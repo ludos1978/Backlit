@@ -155,6 +155,33 @@ final class BrightnessService: @unchecked Sendable {
         softwareBrightnessLock.withLock { softwareBrightnessFactors[displayID] }
     }
 
+    // MARK: - Extra Dimming (below the hardware minimum)
+
+    /// Extra software dimming applied on top of hardware brightness, 0 = none … 95 = darkest.
+    /// Derived from the stored gamma dim factor (in memory, else persisted).
+    func extraDimming(for displayID: CGDirectDisplayID) -> Double {
+        let factor = currentSoftwareBrightness(for: displayID)
+            ?? loadSoftwareBrightness(for: displayID)
+            ?? 1.0
+        return max(0.0, min(95.0, ((1.0 - factor) * 100.0).rounded()))
+    }
+
+    /// Sets extra software dimming (0…95 %) for a display whose hardware brightness is
+    /// already at its floor — the same gamma-ramp scale used for DDC-less externals,
+    /// so it persists, survives wake, and composes with image adjustments and XDR.
+    func setExtraDimming(_ percent: Double, for displayID: CGDirectDisplayID) {
+        let clamped = max(0.0, min(95.0, percent))
+        setSoftwareBrightness(100.0 - clamped, for: displayID)
+    }
+
+    /// True for displays where extra dimming makes sense: the built-in panel and
+    /// DDC-controlled externals. DDC-less externals are already software-dimmed by
+    /// their brightness slider, so a second dimming control would fight it.
+    @MainActor
+    func supportsExtraDimming(_ display: DisplayInfo) -> Bool {
+        display.isBuiltin || isDDCAvailable(for: display.displayID) == true
+    }
+
     // MARK: - DDC Availability Cache
 
     /// Tracks whether hardware DDC is available for each external display.

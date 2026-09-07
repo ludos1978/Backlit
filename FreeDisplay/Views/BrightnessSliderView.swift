@@ -122,6 +122,9 @@ struct BrightnessSliderView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
+
+            // Extra software dimming below the hardware floor (built-in / DDC displays).
+            ExtraDimmingRow(displays: [display])
         }
         .task(id: display.displayID) {
             localBrightness = display.brightness
@@ -401,6 +404,113 @@ struct CombinedGammaView: View {
             } else {
                 GammaService.shared.apply(adj, for: display.displayID)
                 GammaService.shared.saveState(adj, for: display.displayID)
+            }
+        }
+    }
+}
+
+// MARK: - ExtraDimmingRow
+
+/// "Dim Below Minimum": extra software dimming (gamma-ramp scale) applied on top
+/// of hardware brightness, for panels whose backlight floor is still too bright.
+/// Shown for the built-in panel and DDC displays; DDC-less externals are already
+/// software-dimmed by their brightness slider, so the row hides itself for them.
+/// Reuses BrightnessService's software-brightness factor: persisted per display,
+/// re-applied on wake, composed with image adjustments and the XDR boost.
+struct ExtraDimmingRow: View {
+    let displays: [DisplayInfo]
+    var title: String = "Dim Below Minimum"
+    @State private var dimming: Double = 0
+    @State private var isDragging: Bool = false
+
+    private var eligible: [DisplayInfo] {
+        displays.filter { BrightnessService.shared.supportsExtraDimming($0) }
+    }
+
+    var body: some View {
+        if !eligible.isEmpty {
+            content
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Image(systemName: "moon.zzz.fill")
+                    .foregroundColor(dimming > 0 ? .indigo : .secondary)
+                    .font(.caption)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(dimming > 0 ? "\u{2212}\(Int(dimming))%" : "Off")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+                ResetButton(visible: dimming > 0) {
+                    captureUndoSnapshot()
+                    dimming = 0
+                    apply()
+                }
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "sun.min")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
+
+                Slider(value: $dimming, in: 0...95, step: 1) { editing in
+                    isDragging = editing
+                    if editing {
+                        captureUndoSnapshot()
+                    } else {
+                        apply()
+                    }
+                }
+                .accessibilityLabel(title)
+                .accessibilityValue("\(Int(dimming))%")
+                .help("Software dimming below the hardware minimum (applied via the gamma ramp)")
+                .onChange(of: dimming) { _, _ in
+                    guard isDragging else { return }
+                    apply()
+                }
+
+                Image(systemName: "moon.fill")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .onAppear { load() }
+        .onReceive(UndoService.shared.$undoTick) { _ in
+            guard !isDragging else { return }
+            load()
+        }
+    }
+
+    private func load() {
+        let values = eligible.map { BrightnessService.shared.extraDimming(for: $0.displayID) }
+        dimming = values.isEmpty ? 0 : (values.reduce(0, +) / Double(values.count)).rounded()
+    }
+
+    private func apply() {
+        for display in eligible {
+            BrightnessService.shared.setExtraDimming(dimming, for: display.displayID)
+        }
+    }
+
+    /// Pushes every eligible display's current extra dimming onto the undo stack (⌘Z).
+    private func captureUndoSnapshot() {
+        let snapshots = eligible.map { ($0.displayID, BrightnessService.shared.extraDimming(for: $0.displayID)) }
+        UndoService.shared.push {
+            for (id, previous) in snapshots {
+                BrightnessService.shared.setExtraDimming(previous, for: id)
             }
         }
     }

@@ -146,6 +146,14 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 anyActionTaken = true
             }
 
+            // Restore extra dimming below the hardware minimum (nil = older preset
+            // or not applicable to this display → untouched).
+            if let dim = entry.softwareDimming, BrightnessService.shared.supportsExtraDimming(display) {
+                print("[PresetService]   -> setting extra dimming \(dim)%")
+                BrightnessService.shared.setExtraDimming(dim, for: displayID)
+                anyActionTaken = true
+            }
+
             // Set arrangement position if specified — skip no-op moves: every
             // display-configuration transaction dismisses the open menu window.
             if let x = entry.arrangementX, let y = entry.arrangementY,
@@ -199,7 +207,9 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 arrangementY: display.bounds.origin.y,
                 // Neutral (not nil) when no adjustment is saved, so applying the
                 // preset restores the neutral state rather than leaving stale gamma.
-                gammaAdjustment: GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment()
+                gammaAdjustment: GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment(),
+                softwareDimming: BrightnessService.shared.supportsExtraDimming(display)
+                    ? BrightnessService.shared.extraDimming(for: display.displayID) : nil
             )
         }
         var preset = DisplayPreset(name: name, icon: icon, displays: entries)

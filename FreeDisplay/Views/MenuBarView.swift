@@ -170,6 +170,7 @@ struct MenuBarView: View {
                 if settings.showCombinedBrightness {
                     CombinedBrightnessView(displays: displayManager.displays)
                     CombinedGammaView(displays: displayManager.displays)
+                    ExtraDimmingRow(displays: displayManager.displays, title: "Dim Below Minimum (All Displays)")
                     AccessibilityContrastView()
                 }
 

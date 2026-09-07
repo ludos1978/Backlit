@@ -12,6 +12,7 @@ struct DisplayPresetEntry: Codable, Identifiable {
     var arrangementY: Double?
     // Optional (nil in presets saved by older versions → left untouched on apply)
     var gammaAdjustment: GammaAdjustment?  // full image-adjustment snapshot
+    var softwareDimming: Double?           // extra dimming below the hardware minimum, 0-95 %
 }
 
 struct DisplayPreset: Codable, Identifiable {
