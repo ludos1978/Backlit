@@ -114,6 +114,13 @@ struct MenuBarView: View {
         VStack(spacing: 0) {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
+                // ── Presets ────────────────────────────────────────────
+                PresetListView()
+
+                Divider()
+                    .opacity(0.3)
+                    .padding(.vertical, 2)
+
                 // ── General (all displays) ─────────────────────────────
                 if settings.showCombinedBrightness {
                     CombinedBrightnessView(displays: displayManager.displays)
@@ -126,15 +133,6 @@ struct MenuBarView: View {
                 if xdrService.hasEligibleDisplays {
                     XDRQuickSliderView()
                 }
-
-                if settings.showCombinedBrightness || xdrService.hasEligibleDisplays {
-                    Divider()
-                        .opacity(0.3)
-                        .padding(.vertical, 2)
-                }
-
-                // Preset list (Phase 19) — global, so it stays with the general controls
-                PresetListView()
 
                 Divider()
                     .opacity(0.3)
