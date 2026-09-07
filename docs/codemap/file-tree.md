@@ -50,7 +50,7 @@ FreeDisplay/
 │   │   ├── CGHelpers.swift                 # 共享 CG 阻塞调用工具：CGHelpers.runWithTimeout(seconds:fallback:operation:) 在后台线程以超时保护运行 WindowServer IPC 阻塞操作；被 ArrangementService、MirrorService、ResolutionService、VirtualDisplayService 使用
 │   │   ├── ColorProfileService.swift       # ICC Profile 枚举（扫描 3 个系统目录）和切换（ColorSync API）；改动影响色彩描述文件列表和切换
 │   │   ├── DDCService.swift                # ⚠️ IOKit I2C DDC/CI 通信核心：IOFramebuffer 查找、VCP 读写、5 秒 TTL 缓存、3 次重试；几乎所有外接显示器功能的底层依赖，改动需极谨慎
-│   │   ├── DisplayManager.swift            # ⚠️ 显示器枚举（CGGetOnlineDisplayList）+ CGDisplay 热插拔回调 + arrangeExternalAboveBuiltin() 自动外接屏定位；@Published displays 被全局注入，改动影响整个显示器列表数据流
+│   │   ├── DisplayManager.swift            # ⚠️ 显示器枚举（CGGetOnlineDisplayList）+ CGDisplay 热插拔回调（auto-arrange feature removed 2026-09-07 — the app never moves displays on its own）；@Published displays 被全局注入，改动影响整个显示器列表数据流
 │   │   ├── GammaService.swift              # 软件 Gamma 调整：CGSetDisplayTransferByFormula/Table，支持对比度/增益/色温/量化/反色；所有 gamma/软件亮度写入的唯一入口；改动影响图像调整效果
 │   │   ├── HiDPIService.swift              # 写 /Library/Displays/...plist 注入 HiDPI 缩放模式，需管理员权限；改动影响 HiDPI override 生成逻辑
 │   │   ├── LaunchService.swift             # SMAppService 管理开机自启动（macOS 13+）；改动仅影响 Launch at Login 功能

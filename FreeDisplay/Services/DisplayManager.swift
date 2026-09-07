@@ -25,9 +25,6 @@ private func displayReconfigCallback(
         } else {
             manager.refreshDisplays()
         }
-
-        // Auto-rearrange after any display config change completes (debounced 500 ms).
-        manager.scheduleAutoArrange()
     }
 }
 
@@ -41,9 +38,6 @@ class DisplayManager: ObservableObject {
 
     // nonisolated(unsafe) allows deinit (which is nonisolated in Swift 6) to access this value.
     nonisolated(unsafe) private var callbackContext: UnsafeMutableRawPointer?
-
-    /// Work item used to debounce auto-arrange calls triggered by display config changes.
-    private var autoArrangeWorkItem: DispatchWorkItem?
 
     init() {
         refreshDisplays()
@@ -162,17 +156,6 @@ class DisplayManager: ObservableObject {
         }
     }
 
-    /// Debounces calls to `arrangeExternalAboveBuiltin()` — coalesces bursts of config-change
-    /// callbacks into a single rearrange that fires 500 ms after the last callback arrives.
-    func scheduleAutoArrange() {
-        autoArrangeWorkItem?.cancel()
-        let item = DispatchWorkItem { [weak self] in
-            self?.arrangeExternalAboveBuiltin()
-        }
-        autoArrangeWorkItem = item
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)
-    }
-
     private func setupReconfigCallback() {
         let ctx = Unmanaged.passRetained(self).toOpaque()
         callbackContext = ctx
@@ -210,41 +193,6 @@ class DisplayManager: ObservableObject {
         Task { @MainActor in
             let ok = await ArrangementService.shared.setAsMainDisplay(display.displayID, among: self.displays)
             if ok { self.refreshDisplays() }
-        }
-    }
-
-    /// Positions all external displays above the built-in display, centered horizontally.
-    /// Controlled by the UserDefaults key `fd.arrangement.externalAbove`.
-    /// Does nothing if there is no built-in display or no external displays.
-    func arrangeExternalAboveBuiltin() {
-        guard UserDefaults.standard.bool(forKey: "fd.arrangement.externalAbove") else { return }
-
-        guard let builtin = displays.first(where: { $0.isBuiltin }) else { return }
-        let externals = displays.filter { !$0.isBuiltin }
-        guard !externals.isEmpty else { return }
-
-        let builtinX = Int(builtin.bounds.origin.x)
-        let builtinY = Int(builtin.bounds.origin.y)
-        let builtinWidth = Int(builtin.bounds.width)
-
-        // Skip displays that are already at their target position: every
-        // configuration transaction dismisses an open menu window and re-fires
-        // the reconfiguration callback, so no-op moves must not reach CG.
-        let arrangeItems = externals.compactMap { ext -> (id: CGDirectDisplayID, x: Int, y: Int)? in
-            let extWidth = Int(ext.bounds.width)
-            let centeredX = builtinX + (builtinWidth - extWidth) / 2
-            let targetY = builtinY - Int(ext.bounds.height)
-            if Int(ext.bounds.origin.x) == centeredX && Int(ext.bounds.origin.y) == targetY {
-                return nil
-            }
-            return (id: ext.displayID, x: centeredX, y: targetY)
-        }
-        guard !arrangeItems.isEmpty else { return }
-        Task { @MainActor in
-            for item in arrangeItems {
-                await ArrangementService.shared.setPosition(x: item.x, y: item.y, for: item.id)
-            }
-            self.refreshDisplays()
         }
     }
 }

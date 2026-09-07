@@ -26,21 +26,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         _ = AccessibilityService.shared
 
         // Build the display manager now — it registers the reconfiguration
-        // callback and performs the initial display scan.
-        let displayManager = DisplayManager.shared
-
-        // Enable "external above built-in" arrangement by default on first launch.
-        let defaults = UserDefaults.standard
-        if defaults.object(forKey: "fd.arrangement.externalAbove") == nil {
-            defaults.set(true, forKey: "fd.arrangement.externalAbove")
-        }
-
-        // After a 2-second delay (allows displays to fully initialize),
-        // position any external display above the built-in display.
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            displayManager.arrangeExternalAboveBuiltin()
-        }
+        // callback and performs the initial display scan. The app never
+        // rearranges displays on its own; layout changes only happen through
+        // explicit user actions (arrangement canvas, Set as Main, presets).
+        _ = DisplayManager.shared
 
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
