@@ -48,3 +48,19 @@
   gamma slider ↔ per-display ImageAdjustment panel), emit a `PassthroughSubject` from
   the service on save/clear and `.onReceive` it in views to re-sync local `@State`
   (guard with `isDragging` to not fight an active gesture).
+
+## Swift 6 concurrency: closures in `@MainActor` functions on background queues (2026-09-07)
+
+- **Crash signature**: `EXC_BREAKPOINT` / `SIGTRAP` in `_dispatch_assert_queue_fail` ←
+  `swift_task_checkIsolatedSwift`, faulting thread = a background dispatch queue
+  (e.g. `com.freedisplay.ddc`). It only appears when the background path actually runs —
+  for BrightnessService that meant a DDC external display; a MacBook alone never hit it.
+- **Cause**: a non-Sendable closure created inside a `@MainActor` function (here
+  `ddcAvailableLock.withLock { … }` inside a DDC write completion) is inferred
+  main-actor isolated; when the completion invokes it on the DDC queue the runtime asserts.
+  `SWIFT_STRICT_CONCURRENCY: minimal` only silences compile-time diagnostics — the
+  runtime check still fires.
+- **Fix**: never form closures on the background side of a `@MainActor` function. Move the
+  work into a plain (nonisolated) method with explicit `lock()`/`unlock()` and call that
+  from the completion (see `BrightnessService.setDDCAvailable`). `Task { @MainActor in … }`
+  or `DispatchQueue.main.async` hops are fine because they run on main.

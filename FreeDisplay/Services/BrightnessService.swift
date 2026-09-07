@@ -195,6 +195,18 @@ final class BrightnessService: @unchecked Sendable {
     /// Used to denormalize 0–100% into the display's native DDC range.
     private var ddcMaxBrightness: [CGDirectDisplayID: UInt16] = [:]
 
+    /// Records DDC availability from a DDC-queue completion.
+    ///
+    /// Must stay a plain (nonisolated) method with explicit lock()/unlock(): the
+    /// completions are invoked on `com.freedisplay.ddc`, and a `withLock { }`
+    /// closure created inside a `@MainActor` function is inferred main-actor
+    /// isolated — the Swift 6 runtime traps (EXC_BREAKPOINT) when it runs there.
+    private func setDDCAvailable(_ available: Bool, for displayID: CGDirectDisplayID) {
+        ddcAvailableLock.lock()
+        ddcAvailable[displayID] = available
+        ddcAvailableLock.unlock()
+    }
+
     // MARK: - Public API
 
     @MainActor
@@ -289,10 +301,11 @@ final class BrightnessService: @unchecked Sendable {
                 value: ddcValue
             ) { [weak self] success in
                 guard let self else { return }
+                // Runs on the DDC queue — no closures here (see setDDCAvailable).
                 if success {
-                    self.ddcAvailableLock.withLock { self.ddcAvailable[displayID] = true }
+                    self.setDDCAvailable(true, for: displayID)
                 } else {
-                    self.ddcAvailableLock.withLock { self.ddcAvailable[displayID] = false }
+                    self.setDDCAvailable(false, for: displayID)
                     // Apply gamma-based software brightness as fallback (must be on main thread)
                     DispatchQueue.main.async { [weak self] in
                         self?.setSoftwareBrightness(clamped, for: displayID)
@@ -370,11 +383,12 @@ final class BrightnessService: @unchecked Sendable {
                         value: ddcValue
                     ) { [weak self] success in
                         guard let self else { return }
+                        // Runs on the DDC queue — no closures here (see setDDCAvailable).
                         if success {
-                            self.ddcAvailableLock.withLock { self.ddcAvailable[displayID] = true }
+                            self.setDDCAvailable(true, for: displayID)
                         } else if isLast {
                             // DDC failed — mark unavailable and apply software fallback
-                            self.ddcAvailableLock.withLock { self.ddcAvailable[displayID] = false }
+                            self.setDDCAvailable(false, for: displayID)
                             DispatchQueue.main.async { [weak self] in
                                 self?.setSoftwareBrightness(clamped, for: displayID)
                             }
