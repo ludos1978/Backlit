@@ -68,6 +68,11 @@ final class VirtualDisplayService: ObservableObject, @unchecked Sendable {
         activeDisplayObjects.values.contains { $0.displayID == displayID }
     }
 
+    /// The CGDirectDisplayID of an active virtual display config, or nil if not created.
+    func displayID(for configID: UUID) -> CGDirectDisplayID? {
+        activeDisplayObjects[configID]?.displayID
+    }
+
     // MARK: - Create / Destroy
 
     /// Creates a virtual display from the given config using CGVirtualDisplay private API.
@@ -152,6 +157,10 @@ final class VirtualDisplayService: ObservableObject, @unchecked Sendable {
     /// Destroys the virtual display associated with `configID`.
     @discardableResult
     func destroy(configID: UUID) -> Bool {
+        // Close any stream window showing this display before it disappears.
+        if let id = activeDisplayObjects[configID]?.displayID {
+            DisplayStreamService.shared.close(id)
+        }
         guard activeDisplayObjects[configID] != nil else {
             return false
         }

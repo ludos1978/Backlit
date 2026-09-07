@@ -59,6 +59,7 @@ FreeDisplay/
 │   │   ├── ResolutionService.swift         # 通过 CGConfigureDisplayWithDisplayMode 切换显示模式；applyModeSync 已异步化，整个 CG 事务在 CGHelpers.runWithTimeout 内执行；resolvedTargetDisplayID() 在镜像检测时回退到 VirtualDisplayService；改动影响分辨率切换成功率
 │   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；改动需注意 key 命名（必须 fd. 前缀）和向后兼容。Opt-in (default OFF) switches: interceptBrightnessKeys (event tap), autoEnableHiDPI (override plist on new 2K+ externals)
 │   │   ├── AccessibilityService.swift      # Bridges macOS Accessibility "Increase contrast" + "Display Contrast" via private SPI (UAIncreaseContrastSetEnabled, CGSSetDisplayContrast, dlsym) — the pref domain is TCC-protected and pref writes are not applied live; follows System Settings changes via NSWorkspace notification
+│   │   ├── DisplayStreamService.swift      # Live stream window for a (virtual) display: ScreenCaptureKit SCStream → AVSampleBufferDisplayLayer in a floating aspect-locked NSWindow on a physical screen; needs Screen Recording permission
 │   │   ├── UndoService.swift               # App-wide undo stack for display adjustments (⌘Z in the menu window); controls push restore closures on gesture begin, views re-sync via undoTick
 │   │   ├── UpdateService.swift             # GitHub Releases API 检查新版本，语义化版本比较；改动影响更新检查逻辑
 │   │   ├── XDRBrightnessService.swift      # XDR brightness mode (BrightIntosh-style, clean-room): 1×1 EDR trigger overlay per XDR panel + gamma-table boost via GammaService.setXDRBoost; persists fd.xdr.* keys, polls EDR headroom 1s

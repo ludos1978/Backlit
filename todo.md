@@ -53,6 +53,8 @@
       5. `AccessibilityService.swift` — `dlopen`/`dlsym` of Apple's UniversalAccess
          (UAIncreaseContrastIs/SetEnabled) and SkyLight (CGSSetDisplayContrast) private
          frameworks; all local, no data leaves the machine.
+      6. `DisplayStreamService.swift` — ScreenCaptureKit capture of a display for the
+         virtual-display stream window (local rendering only; needs Screen Recording permission).
       No `Process`/`NSTask`/shell execution, no sockets, no third-party dependencies,
       no encoded/obfuscated blobs found (grep for base64/hex literals: none).
 - [ ] Re-run this audit before each tagged release (network grep + Process grep + blob grep).

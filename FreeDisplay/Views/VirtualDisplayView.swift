@@ -5,6 +5,7 @@ import CoreGraphics
 /// Lists all saved virtual display configurations and allows creating / deleting them.
 struct VirtualDisplayView: View {
     @ObservedObject private var service = VirtualDisplayService.shared
+    @ObservedObject private var streamService = DisplayStreamService.shared
     @State private var showCreateForm = false
     @State private var configToDelete: UUID?
     @State private var isCreating: Bool = false
@@ -42,6 +43,14 @@ struct VirtualDisplayView: View {
             .help("Create a new virtual display")
 
             if let err = createError {
+                Text(err)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
+            }
+
+            if let err = streamService.lastError {
                 Text(err)
                     .font(.caption)
                     .foregroundColor(.red)
@@ -124,6 +133,21 @@ struct VirtualDisplayView: View {
                     .padding(.vertical, 2)
                     .background(Color.blue)
                     .cornerRadius(4)
+            }
+
+            // Show the (headless) virtual display's content in a window
+            if active, let displayID = service.displayID(for: config.id) {
+                let showing = streamService.isShowing(displayID)
+                Button(action: {
+                    streamService.toggleWindow(for: displayID, title: config.name)
+                }) {
+                    Image(systemName: showing ? "macwindow.badge.plus" : "macwindow")
+                        .font(.caption)
+                        .foregroundColor(showing ? .accentColor : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help(showing ? "Close the window showing this virtual display"
+                              : "Show this virtual display's content in a window (needs Screen Recording permission)")
             }
 
             // Delete button

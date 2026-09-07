@@ -17,6 +17,7 @@
 		1F535E87C3C4F59A5D2AA618 /* AutoBrightnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598AEDB5733E6B0E108E9EB5 /* AutoBrightnessView.swift */; };
 		20BC0BD119FFB0F3BAC751FD /* DisplayInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E64DDC8BA67C7E60001FDC6 /* DisplayInfo.swift */; };
 		2A82397FAC6CCCA0966AAED5 /* ColorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79B61823CE0057EF1E64215 /* ColorProfileView.swift */; };
+		384BA382CCFF669E7A57EFBC /* DisplayStreamService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7929083DF6570F635851BF5 /* DisplayStreamService.swift */; };
 		3EA5920A3F5338CB1F05642C /* PresetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76FBEDC2A57F5FBBEE11AA0 /* PresetService.swift */; };
 		3EB262F0A45A2A8F1E9FBCE9 /* FreeDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D732A8A7009C298C78D6895C /* FreeDisplayApp.swift */; };
 		3EE2E724BDB262D96D408A44 /* AutoBrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D3E618AD92121297F8A33A /* AutoBrightnessService.swift */; };
@@ -90,6 +91,7 @@
 		87A2686369A9F9969B89376E /* DisplayMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayMode.swift; sourceTree = "<group>"; };
 		90F55D10A5241A8DFA941E4C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2D3E618AD92121297F8A33A /* AutoBrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBrightnessService.swift; sourceTree = "<group>"; };
+		A7929083DF6570F635851BF5 /* DisplayStreamService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayStreamService.swift; sourceTree = "<group>"; };
 		AED959D5249F419ADBDBA1F4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B6B0EE0AC0B2C4726945C0F8 /* AccessibilityContrastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityContrastView.swift; sourceTree = "<group>"; };
 		BC48F94F6FD07F72CA4FDB88 /* BrightnessKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessKeyService.swift; sourceTree = "<group>"; };
@@ -149,6 +151,7 @@
 				4F6823DA8C05CB0B6070AA74 /* ColorProfileService.swift */,
 				719FFBCF3D3A63A6FFFC7172 /* DDCService.swift */,
 				C8919AFF5445E0571C06B148 /* DisplayManager.swift */,
+				A7929083DF6570F635851BF5 /* DisplayStreamService.swift */,
 				7419D1AC41D1C369FFDCD09D /* GammaService.swift */,
 				819474C0E46B105CBBFE7A7F /* HiDPIService.swift */,
 				0509F1D7107310B84B34B825 /* LaunchService.swift */,
@@ -325,6 +328,7 @@
 				17F9F1E3464F57FEFF92591C /* DisplayMode.swift in Sources */,
 				4AA949AC237EE0320969D676 /* DisplayModeListView.swift in Sources */,
 				1E5F0FF7497392061D4444CA /* DisplayPreset.swift in Sources */,
+				384BA382CCFF669E7A57EFBC /* DisplayStreamService.swift in Sources */,
 				3EB262F0A45A2A8F1E9FBCE9 /* FreeDisplayApp.swift in Sources */,
 				69413272AA7D6B777D028855 /* GammaService.swift in Sources */,
 				6C8836EDA79FD1DF60809B4A /* HiDPIService.swift in Sources */,
