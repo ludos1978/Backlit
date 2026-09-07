@@ -1,3 +1,5 @@
+import Combine
+import CoreGraphics
 import SwiftUI
 
 struct BrightnessSliderView: View {
@@ -20,7 +22,7 @@ struct BrightnessSliderView: View {
                         .fill(Color.blue)
                         .frame(width: 5, height: 5)
                         .accessibilityHidden(true)
-                    Text("系统")
+                    Text("System")
                         .font(.caption2)
                         .foregroundColor(.blue)
                 } else if let status = ddcStatus {
@@ -28,15 +30,15 @@ struct BrightnessSliderView: View {
                         .fill(status ? Color.green : Color.orange)
                         .frame(width: 5, height: 5)
                         .accessibilityHidden(true)
-                    Text(status ? "DDC" : "软件")
+                    Text(status ? "DDC" : "Software")
                         .font(.caption2)
                         .foregroundColor(status ? .green : .orange)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.top, 2)
-            .accessibilityLabel(display.isBuiltin ? "亮度控制模式：系统" : "亮度控制模式：\(ddcStatus == true ? "DDC 硬件" : "软件模拟")")
-            .help(display.isBuiltin ? "系统亮度：通过系统 API 控制内建显示屏亮度" : "DDC: 硬件直接控制亮度\n软件: 通过软件调节亮度")
+            .accessibilityLabel(display.isBuiltin ? "Brightness control mode: system" : "Brightness control mode: \(ddcStatus == true ? "DDC hardware" : "software")")
+            .help(display.isBuiltin ? "System brightness: controls the built-in display via system APIs" : "DDC: direct hardware brightness control\nSoftware: simulated brightness adjustment")
 
             HStack(spacing: 6) {
                 let sunIcon: String = {
@@ -53,6 +55,9 @@ struct BrightnessSliderView: View {
 
                 Slider(value: $localBrightness, in: 5...100, step: 1) { editing in
                     isDragging = editing
+                    if editing {
+                        captureUndoSnapshot()
+                    }
                     if !editing {
                         // Drag ended — apply final value with smooth transition and show highlight.
                         withAnimation(.easeOut(duration: 0.3)) { valueHighlighted = true }
@@ -69,9 +74,9 @@ struct BrightnessSliderView: View {
                         lastDDCWrite = Date()
                     }
                 }
-                .accessibilityLabel("显示器亮度")
+                .accessibilityLabel("Display brightness")
                 .accessibilityValue("\(Int(localBrightness))%")
-                .help("拖动调整亮度")
+                .help("Drag to adjust brightness")
                 .onChange(of: localBrightness) { _, newValue in
                     guard isDragging else { return }
                     // Apply immediately — the service chooses software or DDC internally.
@@ -97,7 +102,7 @@ struct BrightnessSliderView: View {
                     .accessibilityHidden(true)
 
                 let brightnessLabel: String = {
-                    if ddcStatus == false { return "软件 \(Int(localBrightness))%" }
+                    if ddcStatus == false { return "SW \(Int(localBrightness))%" }
                     return "\(Int(localBrightness))%"
                 }()
                 Text(brightnessLabel)
@@ -106,6 +111,14 @@ struct BrightnessSliderView: View {
                     .frame(width: 52, alignment: .trailing)
                     .monospacedDigit()
                     .contentTransition(.numericText())
+
+                ResetButton(visible: Int(localBrightness) != 50) {
+                    captureUndoSnapshot()
+                    localBrightness = 50
+                    display.brightness = 50
+                    BrightnessService.shared.setBrightnessSmooth(50, for: display)
+                    updateDDCStatus()
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
@@ -113,6 +126,16 @@ struct BrightnessSliderView: View {
         .task(id: display.displayID) {
             localBrightness = display.brightness
             updateDDCStatus()
+            // Built-in brightness changes outside the app (brightness keys pass
+            // through to macOS, Control Center, auto-brightness sensor) — poll
+            // while the slider is visible so it follows in real time.
+            guard display.isBuiltin else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                if !isDragging {
+                    await BrightnessService.shared.refreshBrightness(for: display)
+                }
+            }
         }
         .onChange(of: display.brightness) { _, newValue in
             if !isDragging && abs(newValue - localBrightness) >= 1 {
@@ -123,6 +146,19 @@ struct BrightnessSliderView: View {
 
     private func updateDDCStatus() {
         ddcStatus = BrightnessService.shared.isDDCAvailable(for: display.displayID)
+    }
+
+    /// Pushes the display's current brightness onto the undo stack (⌘Z).
+    private func captureUndoSnapshot() {
+        let displayID = display.displayID
+        let previous = display.brightness
+        UndoService.shared.push {
+            Task { @MainActor in
+                guard let d = DisplayManagerAccessor.shared.displays.first(where: { $0.displayID == displayID }) else { return }
+                d.brightness = previous
+                await BrightnessService.shared.setBrightness(previous, for: d)
+            }
+        }
     }
 }
 
@@ -150,7 +186,7 @@ struct CombinedBrightnessView: View {
                     .foregroundColor(.yellow)
                     .font(.caption)
                     .accessibilityHidden(true)
-                Text("亮度（组合）")
+                Text("Brightness (All Displays)")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -158,6 +194,16 @@ struct CombinedBrightnessView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .monospacedDigit()
+
+                ResetButton(visible: Int(combinedBrightness) != 50) {
+                    captureUndoSnapshot()
+                    combinedBrightness = 50
+                    Task { @MainActor in
+                        for display in displays {
+                            BrightnessService.shared.setBrightnessSmooth(50, for: display)
+                        }
+                    }
+                }
             }
 
             HStack(spacing: 6) {
@@ -169,6 +215,9 @@ struct CombinedBrightnessView: View {
 
                 Slider(value: $combinedBrightness, in: 5...100, step: 1) { editing in
                     isDragging = editing
+                    if editing {
+                        captureUndoSnapshot()
+                    }
                     if !editing {
                         // Drag ended — flush final value to all displays with smooth transition.
                         Task { @MainActor in
@@ -179,7 +228,7 @@ struct CombinedBrightnessView: View {
                         lastDDCWrite = Date()
                     }
                 }
-                .accessibilityLabel("组合亮度")
+                .accessibilityLabel("Combined brightness")
                 .accessibilityValue("\(Int(combinedBrightness))%")
                 .onChange(of: combinedBrightness) { _, newValue in
                     guard isDragging else { return }
@@ -209,6 +258,150 @@ struct CombinedBrightnessView: View {
         .padding(.vertical, 6)
         .onAppear {
             combinedBrightness = averageBrightness
+        }
+        .onReceive(UndoService.shared.$undoTick) { _ in
+            guard !isDragging else { return }
+            combinedBrightness = averageBrightness
+        }
+        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
+            // Follow external brightness changes (keys, Control Center) live.
+            guard !isDragging else { return }
+            // Built-in brightness changes happen outside the app — re-read it so
+            // the average tracks reality even when no display row is expanded.
+            for display in displays where display.isBuiltin {
+                Task { await BrightnessService.shared.refreshBrightness(for: display) }
+            }
+            if abs(combinedBrightness - averageBrightness) >= 1 {
+                combinedBrightness = averageBrightness
+            }
+        }
+    }
+
+    /// Pushes every display's current brightness onto the undo stack (⌘Z).
+    private func captureUndoSnapshot() {
+        let snapshots = displays.map { ($0.displayID, $0.brightness) }
+        UndoService.shared.push {
+            Task { @MainActor in
+                for (id, previous) in snapshots {
+                    guard let d = DisplayManagerAccessor.shared.displays.first(where: { $0.displayID == id }) else { continue }
+                    d.brightness = previous
+                    await BrightnessService.shared.setBrightness(previous, for: d)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - CombinedGammaView
+
+/// Global gamma slider: brightens or darkens the midtones of all displays at once
+/// (0 = neutral, + = brighter, − = darker). Applied per display via GammaService
+/// so it persists and is re-applied after sleep/wake.
+struct CombinedGammaView: View {
+    let displays: [DisplayInfo]
+    @State private var gammaValue: Double = 0
+    @State private var isDragging: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Image(systemName: "circle.lefthalf.filled")
+                    .foregroundColor(.purple)
+                    .font(.caption)
+                    .accessibilityHidden(true)
+                Text("Gamma (All Displays)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text("\(gammaValue > 0 ? "+" : "")\(Int(gammaValue))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+
+                ResetButton(visible: gammaValue != 0) {
+                    captureUndoSnapshot()
+                    gammaValue = 0
+                    apply()
+                }
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "moon")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
+
+                Slider(value: $gammaValue, in: -100...100, step: 1) { editing in
+                    isDragging = editing
+                    if editing {
+                        captureUndoSnapshot()
+                    } else {
+                        apply()
+                    }
+                }
+                .accessibilityLabel("Combined gamma")
+                .accessibilityValue("\(Int(gammaValue))")
+                .help("Brighten or darken midtones on all displays")
+                .onChange(of: gammaValue) { _, _ in
+                    guard isDragging else { return }
+                    apply()
+                }
+
+                Image(systemName: "sun.max")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .onAppear { load() }
+        .onReceive(GammaService.stateDidChange) { _ in
+            // Re-sync when another control (per-display panel, undo) edits gamma.
+            guard !isDragging else { return }
+            load()
+        }
+    }
+
+    /// Pushes every display's current saved adjustment onto the undo stack (⌘Z).
+    private func captureUndoSnapshot() {
+        let snapshots = displays.map { ($0.displayID, GammaService.shared.loadSavedState(for: $0.displayID)) }
+        UndoService.shared.push {
+            for (id, previous) in snapshots {
+                if let previous {
+                    GammaService.shared.apply(previous, for: id)
+                    GammaService.shared.saveState(previous, for: id)
+                } else {
+                    GammaService.shared.clearSavedState(for: id)
+                    GammaService.shared.resetSingleDisplay(id)
+                }
+            }
+        }
+    }
+
+    /// Initializes the slider from the average of the saved per-display gamma values.
+    private func load() {
+        let values = displays.map {
+            GammaService.shared.loadSavedState(for: $0.displayID)?.gammaVal ?? 0
+        }
+        gammaValue = values.isEmpty ? 0 : (values.reduce(0, +) / Double(values.count)).rounded()
+    }
+
+    private func apply() {
+        for display in displays {
+            var adj = GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment()
+            // Never silently resume a display whose adjustments the user paused.
+            guard !adj.isPaused else { continue }
+            adj.gammaVal = gammaValue
+            if adj.isNeutral {
+                GammaService.shared.clearSavedState(for: display.displayID)
+                GammaService.shared.resetSingleDisplay(display.displayID)
+            } else {
+                GammaService.shared.apply(adj, for: display.displayID)
+                GammaService.shared.saveState(adj, for: display.displayID)
+            }
         }
     }
 }

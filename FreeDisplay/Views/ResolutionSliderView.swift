@@ -36,6 +36,12 @@ struct ResolutionSliderView: View {
         modes.firstIndex(where: { $0.isNative })
     }
 
+    /// True when a recommended mode exists and is not the current one.
+    private var canResetToRecommended: Bool {
+        guard let recIdx = recommendedIndex else { return false }
+        return modes[recIdx].id != display.currentDisplayMode?.id
+    }
+
     var body: some View {
         VStack(spacing: 2) {
             HStack(spacing: 6) {
@@ -62,7 +68,7 @@ struct ResolutionSliderView: View {
                 .onAppear {
                     syncSliderToCurrentMode()
                 }
-                .help("拖动选择分辨率")
+                .help("Drag to choose a resolution")
 
                 Text(previewModeFullString)
                     .font(.caption)
@@ -71,13 +77,20 @@ struct ResolutionSliderView: View {
                     .monospacedDigit()
                     .contentTransition(.numericText())
                     .animation(.easeInOut(duration: 0.15), value: sliderIndex)
+
+                ResetButton(visible: canResetToRecommended) {
+                    if let recIdx = recommendedIndex {
+                        sliderIndex = Double(recIdx)
+                        applySelectedMode()
+                    }
+                }
             }
 
-            // Milestone labels: 最低 / 推荐 / 最高
+            // Milestone labels: lowest / recommended / highest
             if modes.count > 1 {
                 HStack(spacing: 0) {
                     // Modes are sorted descending: index 0 = highest resolution (left), last = lowest (right)
-                    Text("最高")
+                    Text("Highest")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -91,7 +104,7 @@ struct ResolutionSliderView: View {
                                 Circle()
                                     .fill(Color.accentColor)
                                     .frame(width: 4, height: 4)
-                                Text("推荐")
+                                Text("Recommended")
                                     .font(.caption2)
                                     .foregroundColor(.accentColor)
                             }
@@ -101,7 +114,7 @@ struct ResolutionSliderView: View {
                     } else {
                         Spacer()
                     }
-                    Text("最低")
+                    Text("Lowest")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -118,6 +131,20 @@ struct ResolutionSliderView: View {
         sliderIndex = Double(idx)
     }
 
+    /// Pushes the current display mode onto the undo stack (⌘Z).
+    private func captureUndoSnapshot() {
+        guard let previous = display.currentDisplayMode else { return }
+        let displayID = display.displayID
+        UndoService.shared.push {
+            Task { @MainActor in
+                let ok = await ResolutionService.shared.setDisplayMode(previous, for: displayID)
+                if ok, let d = DisplayManagerAccessor.shared.displays.first(where: { $0.displayID == displayID }) {
+                    d.currentDisplayMode = previous
+                }
+            }
+        }
+    }
+
     private func applySelectedMode() {
         guard !modes.isEmpty, !isSwitching else { return }
         let idx = min(Int(sliderIndex.rounded()), modes.count - 1)
@@ -127,11 +154,14 @@ struct ResolutionSliderView: View {
         Task { @MainActor in
             let success = await ResolutionService.shared.setDisplayMode(selected, for: display.displayID)
             if success {
+                // Push the undo entry only for a switch that actually happened —
+                // display.currentDisplayMode still holds the pre-switch mode here.
+                captureUndoSnapshot()
                 display.currentDisplayMode = selected
                 errorMessage = nil
             } else {
                 syncSliderToCurrentMode()
-                errorMessage = "切换失败，请重试"
+                errorMessage = "Switch failed. Please try again."
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                     errorMessage = nil

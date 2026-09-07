@@ -4,11 +4,8 @@ import CoreGraphics
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var wakeObserver: NSObjectProtocol?
 
-    /// Called by FreeDisplayApp to provide access to the live DisplayManager instance.
-    var onWake: (() -> Void)?
-
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 防止重复启动：如果已有实例在运行，直接退出
+        // Prevent duplicate launches: exit immediately if another instance is already running
         let runningApps = NSWorkspace.shared.runningApplications.filter {
             $0.bundleIdentifier == Bundle.main.bundleIdentifier
         }
@@ -21,12 +18,51 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Start intercepting brightness keys to route them to the display under the cursor.
         BrightnessKeyService.shared.start()
 
+        // Restore XDR brightness mode if it was enabled in the previous session.
+        XDRBrightnessService.shared.restoreSavedState()
+
+        // Warm up the accessibility bridge so saved display contrast is restored
+        // and System Settings changes are observed before the menu is first opened.
+        _ = AccessibilityService.shared
+
+        // Build the display manager now — it registers the reconfiguration
+        // callback and performs the initial display scan.
+        let displayManager = DisplayManager.shared
+
+        // Enable "external above built-in" arrangement by default on first launch.
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: "fd.arrangement.externalAbove") == nil {
+            defaults.set(true, forKey: "fd.arrangement.externalAbove")
+        }
+
+        // After a 2-second delay (allows displays to fully initialize),
+        // position any external display above the built-in display.
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            displayManager.arrangeExternalAboveBuiltin()
+        }
+
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
             queue: .main
-        ) { [weak self] _ in
-            self?.onWake?()
+        ) { _ in
+            Task { @MainActor in
+                // Give WindowServer 2 seconds to stabilize after wake before
+                // touching display state.
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                let dm = DisplayManager.shared
+                dm.refreshDisplays()
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                for display in dm.displays {
+                    // Apply software brightness factor first so GammaService
+                    // can read the up-to-date factor when it re-applies its formula.
+                    BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
+                    GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                    // Re-apply any custom resolution that macOS may have reset on wake
+                    ResolutionService.shared.reapplySavedModeIfNeeded(for: display.displayID)
+                }
+            }
         }
     }
 

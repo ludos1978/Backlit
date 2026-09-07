@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		067AB39B36D9486E45FC7C46 /* XDRBrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 006C5872486B745CD756EB91 /* XDRBrightnessService.swift */; };
 		07A41793B3F3304722147F19 /* VirtualDisplayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F606C5D467CD44404890F6EC /* VirtualDisplayService.swift */; };
 		0802EC2814FD3B88A63A337E /* PresetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76DF3A1CA21D512F8DC936F9 /* PresetListView.swift */; };
 		17F9F1E3464F57FEFF92591C /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A2686369A9F9969B89376E /* DisplayMode.swift */; };
@@ -22,6 +23,7 @@
 		4AA949AC237EE0320969D676 /* DisplayModeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F049322038220CBB75B6985 /* DisplayModeListView.swift */; };
 		4C8A0C530FDFF72F78F5DFD3 /* BrightnessHUDService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50B61D6248DB61E562B4E3D /* BrightnessHUDService.swift */; };
 		4E6DA9CD1781AAB2A814E56A /* ArrangementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6804E6622DE956669AE0DBCC /* ArrangementView.swift */; };
+		5C24AE7E60022015BA598CD7 /* AccessibilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CEA01C5479F607D1AE06AD1 /* AccessibilityService.swift */; };
 		5E6835D82CA20AB0673F102F /* NotchOverlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3739D4F9F8A958DE959C133E /* NotchOverlayManager.swift */; };
 		611792FF4019DE0B3D2D8091 /* HiDPIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CFC4A7F963D418082D6B61 /* HiDPIView.swift */; };
 		63E0F610C2DB27B05C23D665 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63BF0C6897ED7891956F2715 /* UpdateService.swift */; };
@@ -32,15 +34,18 @@
 		6C8836EDA79FD1DF60809B4A /* HiDPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819474C0E46B105CBBFE7A7F /* HiDPIService.swift */; };
 		6C97C09AAFC84C7DF9FFFC4F /* ColorProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6823DA8C05CB0B6070AA74 /* ColorProfileService.swift */; };
 		7BC8C11889A477C6501E5BC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AED959D5249F419ADBDBA1F4 /* Assets.xcassets */; };
+		7CF605059CB929A933F6BFE5 /* XDRBrightnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2478CF633DD1D0EABBACECFA /* XDRBrightnessView.swift */; };
 		7D929741C0EE81D5B0418538 /* VirtualDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C8DE3994AD8E543BA765829 /* VirtualDisplayView.swift */; };
 		8020688F9F08D4F744D00974 /* ResolutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6D1243B91C455CE17BE1DF /* ResolutionService.swift */; };
 		80CA5725D4B2AA1D35E1C527 /* DDCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719FFBCF3D3A63A6FFFC7172 /* DDCService.swift */; };
 		80F888F001C7F53E4FA362AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 90F55D10A5241A8DFA941E4C /* Assets.xcassets */; };
 		87A763D8B6A6F9D9D9351AB7 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA0E0202B5E5AC58680DDDB /* MenuBarView.swift */; };
 		8BD7199384F977B50A5EAB5B /* MirrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754025E6D6152C81F145C63C /* MirrorService.swift */; };
+		8C52727A3EDEDF23FED32677 /* UndoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EEA1741C50D4C0B67A3B15 /* UndoService.swift */; };
 		94A44781BBE01DF170DF6F64 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11B24C0698CE807BA1E28D0 /* AppDelegate.swift */; };
 		B170F04C4FDA2E9A8D0AD6B0 /* BrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6ED9828FF4F2823DDB03014 /* BrightnessService.swift */; };
 		B3452C06010BEFEEBF0FD1FC /* ResolutionSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603658292A824E3A3968A4D7 /* ResolutionSliderView.swift */; };
+		BC317BCB31AA234A12597E71 /* AccessibilityContrastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B0EE0AC0B2C4726945C0F8 /* AccessibilityContrastView.swift */; };
 		CBC8B0900A104181893B69B2 /* ImageAdjustmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F22B3A7EF51E72B078901699 /* ImageAdjustmentView.swift */; };
 		CD3C6687C2B23F46A3678E94 /* NotchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2419A06679F0A55C454EF1F /* NotchView.swift */; };
 		D14D979F3149D232244DD701 /* MainDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4720147B44C6328686440A16 /* MainDisplayView.swift */; };
@@ -53,13 +58,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		006C5872486B745CD756EB91 /* XDRBrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XDRBrightnessService.swift; sourceTree = "<group>"; };
 		0509F1D7107310B84B34B825 /* LaunchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchService.swift; sourceTree = "<group>"; };
 		0C8DE3994AD8E543BA765829 /* VirtualDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualDisplayView.swift; sourceTree = "<group>"; };
 		181D9C66D6F3D332AAC9AC0B /* SystemColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemColorView.swift; sourceTree = "<group>"; };
 		1C7E2B33E54A6BAC64A84990 /* DisplayDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDetailView.swift; sourceTree = "<group>"; };
 		1E64DDC8BA67C7E60001FDC6 /* DisplayInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayInfo.swift; sourceTree = "<group>"; };
 		22030BFC8A680A596A5764C9 /* ArrangementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementService.swift; sourceTree = "<group>"; };
+		2478CF633DD1D0EABBACECFA /* XDRBrightnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XDRBrightnessView.swift; sourceTree = "<group>"; };
 		3739D4F9F8A958DE959C133E /* NotchOverlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchOverlayManager.swift; sourceTree = "<group>"; };
+		38EEA1741C50D4C0B67A3B15 /* UndoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoService.swift; sourceTree = "<group>"; };
 		3B6EC27CA822E1D2F38769E0 /* FreeDisplay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FreeDisplay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4720147B44C6328686440A16 /* MainDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainDisplayView.swift; sourceTree = "<group>"; };
 		4F6823DA8C05CB0B6070AA74 /* ColorProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorProfileService.swift; sourceTree = "<group>"; };
@@ -67,6 +75,7 @@
 		598AEDB5733E6B0E108E9EB5 /* AutoBrightnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBrightnessView.swift; sourceTree = "<group>"; };
 		59F1FD9EEC72051EBC3473C1 /* NSScreenExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSScreenExtension.swift; sourceTree = "<group>"; };
 		5CA0E0202B5E5AC58680DDDB /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		5CEA01C5479F607D1AE06AD1 /* AccessibilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityService.swift; sourceTree = "<group>"; };
 		5E9756B168F3CBD4A8DA6E3C /* DisplayPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayPreset.swift; sourceTree = "<group>"; };
 		603658292A824E3A3968A4D7 /* ResolutionSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolutionSliderView.swift; sourceTree = "<group>"; };
 		63BF0C6897ED7891956F2715 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
@@ -82,6 +91,7 @@
 		90F55D10A5241A8DFA941E4C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2D3E618AD92121297F8A33A /* AutoBrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBrightnessService.swift; sourceTree = "<group>"; };
 		AED959D5249F419ADBDBA1F4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B6B0EE0AC0B2C4726945C0F8 /* AccessibilityContrastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityContrastView.swift; sourceTree = "<group>"; };
 		BC48F94F6FD07F72CA4FDB88 /* BrightnessKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessKeyService.swift; sourceTree = "<group>"; };
 		BEC02E3AAD0509479979CBEA /* FreeDisplay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FreeDisplay.entitlements; sourceTree = "<group>"; };
 		C11B24C0698CE807BA1E28D0 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -129,6 +139,7 @@
 		42B91B12346D648024A09155 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				5CEA01C5479F607D1AE06AD1 /* AccessibilityService.swift */,
 				22030BFC8A680A596A5764C9 /* ArrangementService.swift */,
 				A2D3E618AD92121297F8A33A /* AutoBrightnessService.swift */,
 				D50B61D6248DB61E562B4E3D /* BrightnessHUDService.swift */,
@@ -146,8 +157,10 @@
 				C76FBEDC2A57F5FBBEE11AA0 /* PresetService.swift */,
 				6E6D1243B91C455CE17BE1DF /* ResolutionService.swift */,
 				E5483CA367C0673369C00E5A /* SettingsService.swift */,
+				38EEA1741C50D4C0B67A3B15 /* UndoService.swift */,
 				63BF0C6897ED7891956F2715 /* UpdateService.swift */,
 				F606C5D467CD44404890F6EC /* VirtualDisplayService.swift */,
+				006C5872486B745CD756EB91 /* XDRBrightnessService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -198,6 +211,7 @@
 		E4F6E4FC5398AA42CC190E49 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B6B0EE0AC0B2C4726945C0F8 /* AccessibilityContrastView.swift */,
 				6804E6622DE956669AE0DBCC /* ArrangementView.swift */,
 				598AEDB5733E6B0E108E9EB5 /* AutoBrightnessView.swift */,
 				D76D8EE5271581552ED081AF /* BrightnessSliderView.swift */,
@@ -214,6 +228,7 @@
 				58474F9C406F992241963112 /* SavePresetView.swift */,
 				181D9C66D6F3D332AAC9AC0B /* SystemColorView.swift */,
 				0C8DE3994AD8E543BA765829 /* VirtualDisplayView.swift */,
+				2478CF633DD1D0EABBACECFA /* XDRBrightnessView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -254,7 +269,6 @@
 				};
 			};
 			buildConfigurationList = 8EA410054BD32F42B7BB9BC3 /* Build configuration list for PBXProject "FreeDisplay" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -264,6 +278,7 @@
 			mainGroup = AD8C2B4D7F682DFFA53EF6B7;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 4D2DDE7731949C0697A6167C /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -289,6 +304,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC317BCB31AA234A12597E71 /* AccessibilityContrastView.swift in Sources */,
+				5C24AE7E60022015BA598CD7 /* AccessibilityService.swift in Sources */,
 				94A44781BBE01DF170DF6F64 /* AppDelegate.swift in Sources */,
 				E201AC4CE5BCEC009C926206 /* ArrangementService.swift in Sources */,
 				4E6DA9CD1781AAB2A814E56A /* ArrangementView.swift in Sources */,
@@ -327,9 +344,12 @@
 				F9A1FF13C0CAC41003C5B201 /* SavePresetView.swift in Sources */,
 				E6D99B12980703693C61A687 /* SettingsService.swift in Sources */,
 				1ACB5C7E928662C408241F63 /* SystemColorView.swift in Sources */,
+				8C52727A3EDEDF23FED32677 /* UndoService.swift in Sources */,
 				63E0F610C2DB27B05C23D665 /* UpdateService.swift in Sources */,
 				07A41793B3F3304722147F19 /* VirtualDisplayService.swift in Sources */,
 				7D929741C0EE81D5B0418538 /* VirtualDisplayView.swift in Sources */,
+				067AB39B36D9486E45FC7C46 /* XDRBrightnessService.swift in Sources */,
+				7CF605059CB929A933F6BFE5 /* XDRBrightnessView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -405,7 +425,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "FreeDisplay - Free & Open Source";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "FreeDisplay 需要屏幕录制权限以显示各显示器的实时画面预览。";
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "FreeDisplay needs screen recording permission to show live previews of each display.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -432,7 +452,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "FreeDisplay - Free & Open Source";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "FreeDisplay 需要屏幕录制权限以显示各显示器的实时画面预览。";
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "FreeDisplay needs screen recording permission to show live previews of each display.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

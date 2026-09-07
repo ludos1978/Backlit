@@ -52,3 +52,16 @@
 - **解法**: 使用 IOAVService 私有 API（`IOAVServiceCreateWithService` + `IOAVServiceWriteI2C` / `IOAVServiceReadI2C`），通过 DCPAVServiceProxy IOKit 服务查找外接显示器
 - **教训**: 不同 CPU 架构的 macOS 使用完全不同的显示器通信 API。MonitorControl、BetterDisplay 都用 IOAVService。参考 alinpanaitiu.com/blog/journey-to-ddc-on-m1-macs/
 - **日期**: 2026-03-03
+
+## Built-in brightness on Apple Silicon (2026-09-07)
+
+- `IODisplayGetFloatParameter` / `IODisplaySetFloatParameter` on IODisplayConnect **silently
+  fail on Apple Silicon** (no IODisplayConnect services) — same root cause as the DDC B-003
+  issue. Built-in brightness must use the DisplayServices private framework via dlsym:
+  `DisplayServicesGetBrightness(id, &float)` / `DisplayServicesSetBrightness(id, float)` /
+  `DisplayServicesCanChangeBrightness(id)` (rc 0 = success; verified by set+readback).
+- `com.apple.universalaccess` is a **TCC-protected preference domain**: CFPreferences writes
+  from an app without Full Disk Access fail silently, and even successful writes are not
+  applied live by universalaccessd. Use the private SPI instead:
+  `UAIncreaseContrastSetEnabled(Bool)` / `UAIncreaseContrastIsEnabled()` (UniversalAccess.framework)
+  and `CGSSetDisplayContrast(Float)` (SkyLight, 0 = normal, ~1 = max, global).

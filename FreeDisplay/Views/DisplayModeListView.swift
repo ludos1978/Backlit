@@ -49,7 +49,7 @@ struct DisplayModeListView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
             HStack {
-                Text("显示模式")
+                Text("Display Modes")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -59,14 +59,14 @@ struct DisplayModeListView: View {
                         .foregroundColor(.accentColor)
                 }
                 .buttonStyle(.plain)
-                .help("刷新模式列表")
+                .help("Refresh the mode list")
             }
             .padding(.horizontal, 12)
             .padding(.top, 6)
             .padding(.bottom, 2)
 
             if resolutionGroups.isEmpty {
-                Text("没有可用的显示模式")
+                Text("No display modes available")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 12)
@@ -90,7 +90,7 @@ struct DisplayModeListView: View {
                         withAnimation(.easeInOut(duration: 0.2)) { showAllModes.toggle() }
                     }) {
                         HStack(spacing: 4) {
-                            Text(showAllModes ? "收起" : "显示全部 \(resolutionGroups.count) 个")
+                            Text(showAllModes ? "Show less" : "Show all \(resolutionGroups.count)")
                                 .font(.caption)
                                 .foregroundColor(.accentColor)
                             Image(systemName: showAllModes ? "chevron.up" : "chevron.down")
@@ -140,6 +140,8 @@ struct DisplayModeListView: View {
             return
         }
 
+        let previousMode = display.currentDisplayMode
+
         isSwitching = true
         switchingModeID = mode.id
         let displayID = display.displayID
@@ -150,6 +152,18 @@ struct DisplayModeListView: View {
                 success = await ResolutionService.shared.setDisplayMode(mode, for: displayID)
             }
             if success {
+                // Push the undo entry only for a switch that actually happened —
+                // a failed attempt must not pollute the ⌘Z stack with a no-op.
+                if let previous = previousMode {
+                    UndoService.shared.push {
+                        Task { @MainActor in
+                            let ok = await ResolutionService.shared.setDisplayMode(previous, for: displayID)
+                            if ok, let d = DisplayManagerAccessor.shared.displays.first(where: { $0.displayID == displayID }) {
+                                d.currentDisplayMode = previous
+                            }
+                        }
+                    }
+                }
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 let refreshedMode = await Task.detached(priority: .userInitiated) {
                     DisplayMode.currentMode(for: displayID)
@@ -162,7 +176,7 @@ struct DisplayModeListView: View {
                 errorMessage = nil
             } else {
                 withAnimation {
-                    errorMessage = "无法切换到 \(mode.resolutionString)，请重试"
+                    errorMessage = "Could not switch to \(mode.resolutionString). Please try again."
                 }
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
@@ -247,7 +261,7 @@ private struct ResolutionRow: View {
                 }
 
                 if isCurrent {
-                    Text("当前")
+                    Text("Current")
                         .font(.caption2)
                         .foregroundColor(.white)
                         .padding(.horizontal, 5)
@@ -312,7 +326,7 @@ private struct RefreshRatePicker: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Text("刷新率")
+            Text("Refresh rate")
                 .font(.caption2)
                 .foregroundColor(.secondary)
 

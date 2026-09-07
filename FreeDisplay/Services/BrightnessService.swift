@@ -6,6 +6,33 @@ import CoreGraphics
 @_silgen_name("CGDisplayIOServicePort")
 private func CGDisplayIOServicePort(_ display: CGDirectDisplayID) -> io_service_t
 
+// MARK: - DisplayServices (private framework, dlsym)
+//
+// On Apple Silicon the legacy IODisplayGet/SetFloatParameter path silently fails
+// (no IODisplayConnect services), so built-in brightness must go through the
+// DisplayServices private framework — verified working on this hardware.
+
+private let _DSGetBrightness: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32)? = {
+    guard let h = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
+          let sym = dlsym(h, "DisplayServicesGetBrightness") else { return nil }
+    return unsafeBitCast(sym, to: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32).self)
+}()
+
+private let _DSSetBrightness: (@convention(c) (CGDirectDisplayID, Float) -> Int32)? = {
+    guard let h = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
+          let sym = dlsym(h, "DisplayServicesSetBrightness") else { return nil }
+    return unsafeBitCast(sym, to: (@convention(c) (CGDirectDisplayID, Float) -> Int32).self)
+}()
+
+/// The online display marked as built-in, if any.
+private func builtinDisplayID() -> CGDirectDisplayID? {
+    var displayCount: UInt32 = 0
+    CGGetOnlineDisplayList(0, nil, &displayCount)
+    var displayIDs = [CGDirectDisplayID](repeating: 0, count: Int(displayCount))
+    CGGetOnlineDisplayList(displayCount, &displayIDs, &displayCount)
+    return displayIDs.prefix(Int(displayCount)).first { CGDisplayIsBuiltin($0) != 0 }
+}
+
 // MARK: - BrightnessAnimator
 
 /// Manages smooth brightness transitions for a single display.
@@ -354,7 +381,8 @@ final class BrightnessService: @unchecked Sendable {
         }
 
         // No active gamma adjustment — write a plain dimmed ramp directly.
-        let floatFactor = Float(factor)
+        // Preserve any XDR boost so software dimming and XDR mode compose.
+        let floatFactor = Float(factor) * Float(GammaService.shared.xdrBoost(for: displayID))
         let tableSize: UInt32 = 256
         var red   = [CGGammaValue](repeating: 0, count: Int(tableSize))
         var green = [CGGammaValue](repeating: 0, count: Int(tableSize))
@@ -377,10 +405,12 @@ final class BrightnessService: @unchecked Sendable {
         #endif
     }
 
-    /// Resets the gamma table for a display back to the identity curve.
+    /// Resets the gamma table for a display back to the identity curve
+    /// (scaled by the XDR boost when one is active, so XDR mode survives the reset).
     func resetSoftwareBrightness(for displayID: CGDirectDisplayID) {
         let size = 256
-        let values = (0..<size).map { CGGammaValue($0) / CGGammaValue(size - 1) }
+        let boost = CGGammaValue(GammaService.shared.xdrBoost(for: displayID))
+        let values = (0..<size).map { CGGammaValue($0) / CGGammaValue(size - 1) * boost }
         var red = values
         var green = values
         var blue = values
@@ -447,7 +477,16 @@ final class BrightnessService: @unchecked Sendable {
     }
 
     private func getInternalBrightness() -> Double? {
-        // Primary: use CGDisplayIOServicePort to get the specific builtin display service
+        // Primary: DisplayServices private framework (the only path that works
+        // on Apple Silicon).
+        if let getB = _DSGetBrightness, let id = builtinDisplayID() {
+            var value: Float = 0
+            if getB(id, &value) == 0 {
+                return Double(value) * 100.0
+            }
+        }
+
+        // Legacy: use CGDisplayIOServicePort to get the specific builtin display service
         if let servicePort = builtinIOService() {
             var value: Float = 0
             if IODisplayGetFloatParameter(
@@ -500,7 +539,18 @@ final class BrightnessService: @unchecked Sendable {
     }
 
     private func setInternalBrightness(_ value: Float) {
-        // Primary: use CGDisplayIOServicePort to target only the builtin display service
+        // Primary: DisplayServices private framework (the only path that works
+        // on Apple Silicon).
+        if let setB = _DSSetBrightness, let id = builtinDisplayID() {
+            if setB(id, value) == 0 {
+                #if DEBUG
+                print("[BrightnessService] internal brightness set to \(value) via DisplayServices")
+                #endif
+                return
+            }
+        }
+
+        // Legacy: use CGDisplayIOServicePort to target only the builtin display service
         if let servicePort = builtinIOService() {
             if IODisplaySetFloatParameter(
                 servicePort, 0, Self.ioDisplayBrightnessKey, value

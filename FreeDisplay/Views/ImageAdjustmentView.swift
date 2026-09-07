@@ -1,6 +1,7 @@
+import Combine
 import SwiftUI
 
-/// Expandable "图像调整" section — 11 sliders for software gamma/image adjustments.
+/// Expandable image-adjustment section — 11 sliders for software gamma/image adjustments.
 /// Mirrors BetterDisplay's Image Adjustment panel.
 struct ImageAdjustmentView: View {
     @ObservedObject var display: DisplayInfo
@@ -9,6 +10,9 @@ struct ImageAdjustmentView: View {
     @State private var contrast: Double = 0           // -100 … +100
     @State private var gammaVal: Double = 0           // -100 … +100
     @State private var gain: Double = 0               // -100 … +100
+    @State private var blackPoint: Double = 0         // 0 … 100 (input black clip)
+    @State private var midPoint: Double = 0           // -100 … +100 (midtone lift)
+    @State private var whitePoint: Double = 0         // 0 … 100 (input white clip)
     @State private var colorTemperature: Double = 0   // -100 … +100
     @State private var quantLevels: Double = 256      // 2 … 256 (256 = ∞)
     @State private var rGamma: Double = 0
@@ -24,29 +28,40 @@ struct ImageAdjustmentView: View {
         VStack(alignment: .leading, spacing: 0) {
 
             // ── Group 1: Global adjustments ────────────────────────────────
-            adjustRow(icon: "circle.righthalf.filled",   label: "对比度",  value: $contrast).help("调整 对比度")
-            adjustRow(icon: "sparkle",                   label: "伽马值",  value: $gammaVal).help("调整 伽马值")
-            adjustRow(icon: "bolt.fill",                 label: "增益",    value: $gain).help("调整 增益")
-            adjustRow(icon: "thermometer.medium",        label: "色温",    value: $colorTemperature).help("调整 色温")
+            adjustRow(icon: "circle.righthalf.filled",   label: "Contrast", value: $contrast).help("Adjust contrast")
+            adjustRow(icon: "sparkle",                   label: "Gamma", value: $gammaVal).help("Adjust gamma")
+            adjustRow(icon: "bolt.fill",                 label: "Gain", value: $gain).help("Adjust gain")
+            adjustRow(icon: "thermometer.medium",        label: "Color Temp", value: $colorTemperature).help("Adjust color temperature")
             quantizationRow
 
             Divider()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 2)
 
+            // ── Levels: black point / midtone / white point ────────────────
+            // Photoshop-style curve via LUT — the midtone moves independently
+            // of the endpoints, which a plain gamma exponent cannot do.
+            adjustRow(icon: "circle.fill",        label: "Black Point", value: $blackPoint, accent: .indigo, range: 0...100).help("Clip dark grays to black (raises perceived contrast)")
+            adjustRow(icon: "circle.circle.fill", label: "Midtone",     value: $midPoint,   accent: .indigo).help("Lift or lower midtones independently of black/white point")
+            adjustRow(icon: "circle",             label: "White Point", value: $whitePoint, accent: .indigo, range: 0...100).help("Compress highlights to white")
+
+            Divider()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 2)
+
             // ── Group 2: Per-channel gamma ─────────────────────────────────
-            adjustRow(icon: "r.circle",      label: "伽马值 R",  value: $rGamma, accent: .red).help("调整 红色伽马值")
-            adjustRow(icon: "g.circle",      label: "伽马值 G",  value: $gGamma, accent: .green).help("调整 绿色伽马值")
-            adjustRow(icon: "b.circle",      label: "伽马值 B",  value: $bGamma, accent: .blue).help("调整 蓝色伽马值")
+            adjustRow(icon: "r.circle",      label: "Gamma R", value: $rGamma, accent: .red).help("Adjust red gamma")
+            adjustRow(icon: "g.circle",      label: "Gamma G", value: $gGamma, accent: .green).help("Adjust green gamma")
+            adjustRow(icon: "b.circle",      label: "Gamma B", value: $bGamma, accent: .blue).help("Adjust blue gamma")
 
             Divider()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 2)
 
             // ── Group 3: Per-channel gain ──────────────────────────────────
-            adjustRow(icon: "r.circle.fill", label: "增益 R",    value: $rGain,  accent: .red).help("调整 红色增益")
-            adjustRow(icon: "g.circle.fill", label: "增益 G",    value: $gGain,  accent: .green).help("调整 绿色增益")
-            adjustRow(icon: "b.circle.fill", label: "增益 B",    value: $bGain,  accent: .blue).help("调整 蓝色增益")
+            adjustRow(icon: "r.circle.fill", label: "Gain R", value: $rGain,  accent: .red).help("Adjust red gain")
+            adjustRow(icon: "g.circle.fill", label: "Gain G", value: $gGain,  accent: .green).help("Adjust green gain")
+            adjustRow(icon: "b.circle.fill", label: "Gain B", value: $bGain,  accent: .blue).help("Adjust blue gain")
 
             Divider()
                 .padding(.horizontal, 12)
@@ -57,7 +72,7 @@ struct ImageAdjustmentView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(.yellow)
                     .font(.caption)
-                Text("调整可能影响 HDR 内容！")
+                Text("Adjustments may affect HDR content!")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -67,20 +82,22 @@ struct ImageAdjustmentView: View {
             // ── Action buttons ─────────────────────────────────────────────
             HStack(spacing: 8) {
                 actionButton(
-                    title: "反转色彩",
+                    title: "Invert Colors",
                     systemImage: "circle.lefthalf.filled",
                     isActive: isInverted
                 ) {
+                    captureUndoSnapshot()
                     isInverted.toggle()
                     commitAdjustment()
                 }
-                .help("反转显示器色彩（类似夜间模式）")
+                .help("Invert display colors (similar to a night mode)")
 
                 actionButton(
-                    title: isPaused ? "继续调整" : "暂停调整",
+                    title: isPaused ? "Resume" : "Pause",
                     systemImage: isPaused ? "play.circle" : "pause.circle",
                     isActive: isPaused
                 ) {
+                    captureUndoSnapshot()
                     isPaused.toggle()
                     if isPaused {
                         GammaService.shared.applyIdentity(for: display.displayID)
@@ -88,39 +105,32 @@ struct ImageAdjustmentView: View {
                         commitAdjustment()
                     }
                 }
-                .help("暂时停用色彩调整，恢复原始显示")
+                .help("Temporarily disable color adjustments and restore the original output")
 
                 actionButton(
-                    title: "重置全部",
+                    title: "Reset All",
                     systemImage: "arrow.counterclockwise",
                     isActive: false
                 ) {
                     resetAll()
                 }
-                .help("重置所有色彩调整为默认值")
+                .help("Reset all color adjustments to their defaults")
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
         }
         .onAppear {
-            if let saved = GammaService.shared.loadSavedState(for: display.displayID) {
-                contrast = saved.contrast
-                gammaVal = saved.gammaVal
-                gain = saved.gain
-                colorTemperature = saved.colorTemperature
-                rGamma = saved.rGamma; gGamma = saved.gGamma; bGamma = saved.bGamma
-                rGain = saved.rGain;   gGain = saved.gGain;   bGain = saved.bGain
-                quantLevels = Double(saved.quantizationLevels)
-                isInverted = saved.isInverted
-                isPaused = saved.isPaused
-                // Re-apply visually so the display matches the saved state immediately.
-                if !saved.isPaused {
-                    GammaService.shared.apply(saved, for: display.displayID)
-                }
-            }
+            reloadFromSaved(reapply: true)
+        }
+        .onReceive(GammaService.stateDidChange) { changedID in
+            // Another control (combined gamma slider, undo, …) edited this
+            // display's adjustment — re-sync the local slider state.
+            guard changedID == display.displayID else { return }
+            reloadFromSaved(reapply: false)
         }
         .onDisappear {
             let isAtZero = contrast == 0 && gammaVal == 0 && gain == 0 &&
+                blackPoint == 0 && midPoint == 0 && whitePoint == 0 &&
                 colorTemperature == 0 && rGamma == 0 && gGamma == 0 && bGamma == 0 &&
                 rGain == 0 && gGain == 0 && bGain == 0 && !isInverted &&
                 quantLevels == 256
@@ -130,6 +140,7 @@ struct ImageAdjustmentView: View {
             } else {
                 let adj = GammaAdjustment(
                     contrast: contrast, gammaVal: gammaVal, gain: gain,
+                    blackPoint: blackPoint, midPoint: midPoint, whitePoint: whitePoint,
                     colorTemperature: colorTemperature,
                     rGamma: rGamma, gGamma: gGamma, bGamma: bGamma,
                     rGain: rGain, gGain: gGain, bGain: bGain,
@@ -147,9 +158,49 @@ struct ImageAdjustmentView: View {
         icon: String,
         label: String,
         value: Binding<Double>,
-        accent: Color = .blue
+        accent: Color = .blue,
+        range: ClosedRange<Double> = -100...100
     ) -> some View {
-        AdjustRow(icon: icon, label: label, value: value, accent: accent, commitAction: commitAdjustment)
+        AdjustRow(icon: icon, label: label, value: value, accent: accent, range: range,
+                  beginAction: captureUndoSnapshot, commitAction: commitAdjustment)
+    }
+
+    /// Syncs the local slider state from the persisted adjustment (or defaults
+    /// when none is saved). With `reapply` the adjustment is also written to the
+    /// display so it visually matches the sliders.
+    private func reloadFromSaved(reapply: Bool) {
+        let saved = GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment()
+        contrast = saved.contrast
+        gammaVal = saved.gammaVal
+        gain = saved.gain
+        blackPoint = saved.blackPoint
+        midPoint = saved.midPoint
+        whitePoint = saved.whitePoint
+        colorTemperature = saved.colorTemperature
+        rGamma = saved.rGamma; gGamma = saved.gGamma; bGamma = saved.bGamma
+        rGain = saved.rGain;   gGain = saved.gGain;   bGain = saved.bGain
+        quantLevels = Double(saved.quantizationLevels)
+        isInverted = saved.isInverted
+        isPaused = saved.isPaused
+        if reapply && !saved.isNeutral && !saved.isPaused {
+            GammaService.shared.apply(saved, for: display.displayID)
+        }
+    }
+
+    /// Pushes the display's current persisted adjustment onto the undo stack.
+    /// Called when an edit gesture begins, before any value changes.
+    private func captureUndoSnapshot() {
+        let displayID = display.displayID
+        let previous = GammaService.shared.loadSavedState(for: displayID)
+        UndoService.shared.push {
+            if let previous {
+                GammaService.shared.apply(previous, for: displayID)
+                GammaService.shared.saveState(previous, for: displayID)
+            } else {
+                GammaService.shared.clearSavedState(for: displayID)
+                GammaService.shared.resetSingleDisplay(displayID)
+            }
+        }
     }
 
     // MARK: - Quantization row
@@ -161,20 +212,30 @@ struct ImageAdjustmentView: View {
                 .frame(width: 18)
                 .font(.caption)
 
-            Text("量化")
+            Text("Quantize")
                 .font(.caption)
                 .frame(width: 72, alignment: .leading)
 
-            Slider(value: $quantLevels, in: 2...256, step: 1) { _ in
-                commitAdjustment()
+            Slider(value: $quantLevels, in: 2...256, step: 1) { editing in
+                if editing {
+                    captureUndoSnapshot()
+                } else {
+                    commitAdjustment()
+                }
             }
-            .help("调整 量化级别")
+            .help("Adjust quantization levels")
 
             Text(quantLevels >= 255 ? "∞" : "\(Int(quantLevels))")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(width: 38, alignment: .trailing)
                 .monospacedDigit()
+
+            ResetButton(visible: quantLevels != 256) {
+                captureUndoSnapshot()
+                quantLevels = 256
+                commitAdjustment()
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 3)
@@ -212,6 +273,9 @@ struct ImageAdjustmentView: View {
             contrast: contrast,
             gammaVal: gammaVal,
             gain: gain,
+            blackPoint: blackPoint,
+            midPoint: midPoint,
+            whitePoint: whitePoint,
             colorTemperature: colorTemperature,
             rGamma: rGamma, gGamma: gGamma, bGamma: bGamma,
             rGain: rGain,   gGain: gGain,   bGain: bGain,
@@ -219,19 +283,30 @@ struct ImageAdjustmentView: View {
             isInverted: isInverted,
             isPaused: false
         )
-        GammaService.shared.apply(adj, for: display.displayID)
+        // Persist immediately so other controls editing the same state (combined
+        // gamma slider, undo) always see the current values.
+        if adj.isNeutral {
+            GammaService.shared.clearSavedState(for: display.displayID)
+            GammaService.shared.resetSingleDisplay(display.displayID)
+        } else {
+            GammaService.shared.apply(adj, for: display.displayID)
+            GammaService.shared.saveState(adj, for: display.displayID)
+        }
     }
 
     @MainActor
     private func resetAll() {
+        captureUndoSnapshot()
         contrast = 0; gammaVal = 0; gain = 0; colorTemperature = 0
+        blackPoint = 0; midPoint = 0; whitePoint = 0
         rGamma = 0; gGamma = 0; bGamma = 0
         rGain = 0;  gGain = 0;  bGain = 0
         quantLevels = 256
         isInverted = false
         isPaused = false
         GammaService.shared.clearSavedState(for: display.displayID)
-        GammaService.shared.resetSingleDisplay(display.displayID)
+        // Explicit user-initiated reset: also restore the factory ICC profile.
+        GammaService.shared.resetSingleDisplay(display.displayID, restoreFactoryProfile: true)
     }
 }
 
@@ -240,12 +315,16 @@ private struct AdjustRow: View {
     let label: String
     @Binding var value: Double
     let accent: Color
+    var range: ClosedRange<Double> = -100...100
+    var defaultValue: Double = 0
+    let beginAction: () -> Void
     let commitAction: () -> Void
 
     @State private var highlighted: Bool = false
 
     private func percentLabel(_ v: Double) -> String {
-        let sign = v > 0 ? "+" : ""
+        // Only show a "+" sign for bipolar ranges where 0 is the neutral midpoint.
+        let sign = (v > 0 && range.lowerBound < 0) ? "+" : ""
         return "\(sign)\(Int(v))%"
     }
 
@@ -260,8 +339,10 @@ private struct AdjustRow: View {
                 .font(.caption)
                 .frame(width: 72, alignment: .leading)
 
-            Slider(value: $value, in: -100...100, step: 1) { editing in
-                if !editing {
+            Slider(value: $value, in: range, step: 1) { editing in
+                if editing {
+                    beginAction()
+                } else {
                     commitAction()
                     withAnimation(.easeOut(duration: 0.3)) { highlighted = true }
                     Task { @MainActor in
@@ -278,6 +359,12 @@ private struct AdjustRow: View {
                 .frame(width: 38, alignment: .trailing)
                 .monospacedDigit()
                 .contentTransition(.numericText())
+
+            ResetButton(visible: value != defaultValue) {
+                beginAction()
+                value = defaultValue
+                commitAction()
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 3)

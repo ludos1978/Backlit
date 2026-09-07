@@ -27,3 +27,24 @@
 - `isSwitching = true; syncCall(); isSwitching = false` 模式无效：SwiftUI 不会在同步代码中间渲染 → 必须用 async/await 让 SwiftUI 有机会重绘
 - `@StateObject` 包装共享单例（`XXX.shared`）是反模式：每次 View 重建都可能创建新订阅 → 共享单例用 `@ObservedObject`
 - `CGSetDisplayTransferByFormula` 设置的 gamma table 是内核级持久的，不会随 View 销毁自动恢复 → 必须在 `onDisappear` 和 app 退出时手动调 `CGDisplayRestoreColorSyncSettings()`
+
+## MenuBarExtra `.window` — ScrollView collapse & per-open `.task` (2026-09-07)
+
+- **ScrollView inside a MenuBarExtra `.window` panel collapses to zero height** — the
+  panel sizes itself to the view's *ideal* size, and a ScrollView's ideal height is ~0.
+  Result: the menu "opens" as a sliver showing only fixed-height siblings (footer).
+  `.frame(maxHeight:)` does NOT fix it (max ≠ ideal). Fix: measure the content with a
+  GeometryReader + PreferenceKey and set `.frame(height: min(contentHeight, cap))`
+  on the ScrollView (see `MenuContentHeightKey` in MenuBarView.swift).
+- **`.task` on MenuBarExtra `.window` content re-runs on every menu open** — the content
+  view is recreated per open. Launch-time work (defaults registration, wake-handler
+  wiring, delayed display arrangement) must be guarded by a once-per-process flag or
+  live in AppDelegate. A delayed display-config transaction fired from that task closes
+  the just-opened menu (any CGCompleteDisplayConfiguration dismisses the panel).
+- **Skip no-op display moves**: compare current bounds against the target before calling
+  `CGConfigureDisplayOrigin` — every completed transaction re-fires the reconfiguration
+  callback and dismisses open menu panels, even if nothing changed.
+- **Cross-view state sync**: when two controls edit the same persisted state (combined
+  gamma slider ↔ per-display ImageAdjustment panel), emit a `PassthroughSubject` from
+  the service on save/clear and `.onReceive` it in views to re-sync local `@State`
+  (guard with `isDragging` to not fight an active gesture).

@@ -33,6 +33,10 @@ private func displayReconfigCallback(
 
 @MainActor
 class DisplayManager: ObservableObject {
+    /// Single app-wide instance: AppDelegate needs it at launch (before the
+    /// MenuBarExtra content is ever built) and the scene injects it into views.
+    static let shared = DisplayManager()
+
     @Published var displays: [DisplayInfo] = []
 
     // nonisolated(unsafe) allows deinit (which is nonisolated in Swift 6) to access this value.
@@ -89,7 +93,7 @@ class DisplayManager: ObservableObject {
         displays = updatedDisplays
         DisplayManagerAccessor.shared.displays = updatedDisplays
 
-        // Regenerate built-in presets (HiDPI 模式 / 原生模式) from updated display list.
+        // Regenerate built-in presets (HiDPI / Native) from updated display list.
         PresetService.shared.refreshBuiltins()
 
         // Only load details / refresh brightness for newly appeared displays
@@ -223,11 +227,19 @@ class DisplayManager: ObservableObject {
         let builtinY = Int(builtin.bounds.origin.y)
         let builtinWidth = Int(builtin.bounds.width)
 
-        let arrangeItems = externals.map { ext in
+        // Skip displays that are already at their target position: every
+        // configuration transaction dismisses an open menu window and re-fires
+        // the reconfiguration callback, so no-op moves must not reach CG.
+        let arrangeItems = externals.compactMap { ext -> (id: CGDirectDisplayID, x: Int, y: Int)? in
             let extWidth = Int(ext.bounds.width)
             let centeredX = builtinX + (builtinWidth - extWidth) / 2
-            return (id: ext.displayID, x: centeredX, y: builtinY - Int(ext.bounds.height))
+            let targetY = builtinY - Int(ext.bounds.height)
+            if Int(ext.bounds.origin.x) == centeredX && Int(ext.bounds.origin.y) == targetY {
+                return nil
+            }
+            return (id: ext.displayID, x: centeredX, y: targetY)
         }
+        guard !arrangeItems.isEmpty else { return }
         Task { @MainActor in
             for item in arrangeItems {
                 await ArrangementService.shared.setPosition(x: item.x, y: item.y, for: item.id)

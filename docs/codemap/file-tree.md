@@ -58,7 +58,10 @@ FreeDisplay/
 │   │   ├── NotchOverlayManager.swift       # 在内建屏刘海区域创建黑色遮罩 NSWindow（screenSaver 级别）；改动影响刘海遮罩的视觉效果和层级
 │   │   ├── ResolutionService.swift         # 通过 CGConfigureDisplayWithDisplayMode 切换显示模式；applyModeSync 已异步化，整个 CG 事务在 CGHelpers.runWithTimeout 内执行；resolvedTargetDisplayID() 在镜像检测时回退到 VirtualDisplayService；改动影响分辨率切换成功率
 │   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；改动需注意 key 命名（必须 fd. 前缀）和向后兼容
+│   │   ├── AccessibilityService.swift      # Bridges macOS Accessibility "Increase contrast" + "Display Contrast" via private SPI (UAIncreaseContrastSetEnabled, CGSSetDisplayContrast, dlsym) — the pref domain is TCC-protected and pref writes are not applied live; follows System Settings changes via NSWorkspace notification
+│   │   ├── UndoService.swift               # App-wide undo stack for display adjustments (⌘Z in the menu window); controls push restore closures on gesture begin, views re-sync via undoTick
 │   │   ├── UpdateService.swift             # GitHub Releases API 检查新版本，语义化版本比较；改动影响更新检查逻辑
+│   │   ├── XDRBrightnessService.swift      # XDR brightness mode (BrightIntosh-style, clean-room): 1×1 EDR trigger overlay per XDR panel + gamma-table boost via GammaService.setXDRBoost; persists fd.xdr.* keys, polls EDR headroom 1s
 │   │   ├── VirtualDisplayService.swift     # 虚拟显示器创建/销毁：CGVirtualDisplay 私有 API（vendorID 必须非零如 0xEEEE，主线程创建），HiDPI via 镜像模式，CGHelpers.runWithTimeout 超时保护，hiDPILog 文件调试日志，ObjC 类型 Sendable 扩展；HiDPI 配置仅运行时生效不持久化；改动影响虚拟显示器和 HiDPI 一键预设功能
 │   │   └── PresetService.swift             # 预设管理：保存/加载/应用显示器配置预设；使用 DisplayManagerAccessor 读取当前显示器状态；presets.json 存储在 ~/Library/Application Support/FreeDisplay/
 │   ├── Utilities/                  # 工具扩展
@@ -78,6 +81,8 @@ FreeDisplay/
 │       ├── ResolutionSliderView.swift      # 分辨率横向拖动滑块（松手生效）；依赖 ResolutionService，读取 DisplayInfo.availableModes
 │       ├── SystemColorView.swift           # 系统取色器（NSColorSampler）+ HEX/RGB/HSB 显示 + 历史记录；依赖 SettingsService 持久化颜色历史
 │       ├── HiDPIView.swift                 # HiDPI Override 状态行（plist 方案）+ 写入/还原按钮；依赖 HiDPIService
+│       ├── AccessibilityContrastView.swift # System-wide accessibility contrast controls (Increase Contrast toggle + Display Contrast slider) in the top section; depends on AccessibilityService
+│       ├── XDRBrightnessView.swift         # XDR brightness section (tools panel: toggle + level slider) + XDRQuickSliderView (top-section quick slider, 0 = off); depends on XDRBrightnessService
 │       ├── VirtualDisplayView.swift        # 虚拟显示器配置列表 + 创建表单（预设分辨率）+ HiDPI 一键预设；依赖 VirtualDisplayService
 │       └── SavePresetView.swift            # 保存当前显示器状态为预设；内联表单（名称 + 图标选择器）；调用 PresetService.captureCurrentState + addPreset
 ├── FreeDisplay.xcodeproj/          # Xcode 项目文件（由 xcodegen 生成，不要手动编辑）
