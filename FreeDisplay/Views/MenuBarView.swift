@@ -114,7 +114,33 @@ struct MenuBarView: View {
         VStack(spacing: 0) {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                // Display list
+                // ── General (all displays) ─────────────────────────────
+                if settings.showCombinedBrightness {
+                    CombinedBrightnessView(displays: displayManager.displays)
+                    CombinedGammaView(displays: displayManager.displays)
+                    ExtraDimmingRow(displays: displayManager.displays, title: "Dim Below Minimum (All Displays)")
+                    AccessibilityContrastView()
+                }
+
+                // Quick XDR slider (XDR-capable panels only)
+                if xdrService.hasEligibleDisplays {
+                    XDRQuickSliderView()
+                }
+
+                if settings.showCombinedBrightness || xdrService.hasEligibleDisplays {
+                    Divider()
+                        .opacity(0.3)
+                        .padding(.vertical, 2)
+                }
+
+                // Preset list (Phase 19) — global, so it stays with the general controls
+                PresetListView()
+
+                Divider()
+                    .opacity(0.3)
+                    .padding(.vertical, 2)
+
+                // ── Individual displays ────────────────────────────────
                 ForEach(visibleDisplays) { display in
                     VStack(spacing: 0) {
                         DisplayRowView(
@@ -134,13 +160,6 @@ struct MenuBarView: View {
                         }
                     }
                 }
-
-                // Preset list (Phase 19)
-                Divider()
-                    .opacity(0.3)
-                    .padding(.vertical, 2)
-
-                PresetListView()
 
                 // Arrange-displays section (Phase 4)
                 if visibleDisplays.count > 1 {
@@ -165,25 +184,6 @@ struct MenuBarView: View {
                 Divider()
                     .opacity(0.3)
                     .padding(.vertical, 2)
-
-                // Combined brightness control (Phase 2)
-                if settings.showCombinedBrightness {
-                    CombinedBrightnessView(displays: displayManager.displays)
-                    CombinedGammaView(displays: displayManager.displays)
-                    ExtraDimmingRow(displays: displayManager.displays, title: "Dim Below Minimum (All Displays)")
-                    AccessibilityContrastView()
-                }
-
-                // Quick XDR slider in the top section (XDR-capable panels only)
-                if xdrService.hasEligibleDisplays {
-                    XDRQuickSliderView()
-                }
-
-                if settings.showCombinedBrightness || xdrService.hasEligibleDisplays {
-                    Divider()
-                        .opacity(0.3)
-                        .padding(.vertical, 2)
-                }
 
                 // Tools section header
                 Text("Tools")
