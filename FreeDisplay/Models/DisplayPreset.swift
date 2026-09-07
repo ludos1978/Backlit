@@ -26,4 +26,5 @@ struct DisplayPreset: Codable, Identifiable {
     var xdrLevel: Double?          // XDR boost strength 0-1
     var increaseContrast: Bool?    // accessibility "Increase contrast"
     var displayContrast: Double?   // accessibility "Display Contrast" 0-1
+    var restoresArrangement: Bool? // opt-in: apply stored display positions (nil/false = never)
 }

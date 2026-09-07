@@ -57,6 +57,13 @@
       no encoded/obfuscated blobs found (grep for base64/hex literals: none).
 - [ ] Re-run this audit before each tagged release (network grep + Process grep + blob grep).
 
+## Arrangement follow-ups
+
+- [ ] **Preserve arrangement across resolution/HiDPI switches** — when a display's point size
+      changes (Native ↔ HiDPI presets, mode list), macOS reflows neighbours to avoid overlap and
+      the layout drifts. Snapshot relative origins before a mode switch and restore them after
+      (externals only, never the built-in). Effort: small-medium.
+
 ## XDR / gamma follow-ups (own backlog)
 
 - [ ] XDR mode: conflict detection with other gamma-touching apps (f.lux, Lunar,

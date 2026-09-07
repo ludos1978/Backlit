@@ -42,6 +42,7 @@ struct SavePresetForm: View {
     @State private var presetName: String = "My Preset"
     @State private var selectedIcon: String = "display"
     @State private var isSaving: Bool = false
+    @State private var includeArrangement: Bool = false
     @State private var saveError: String?
 
     private let iconOptions: [(symbol: String, label: String)] = [
@@ -91,6 +92,16 @@ struct SavePresetForm: View {
                 }
             }
 
+            // Arrangement opt-in (off by default — replaying positions captured under a
+            // different display setup scrambles the layout)
+            Toggle(isOn: $includeArrangement) {
+                Text("Restore display arrangement")
+                    .font(.caption)
+            }
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .help("Also store the external displays' positions and re-apply them when this preset is applied")
+
             // Error message
             if let err = saveError {
                 Text(err)
@@ -125,7 +136,7 @@ struct SavePresetForm: View {
         isSaving = true
         saveError = nil
 
-        let preset = PresetService.shared.captureCurrentState(name: name, icon: selectedIcon)
+        let preset = PresetService.shared.captureCurrentState(name: name, icon: selectedIcon, includeArrangement: includeArrangement)
         PresetService.shared.addPreset(preset)
 
         isSaving = false

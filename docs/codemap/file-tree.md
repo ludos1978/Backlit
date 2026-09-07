@@ -42,7 +42,7 @@ FreeDisplay/
 │   ├── Models/                     # 数据模型层（纯数据，无副作用）
 │   │   ├── DisplayInfo.swift       # ⚠️ 核心显示器模型，12+ @Published 属性；所有 View/Service 均依赖此类，属性增删需全局 grep 同步
 │   │   ├── DisplayMode.swift       # 单个显示模式（分辨率+刷新率+HiDPI 标志）的值类型；枚举逻辑改动影响分辨率切换和模式列表展示
-│   │   └── DisplayPreset.swift     # 显示器配置预设模型：DisplayPreset（预设）+ DisplayPresetEntry（单显示器快照）；Codable，由 PresetService 持久化。Entry carries an optional GammaAdjustment snapshot + optional softwareDimming (extra dimming %); preset carries optional XDR (enabled/level) + accessibility contrast state (nil = older preset, left untouched on apply)
+│   │   └── DisplayPreset.swift     # 显示器配置预设模型：DisplayPreset（预设）+ DisplayPresetEntry（单显示器快照）；Codable，由 PresetService 持久化。Entry carries an optional GammaAdjustment snapshot + optional softwareDimming (extra dimming %); preset carries optional XDR (enabled/level) + accessibility contrast state + restoresArrangement opt-in (nil = older preset: state left untouched, positions never applied)
 │   ├── Services/                   # 业务逻辑层，与系统框架直接交互
 │   │   ├── ArrangementService.swift        # 通过 CGDisplayConfiguration 读写显示器位置，支持设为主显示器；setPosition/setAsMainDisplay 已异步化，CG 事务在 CGHelpers.runWithTimeout 内执行；改动影响拖拽排列和主显示器切换
 │   │   ├── AutoBrightnessService.swift     # 读取 IOKit AppleLMUController 环境光传感器，定时轮询映射 lux→亮度；改动影响自动亮度精度和电池消耗

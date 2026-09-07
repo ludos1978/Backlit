@@ -154,9 +154,12 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 anyActionTaken = true
             }
 
-            // Set arrangement position if specified — skip no-op moves: every
-            // display-configuration transaction dismisses the open menu window.
-            if let x = entry.arrangementX, let y = entry.arrangementY,
+            // Restore arrangement only for presets that opted in (older presets have
+            // nil → never), never for the built-in display (moving it onto (0,0)
+            // makes it the main display and displaces every external). Skip no-op
+            // moves: every display-configuration transaction dismisses the menu.
+            if preset.restoresArrangement == true, !display.isBuiltin,
+               let x = entry.arrangementX, let y = entry.arrangementY,
                Int(x) != Int(display.bounds.origin.x) || Int(y) != Int(display.bounds.origin.y) {
                 print("[PresetService]   -> setting arrangement x=\(x) y=\(y)")
                 let ok = await ArrangementService.shared.setPosition(
@@ -192,7 +195,10 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     /// The built-in display IS captured (brightness + gamma) — without it a
     /// MacBook with no external display would save empty presets. Only its
     /// resolution is exempt from apply (see applyPreset).
-    func captureCurrentState(name: String, icon: String) -> DisplayPreset {
+    /// `includeArrangement` stores display positions for restore on apply — opt-in,
+    /// because replaying positions captured under a different display setup
+    /// scrambles the layout (and moving the built-in display changes the main screen).
+    func captureCurrentState(name: String, icon: String, includeArrangement: Bool = false) -> DisplayPreset {
         let displays = DisplayManagerAccessor.shared.displays
         let entries: [DisplayPresetEntry] = displays.compactMap { display in
             guard display.isOnline else { return nil }
@@ -203,8 +209,8 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 height: mode?.height ?? display.pixelHeight,
                 isHiDPI: mode?.isHiDPI ?? false,
                 brightness: display.brightness / 100.0,
-                arrangementX: display.bounds.origin.x,
-                arrangementY: display.bounds.origin.y,
+                arrangementX: includeArrangement && !display.isBuiltin ? display.bounds.origin.x : nil,
+                arrangementY: includeArrangement && !display.isBuiltin ? display.bounds.origin.y : nil,
                 // Neutral (not nil) when no adjustment is saved, so applying the
                 // preset restores the neutral state rather than leaving stale gamma.
                 gammaAdjustment: GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment(),
@@ -213,6 +219,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             )
         }
         var preset = DisplayPreset(name: name, icon: icon, displays: entries)
+        preset.restoresArrangement = includeArrangement
         preset.xdrEnabled = XDRBrightnessService.shared.isEnabled
         preset.xdrLevel = XDRBrightnessService.shared.level
         preset.increaseContrast = AccessibilityService.shared.increaseContrast
