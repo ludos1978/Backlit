@@ -81,6 +81,7 @@ FreeDisplay/
 │       ├── NotchView.swift                 # 刘海信息显示 + 遮罩开关（仅有刘海的内建屏显示）；依赖 NotchOverlayManager
 │       ├── ResolutionSliderView.swift      # 分辨率横向拖动滑块（松手生效）；依赖 ResolutionService，读取 DisplayInfo.availableModes
 │       ├── SystemColorView.swift           # 系统取色器（NSColorSampler）+ HEX/RGB/HSB 显示 + 历史记录；依赖 SettingsService 持久化颜色历史
+│       ├── DisplayStreamRowView.swift      # "Show in Window" row in each display panel (physical or virtual) → DisplayStreamService
 │       ├── HiDPIView.swift                 # HiDPI Override 状态行（plist 方案）+ 写入/还原按钮；依赖 HiDPIService
 │       ├── AccessibilityContrastView.swift # System-wide accessibility contrast controls (Increase Contrast toggle + Display Contrast slider) in the top section; depends on AccessibilityService
 │       ├── XDRBrightnessView.swift         # XDR brightness section (tools panel: toggle + level slider) + XDRQuickSliderView (top-section quick slider, 0 = off); depends on XDRBrightnessService

@@ -3,8 +3,8 @@ import AVFoundation
 import CoreGraphics
 import ScreenCaptureKit
 
-/// Shows a display's live content in a floating window on another screen —
-/// the way to actually see a (headless) virtual display. Uses ScreenCaptureKit
+/// Shows any display's live content (physical or virtual) in a floating window —
+/// for virtual displays it is the only way to actually see them. Uses ScreenCaptureKit
 /// (needs the Screen Recording permission; nothing leaves the machine) and
 /// renders frames through an AVSampleBufferDisplayLayer.
 @MainActor
@@ -147,7 +147,11 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
             throw NSError(domain: "FreeDisplay.DisplayStream", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "the display is no longer available"])
         }
-        let filter = SCContentFilter(display: scDisplay, excludingWindows: [])
+        // Exclude this very window from the capture: if it must live on the display
+        // it shows (single-display setups) it would otherwise render an infinite mirror.
+        let ownID = CGWindowID(windowNumber)
+        let excluded = content.windows.filter { $0.windowID == ownID }
+        let filter = SCContentFilter(display: scDisplay, excludingWindows: excluded)
         let config = SCStreamConfiguration()
         config.width = max(1, CGDisplayPixelsWide(displayID))
         config.height = max(1, CGDisplayPixelsHigh(displayID))

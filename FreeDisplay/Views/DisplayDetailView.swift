@@ -102,6 +102,9 @@ struct DisplayDetailView: View {
             // Set as main display
             MainDisplayView(display: display)
 
+            // Live view of this display in a floating window on another screen
+            DisplayStreamRowView(display: display)
+
             // Notch management (built-in with notch only)
             NotchView(display: display)
 

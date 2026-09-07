@@ -543,6 +543,13 @@ struct DisplayRowView: View {
                 Label("Open in System Settings", systemImage: "display")
             }
 
+            Button {
+                DisplayStreamService.shared.toggleWindow(for: display.displayID, title: display.name)
+            } label: {
+                Label(DisplayStreamService.shared.isShowing(display.displayID) ? "Close Stream Window" : "Show in Window",
+                      systemImage: "macwindow")
+            }
+
             Divider()
 
             Button {
