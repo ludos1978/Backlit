@@ -85,40 +85,40 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 print("[PresetService]   -> display '\(display.name)' is offline – skipping")
                 continue
             }
-            // Never change built-in display resolution via presets
-            guard !display.isBuiltin else {
-                print("[PresetService]   -> built-in display, skipping")
-                continue
-            }
 
             let displayID = display.displayID
             print("[PresetService]   -> matched display '\(display.name)' (id=\(displayID)), \(display.availableModes.count) available modes")
 
-            // Set resolution
-            let targetMode = display.availableModes.first(where: {
-                $0.width == entry.width &&
-                $0.height == entry.height &&
-                $0.isHiDPI == entry.isHiDPI
-            }) ?? display.availableModes.first(where: {
-                $0.width == entry.width && $0.height == entry.height
-            })
-
-            if let mode = targetMode {
-                let currentMode = display.currentDisplayMode
-                let alreadyActive = currentMode?.width == mode.width
-                    && currentMode?.height == mode.height
-                    && currentMode?.isHiDPI == mode.isHiDPI
-                if alreadyActive {
-                    print("[PresetService]   -> resolution \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI) already active, skipping mode switch")
-                } else {
-                    print("[PresetService]   -> setting mode \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI)")
-                    let ok = await ResolutionService.shared.setDisplayMode(mode, for: displayID)
-                    print("[PresetService]   -> setDisplayMode result: \(ok)")
-                    anyActionTaken = true
-                }
+            // Set resolution — never for the built-in display (policy), but
+            // brightness/gamma below still apply to it.
+            if display.isBuiltin {
+                print("[PresetService]   -> built-in display, skipping resolution change")
             } else {
-                print("[PresetService]   -> WARNING: no matching mode found for \(entry.width)×\(entry.height) hiDPI=\(entry.isHiDPI)")
-                print("[PresetService]      available: \(display.availableModes.map { "\($0.width)×\($0.height)/\($0.isHiDPI)" }.joined(separator: ", "))")
+                let targetMode = display.availableModes.first(where: {
+                    $0.width == entry.width &&
+                    $0.height == entry.height &&
+                    $0.isHiDPI == entry.isHiDPI
+                }) ?? display.availableModes.first(where: {
+                    $0.width == entry.width && $0.height == entry.height
+                })
+
+                if let mode = targetMode {
+                    let currentMode = display.currentDisplayMode
+                    let alreadyActive = currentMode?.width == mode.width
+                        && currentMode?.height == mode.height
+                        && currentMode?.isHiDPI == mode.isHiDPI
+                    if alreadyActive {
+                        print("[PresetService]   -> resolution \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI) already active, skipping mode switch")
+                    } else {
+                        print("[PresetService]   -> setting mode \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI)")
+                        let ok = await ResolutionService.shared.setDisplayMode(mode, for: displayID)
+                        print("[PresetService]   -> setDisplayMode result: \(ok)")
+                        anyActionTaken = true
+                    }
+                } else {
+                    print("[PresetService]   -> WARNING: no matching mode found for \(entry.width)×\(entry.height) hiDPI=\(entry.isHiDPI)")
+                    print("[PresetService]      available: \(display.availableModes.map { "\($0.width)×\($0.height)/\($0.isHiDPI)" }.joined(separator: ", "))")
+                }
             }
 
             // Set brightness if specified (convert 0.0-1.0 to 0-100 range used by BrightnessService)
@@ -132,8 +132,24 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 anyActionTaken = true
             }
 
-            // Set arrangement position if specified
-            if let x = entry.arrangementX, let y = entry.arrangementY {
+            // Restore the captured gamma/image adjustment (nil = preset from an
+            // older version → leave gamma untouched).
+            if let adj = entry.gammaAdjustment {
+                print("[PresetService]   -> applying gamma adjustment (neutral=\(adj.isNeutral))")
+                if adj.isNeutral {
+                    GammaService.shared.clearSavedState(for: displayID)
+                    GammaService.shared.resetSingleDisplay(displayID)
+                } else {
+                    GammaService.shared.apply(adj, for: displayID)
+                    GammaService.shared.saveState(adj, for: displayID)
+                }
+                anyActionTaken = true
+            }
+
+            // Set arrangement position if specified — skip no-op moves: every
+            // display-configuration transaction dismisses the open menu window.
+            if let x = entry.arrangementX, let y = entry.arrangementY,
+               Int(x) != Int(display.bounds.origin.x) || Int(y) != Int(display.bounds.origin.y) {
                 print("[PresetService]   -> setting arrangement x=\(x) y=\(y)")
                 let ok = await ArrangementService.shared.setPosition(
                     x: Int(x), y: Int(y), for: displayID
@@ -143,17 +159,35 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             }
         }
 
+        // Restore app-level state captured with the preset (nil = older preset,
+        // leave untouched). Level is set before the enabled flag so start()
+        // never applies a stale boost.
+        if let level = preset.xdrLevel {
+            XDRBrightnessService.shared.level = level
+        }
+        if let enabled = preset.xdrEnabled, XDRBrightnessService.shared.isEnabled != enabled {
+            XDRBrightnessService.shared.isEnabled = enabled
+        }
+        if let increase = preset.increaseContrast {
+            AccessibilityService.shared.increaseContrast = increase
+        }
+        if let contrast = preset.displayContrast {
+            AccessibilityService.shared.displayContrast = contrast
+        }
+
         print("[PresetService] applyPreset '\(preset.name)' complete. anyActionTaken=\(anyActionTaken)")
-        // DisplayManager is not a singleton; callers with a DisplayManager ref can call refreshDisplays().
     }
 
     // MARK: - Capture
 
     /// Snapshots all current online displays into a new preset.
+    /// The built-in display IS captured (brightness + gamma) — without it a
+    /// MacBook with no external display would save empty presets. Only its
+    /// resolution is exempt from apply (see applyPreset).
     func captureCurrentState(name: String, icon: String) -> DisplayPreset {
         let displays = DisplayManagerAccessor.shared.displays
         let entries: [DisplayPresetEntry] = displays.compactMap { display in
-            guard display.isOnline, !display.isBuiltin else { return nil }
+            guard display.isOnline else { return nil }
             let mode = display.currentDisplayMode
             return DisplayPresetEntry(
                 displayUUID: display.displayUUID,
@@ -162,10 +196,18 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 isHiDPI: mode?.isHiDPI ?? false,
                 brightness: display.brightness / 100.0,
                 arrangementX: display.bounds.origin.x,
-                arrangementY: display.bounds.origin.y
+                arrangementY: display.bounds.origin.y,
+                // Neutral (not nil) when no adjustment is saved, so applying the
+                // preset restores the neutral state rather than leaving stale gamma.
+                gammaAdjustment: GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment()
             )
         }
-        return DisplayPreset(name: name, icon: icon, displays: entries)
+        var preset = DisplayPreset(name: name, icon: icon, displays: entries)
+        preset.xdrEnabled = XDRBrightnessService.shared.isEnabled
+        preset.xdrLevel = XDRBrightnessService.shared.level
+        preset.increaseContrast = AccessibilityService.shared.increaseContrast
+        preset.displayContrast = AccessibilityService.shared.displayContrast
+        return preset
     }
 
     /// Returns the preset ID that matches the current display state, if any.

@@ -10,6 +10,8 @@ struct DisplayPresetEntry: Codable, Identifiable {
     var brightness: Double?       // optional brightness 0.0-1.0
     var arrangementX: Double?     // optional position
     var arrangementY: Double?
+    // Optional (nil in presets saved by older versions → left untouched on apply)
+    var gammaAdjustment: GammaAdjustment?  // full image-adjustment snapshot
 }
 
 struct DisplayPreset: Codable, Identifiable {
@@ -18,4 +20,9 @@ struct DisplayPreset: Codable, Identifiable {
     var icon: String              // SF Symbol name
     var isBuiltin: Bool = false
     var displays: [DisplayPresetEntry]
+    // App-level state, optional for backward compatibility with older presets
+    var xdrEnabled: Bool?          // XDR brightness mode on/off
+    var xdrLevel: Double?          // XDR boost strength 0-1
+    var increaseContrast: Bool?    // accessibility "Increase contrast"
+    var displayContrast: Double?   // accessibility "Display Contrast" 0-1
 }

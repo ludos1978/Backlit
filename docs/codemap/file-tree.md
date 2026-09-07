@@ -42,7 +42,7 @@ FreeDisplay/
 │   ├── Models/                     # 数据模型层（纯数据，无副作用）
 │   │   ├── DisplayInfo.swift       # ⚠️ 核心显示器模型，12+ @Published 属性；所有 View/Service 均依赖此类，属性增删需全局 grep 同步
 │   │   ├── DisplayMode.swift       # 单个显示模式（分辨率+刷新率+HiDPI 标志）的值类型；枚举逻辑改动影响分辨率切换和模式列表展示
-│   │   └── DisplayPreset.swift     # 显示器配置预设模型：DisplayPreset（预设）+ DisplayPresetEntry（单显示器快照）；Codable，由 PresetService 持久化
+│   │   └── DisplayPreset.swift     # 显示器配置预设模型：DisplayPreset（预设）+ DisplayPresetEntry（单显示器快照）；Codable，由 PresetService 持久化。Entry carries an optional GammaAdjustment snapshot; preset carries optional XDR (enabled/level) + accessibility contrast state (nil = older preset, left untouched on apply)
 │   ├── Services/                   # 业务逻辑层，与系统框架直接交互
 │   │   ├── ArrangementService.swift        # 通过 CGDisplayConfiguration 读写显示器位置，支持设为主显示器；setPosition/setAsMainDisplay 已异步化，CG 事务在 CGHelpers.runWithTimeout 内执行；改动影响拖拽排列和主显示器切换
 │   │   ├── AutoBrightnessService.swift     # 读取 IOKit AppleLMUController 环境光传感器，定时轮询映射 lux→亮度；改动影响自动亮度精度和电池消耗
@@ -63,7 +63,7 @@ FreeDisplay/
 │   │   ├── UpdateService.swift             # GitHub Releases API 检查新版本，语义化版本比较；改动影响更新检查逻辑
 │   │   ├── XDRBrightnessService.swift      # XDR brightness mode (BrightIntosh-style, clean-room): 1×1 EDR trigger overlay per XDR panel + gamma-table boost via GammaService.setXDRBoost; persists fd.xdr.* keys, polls EDR headroom 1s
 │   │   ├── VirtualDisplayService.swift     # 虚拟显示器创建/销毁：CGVirtualDisplay 私有 API（vendorID 必须非零如 0xEEEE，主线程创建），HiDPI via 镜像模式，CGHelpers.runWithTimeout 超时保护，hiDPILog 文件调试日志，ObjC 类型 Sendable 扩展；HiDPI 配置仅运行时生效不持久化；改动影响虚拟显示器和 HiDPI 一键预设功能
-│   │   └── PresetService.swift             # 预设管理：保存/加载/应用显示器配置预设；使用 DisplayManagerAccessor 读取当前显示器状态；presets.json 存储在 ~/Library/Application Support/FreeDisplay/
+│   │   └── PresetService.swift             # 预设管理：保存/加载/应用显示器配置预设；使用 DisplayManagerAccessor 读取当前显示器状态；presets.json 存储在 ~/Library/Application Support/FreeDisplay/。Captures the built-in display too (brightness + gamma; its resolution is never changed on apply) plus XDR and accessibility contrast state
 │   ├── Utilities/                  # 工具扩展
 │   │   └── NSScreenExtension.swift         # NSScreen 扩展：按 CGDirectDisplayID 查找 NSScreen，获取 displayID；被 NotchView、NotchOverlayManager 依赖
 │   ├── FreeDisplay-Bridging-Header.h       # 私有 API 声明：CGVirtualDisplay（macOS 14+）和 IOAVService（Apple Silicon DDC）；属性名已对照 Chromium 源码验证（maxPixelsWide/maxPixelsHigh 非 maxPixelSize）
