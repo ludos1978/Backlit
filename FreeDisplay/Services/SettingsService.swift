@@ -30,6 +30,8 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         static let showCombinedBrightness = "fd.showCombinedBrightness"
         static let ddcCacheTTL            = "fd.ddcCacheTTL"
         static let checkUpdatesOnLaunch   = "fd.checkUpdatesOnLaunch"
+        static let interceptBrightnessKeys = "fd.interceptBrightnessKeys"
+        static let autoEnableHiDPI        = "fd.autoEnableHiDPI"
         static let colorPickerHistory     = "fd.colorPickerHistory"
         // Per-display keys use prefix + displayID
         static let brightnessPrefix       = "fd.brightness_"
@@ -61,6 +63,20 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
 
     @Published var checkUpdatesOnLaunch: Bool = true {
         didSet { defaults.set(checkUpdatesOnLaunch, forKey: Keys.checkUpdatesOnLaunch) }
+    }
+
+    /// Opt-in: install a system-wide event tap so F1/F2 drive the external display
+    /// under the cursor via DDC (needs Accessibility permission). Off by default —
+    /// it changes keyboard behaviour system-wide.
+    @Published var interceptBrightnessKeys: Bool = false {
+        didSet { defaults.set(interceptBrightnessKeys, forKey: Keys.interceptBrightnessKeys) }
+    }
+
+    /// Opt-in: write a HiDPI override plist for newly connected 2K+ external displays
+    /// (asks for an administrator password). Off by default — it modifies
+    /// /Library/Displays without the user asking.
+    @Published var autoEnableHiDPI: Bool = false {
+        didSet { defaults.set(autoEnableHiDPI, forKey: Keys.autoEnableHiDPI) }
     }
 
     /// Recently sampled colors (hex strings, newest first, max 20).
@@ -136,6 +152,8 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
             ? defaults.double(forKey: Keys.ddcCacheTTL) : 5.0
         checkUpdatesOnLaunch = defaults.object(forKey: Keys.checkUpdatesOnLaunch) != nil
             ? defaults.bool(forKey: Keys.checkUpdatesOnLaunch) : true
+        interceptBrightnessKeys = defaults.bool(forKey: Keys.interceptBrightnessKeys)
+        autoEnableHiDPI = defaults.bool(forKey: Keys.autoEnableHiDPI)
         colorPickerHistory = defaults.stringArray(forKey: Keys.colorPickerHistory) ?? []
     }
 }

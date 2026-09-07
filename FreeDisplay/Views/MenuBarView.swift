@@ -440,6 +440,44 @@ struct SettingsView: View {
             .controlSize(.small)
             .padding(.horizontal, 12)
             .help("Automatically check for a new version at every launch")
+
+            // Brightness-key interception (opt-in)
+            Toggle(isOn: Binding(
+                get: { settings.interceptBrightnessKeys },
+                set: { newValue in
+                    settings.interceptBrightnessKeys = newValue
+                    if newValue {
+                        BrightnessKeyService.shared.start()
+                    } else {
+                        BrightnessKeyService.shared.stop()
+                    }
+                }
+            )) {
+                HStack(spacing: 6) {
+                    MenuItemIcon(systemName: "keyboard", color: .purple)
+                        .accessibilityHidden(true)
+                    Text("Intercept Brightness Keys")
+                        .font(.body)
+                }
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .padding(.horizontal, 12)
+            .help("Route F1/F2 to the external display under the cursor via DDC, with FreeDisplay's own on-screen indicator (needs Accessibility permission)")
+
+            // Auto HiDPI on new displays (opt-in)
+            Toggle(isOn: $settings.autoEnableHiDPI) {
+                HStack(spacing: 6) {
+                    MenuItemIcon(systemName: "sparkles", color: .orange)
+                        .accessibilityHidden(true)
+                    Text("Auto-enable HiDPI on New Displays")
+                        .font(.body)
+                }
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .padding(.horizontal, 12)
+            .help("Write a HiDPI override for newly connected 2K+ external displays (asks for an administrator password)")
         }
         .padding(.vertical, 6)
     }

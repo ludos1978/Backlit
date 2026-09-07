@@ -95,8 +95,10 @@ class DisplayManager: ObservableObject {
             Task { await BrightnessService.shared.refreshBrightness(for: display) }
             Task {
                 await display.loadDetails()
-                // Auto-enable HiDPI for new external 2K+ displays that don't have it yet
-                if !display.isBuiltin {
+                // Auto-enable HiDPI for new external 2K+ displays — opt-in only
+                // (Settings → "Auto-enable HiDPI on New Displays"): it writes to
+                // /Library/Displays and prompts for an administrator password.
+                if !display.isBuiltin && SettingsService.shared.autoEnableHiDPI {
                     await self.autoEnableHiDPIIfNeeded(for: display)
                 }
                 PresetService.shared.refreshBuiltins()

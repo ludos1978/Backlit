@@ -15,8 +15,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Start intercepting brightness keys to route them to the display under the cursor.
-        BrightnessKeyService.shared.start()
+        // Brightness-key interception (F1/F2 → external display under the cursor)
+        // is opt-in: Settings → "Intercept Brightness Keys". The toggle starts/stops
+        // the event tap live; here we only honour the saved choice.
+        if SettingsService.shared.interceptBrightnessKeys {
+            BrightnessKeyService.shared.start()
+        }
 
         // Restore XDR brightness mode if it was enabled in the previous session.
         XDRBrightnessService.shared.restoreSavedState()
