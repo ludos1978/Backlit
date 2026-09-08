@@ -58,6 +58,13 @@
       No `Process`/`NSTask`/shell execution, no sockets, no third-party dependencies,
       no encoded/obfuscated blobs found (grep for base64/hex literals: none).
 - [ ] Re-run this audit before each tagged release (network grep + Process grep + blob grep).
+- [x] **Copyright / license provenance audit** (2026-09-08): no files from BrightIntosh (GPL-3.0),
+      SimpleDisplay (GPL-3.0) or MacOS-DPIManager (MIT) are in the repo; XDR feature written from
+      a prose description, never from source. Mechanical comparison against the BrightIntosh
+      sources: 10 identical lines, all single Apple-API assignments (no other way to write them);
+      token similarity 0.08–0.11 (unrelated-file range). The only derived specifics — the boost
+      calibration constants — were replaced by a self-calibrating design (measured potential and
+      full-backlight headroom, own gain constant). Levels curve came from the user's own notes.
 
 ## Arrangement follow-ups
 

@@ -4,7 +4,8 @@ import Metal
 import MetalKit
 
 /// Unlocks the extended (XDR) brightness range of Apple XDR panels for normal SDR
-/// content — a clean-room implementation of the technique BrightIntosh popularized:
+/// content. The technique itself is public knowledge (popularized by BrightIntosh);
+/// this is an independent implementation with its own calibration:
 ///
 ///  1. A 1×1 pt invisible overlay window per display renders a single EDR pixel
 ///     (extended-linear-sRGB white > 1.0) through Metal. Its presence makes macOS
@@ -14,16 +15,26 @@ import MetalKit
 ///     > 1.0 (via GammaService, the sole gamma-table writer) so ordinary SDR white
 ///     lands in the extended range and the panel drives its full brightness.
 ///
-/// Only public APIs are involved; macOS retains thermal and battery control of the
-/// actual headroom, so the OS can always dial the effect back.
+/// The boost is self-calibrating: it uses the panel's reported potential headroom
+/// and the smallest headroom observed while engaged (≈ full backlight) instead of
+/// per-model constants. Only public APIs are involved; macOS retains thermal and
+/// battery control of the actual headroom, so the OS can always dial the effect back.
 @MainActor
 final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
     static let shared = XDRBrightnessService()
 
     /// Headroom value above which the extended range counts as engaged.
     private static let engagedThreshold = 1.05
-    /// Maximum EDR value used in the boost-factor formula.
-    private static let maxEDR = 16.0
+    /// Maximum extra gain at full backlight, as a fraction of SDR white (our choice;
+    /// scaled by `level`). 0.6 → SDR white is driven to 1.6× when fully engaged.
+    private static let maxExtraGain = 0.6
+    /// Fallback potential headroom when the panel does not report one.
+    private static let fallbackPotentialEDR = 16.0
+
+    /// Smallest headroom seen per display while engaged — a panel reports its
+    /// smallest headroom at full backlight, so this tracks the full-backlight
+    /// reference without needing a per-model table.
+    private var referenceHeadroom: [CGDirectDisplayID: Double] = [:]
 
     @Published var isEnabled: Bool = false {
         didSet {
@@ -155,6 +166,7 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
             GammaService.shared.setXDRBoost(nil, for: displayID)
         }
         appliedBoosts.removeAll()
+        referenceHeadroom.removeAll()
         currentHeadroom = 1.0
     }
 
@@ -166,6 +178,7 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
         for (displayID, window) in overlays where !wantedIDs.contains(displayID) {
             window.orderOut(nil)
             overlays.removeValue(forKey: displayID)
+            referenceHeadroom.removeValue(forKey: displayID)
             if appliedBoosts.removeValue(forKey: displayID) != nil {
                 GammaService.shared.setXDRBoost(nil, for: displayID)
             }
@@ -197,7 +210,7 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
 
             let factor: Double
             if headroom > Self.engagedThreshold && level > 0 {
-                factor = gammaFactor(headroom: headroom, screen: screen)
+                factor = boostFactor(headroom: headroom, screen: screen)
             } else {
                 factor = 1.0
             }
@@ -211,42 +224,29 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
         currentHeadroom = headroomForUI
     }
 
-    /// Boost factor for the current headroom: the panel grants the most extra
-    /// range at full backlight (small headroom), so the multiplier shrinks as the
-    /// reported headroom approaches its maximum. `level` scales the effect.
-    private func gammaFactor(headroom: Double, screen: NSScreen) -> Double {
-        let (referenceEDR, bonus) = panelConstants(for: screen)
-        let clamped = min(max(headroom, referenceEDR), Self.maxEDR)
-        let fullFactor = 1.0 + bonus * (1.0 - (clamped - referenceEDR) / (Self.maxEDR - referenceEDR))
-        let factor = 1.0 + (fullFactor - 1.0) * min(max(level, 0.0), 1.0)
+    /// Boost factor for the current headroom. The panel grants the most extra
+    /// range at full backlight (its smallest headroom); as the backlight dims the
+    /// reported headroom grows toward the panel's potential maximum, and the
+    /// multiplier tapers linearly to 1.0 so dimming keeps working naturally.
+    /// `level` scales the effect.
+    private func boostFactor(headroom: Double, screen: NSScreen) -> Double {
+        let displayID = screen.displayID
+        // Track the full-backlight reference as the minimum engaged headroom seen.
+        let reference = min(referenceHeadroom[displayID] ?? headroom, headroom)
+        referenceHeadroom[displayID] = reference
+
+        var potential = Double(screen.maximumPotentialExtendedDynamicRangeColorComponentValue)
+        if potential <= reference + 0.5 { potential = max(Self.fallbackPotentialEDR, reference + 1) }
+
+        // 1.0 at the potential maximum (deep dimming) … full gain at the reference.
+        let remaining = max(0.0, min(1.0, (potential - headroom) / (potential - reference)))
+        let maxFactor = 1.0 + Self.maxExtraGain * remaining
+        let factor = 1.0 + (maxFactor - 1.0) * min(max(level, 0.0), 1.0)
         // Never boost beyond the currently *granted* headroom: a factor above it
         // hard-clips the top of the curve (bright grays merge into white), e.g.
         // in Low Power Mode or under thermal limits.
         return min(factor, max(1.0, headroom * 0.95))
     }
-
-    /// Per-panel calibration constants (reference headroom, maximum bonus gain).
-    private func panelConstants(for screen: NSScreen) -> (referenceEDR: Double, bonus: Double) {
-        let isBuiltin = CGDisplayIsBuiltin(screen.displayID) != 0
-        if !isBuiltin {
-            // Apple Pro Display XDR / Studio Display class externals.
-            return (2.66, 0.60)
-        }
-        // 600-nit-SDR panels (M3 generation and later) need less gain than the
-        // 500-nit M1/M2 Liquid Retina XDR panels.
-        return Self.isM1M2Model ? (3.2, 0.59) : (2.66, 0.50)
-    }
-
-    /// True on M1/M2-generation MacBook Pro models (hw.model MacBookPro18,x / Mac14,x).
-    private static let isM1M2Model: Bool = {
-        var size = 0
-        sysctlbyname("hw.model", nil, &size, nil, 0)
-        guard size > 0 else { return false }
-        var chars = [CChar](repeating: 0, count: size)
-        sysctlbyname("hw.model", &chars, &size, nil, 0)
-        let model = String(cString: chars)
-        return model.hasPrefix("MacBookPro18") || model.hasPrefix("Mac14")
-    }()
 }
 
 // MARK: - EDR Trigger Window
@@ -292,7 +292,7 @@ private final class EDRTriggerView: MTKView, MTKViewDelegate {
         delegate = self
         colorPixelFormat = .rgba16Float
         colorspace = CGColorSpace(name: CGColorSpace.extendedLinearSRGB)
-        preferredFramesPerSecond = 5
+        preferredFramesPerSecond = 4
         autoResizeDrawable = false
         drawableSize = CGSize(width: 1, height: 1)
         // Color > 1.0 engages the extended range even at near-zero alpha
@@ -300,7 +300,7 @@ private final class EDRTriggerView: MTKView, MTKViewDelegate {
         // 1×1 trigger pixel genuinely invisible — including over dark menu bars
         // and full-screen video. The boost strength itself comes from the gamma
         // table, not from this pixel.
-        clearColor = MTLClearColorMake(1.6, 1.6, 1.6, 0.01)
+        clearColor = MTLClearColorMake(1.5, 1.5, 1.5, 0.01)
         if let metalLayer = layer as? CAMetalLayer {
             metalLayer.wantsExtendedDynamicRangeContent = true
             metalLayer.pixelFormat = .rgba16Float
