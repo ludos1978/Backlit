@@ -31,10 +31,14 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
     /// Fallback potential headroom when the panel does not report one.
     private static let fallbackPotentialEDR = 16.0
 
-    /// Smallest headroom seen per display while engaged — a panel reports its
-    /// smallest headroom at full backlight, so this tracks the full-backlight
-    /// reference without needing a per-model table.
+    /// Full-backlight headroom reference for displays whose backlight cannot be
+    /// read (externals): the smallest headroom seen after engagement has settled.
     private var referenceHeadroom: [CGDirectDisplayID: Double] = [:]
+    /// When each display's extended range first engaged (headroom rises over a
+    /// couple of seconds after the trigger appears; readings before it settles
+    /// must not become the reference).
+    private var engagedSince: [CGDirectDisplayID: Date] = [:]
+    private static let settleSeconds: TimeInterval = 3
 
     @Published var isEnabled: Bool = false {
         didSet {
@@ -167,6 +171,7 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
         }
         appliedBoosts.removeAll()
         referenceHeadroom.removeAll()
+        engagedSince.removeAll()
         currentHeadroom = 1.0
     }
 
@@ -179,6 +184,7 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
             window.orderOut(nil)
             overlays.removeValue(forKey: displayID)
             referenceHeadroom.removeValue(forKey: displayID)
+            engagedSince.removeValue(forKey: displayID)
             if appliedBoosts.removeValue(forKey: displayID) != nil {
                 GammaService.shared.setXDRBoost(nil, for: displayID)
             }
@@ -208,6 +214,13 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
             let headroom = Double(screen.maximumExtendedDynamicRangeColorComponentValue)
             headroomForUI = max(headroomForUI, headroom)
 
+            if headroom > Self.engagedThreshold {
+                if engagedSince[displayID] == nil { engagedSince[displayID] = Date() }
+            } else {
+                engagedSince.removeValue(forKey: displayID)
+                referenceHeadroom.removeValue(forKey: displayID)
+            }
+
             let factor: Double
             if headroom > Self.engagedThreshold && level > 0 {
                 factor = boostFactor(headroom: headroom, screen: screen)
@@ -231,9 +244,21 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
     /// `level` scales the effect.
     private func boostFactor(headroom: Double, screen: NSScreen) -> Double {
         let displayID = screen.displayID
-        // Track the full-backlight reference as the minimum engaged headroom seen.
-        let reference = min(referenceHeadroom[displayID] ?? headroom, headroom)
-        referenceHeadroom[displayID] = reference
+
+        // Full-backlight reference. Headroom scales inversely with the backlight,
+        // so for the built-in panel it is simply headroom × backlight — measured
+        // right now, no history and no per-model constants. Externals (backlight
+        // unreadable) use the smallest headroom seen once engagement has settled.
+        let reference: Double
+        if let backlight = BrightnessService.shared.hardwareBacklight(for: displayID), backlight > 0.02 {
+            reference = max(Self.engagedThreshold, headroom * backlight)
+        } else {
+            let since = engagedSince[displayID] ?? Date()
+            if Date().timeIntervalSince(since) >= Self.settleSeconds {
+                referenceHeadroom[displayID] = min(referenceHeadroom[displayID] ?? headroom, headroom)
+            }
+            reference = referenceHeadroom[displayID] ?? headroom
+        }
 
         var potential = Double(screen.maximumPotentialExtendedDynamicRangeColorComponentValue)
         if potential <= reference + 0.5 { potential = max(Self.fallbackPotentialEDR, reference + 1) }

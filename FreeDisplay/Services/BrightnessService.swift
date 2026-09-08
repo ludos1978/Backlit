@@ -155,6 +155,16 @@ final class BrightnessService: @unchecked Sendable {
         softwareBrightnessLock.withLock { softwareBrightnessFactors[displayID] }
     }
 
+    /// Current hardware backlight level (0…1) of the built-in display, read
+    /// synchronously via DisplayServices; nil for external displays or on failure.
+    /// Used by XDRBrightnessService to derive the full-backlight headroom reference.
+    func hardwareBacklight(for displayID: CGDirectDisplayID) -> Double? {
+        guard CGDisplayIsBuiltin(displayID) != 0, let getB = _DSGetBrightness else { return nil }
+        var value: Float = 0
+        guard getB(displayID, &value) == 0 else { return nil }
+        return Double(min(max(value, 0), 1))
+    }
+
     // MARK: - Extra Dimming (below the hardware minimum)
 
     /// Extra software dimming applied on top of hardware brightness, 0 = none … 95 = darkest.
