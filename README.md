@@ -42,13 +42,34 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 
 ## Installation
 
-### Option 1: Download DMG
+FreeDisplay is ad-hoc signed and **not notarized**, so macOS shows "cannot be opened
+because the developer cannot be verified" on first launch unless the quarantine
+attribute is removed. Each option below covers that.
 
-1. Download `FreeDisplay.dmg` from [Releases](https://github.com/ludos1978/FreeDisplay/releases/latest)
-2. Open the DMG and drag **FreeDisplay.app** to **Applications**
-3. First launch: right-click → **Open** (unsigned app, one-time approval)
+### Option 1: Homebrew (recommended)
 
-### Option 2: Build from Source
+```bash
+brew tap ludos1978/freedisplay
+brew install --cask --no-quarantine freedisplay
+```
+
+Update later with `brew upgrade --cask freedisplay`; uninstall with
+`brew uninstall --cask freedisplay` (add `--zap` to also delete settings and presets).
+Tap repository: [ludos1978/homebrew-freedisplay](https://github.com/ludos1978/homebrew-freedisplay).
+
+### Option 2: Download the release
+
+1. Download `FreeDisplay-<version>.zip` from [Releases](https://github.com/ludos1978/FreeDisplay/releases/latest)
+2. Unzip and move **FreeDisplay.app** to **Applications**
+3. Remove the quarantine attribute once, then launch normally:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/FreeDisplay.app
+```
+
+(Alternatively: right-click the app → **Open** and confirm the one-time dialog.)
+
+### Option 3: Build from Source
 
 Requirements: Xcode and [xcodegen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
