@@ -49,3 +49,12 @@ enum CGHelpers {
         }
     }
 }
+
+/// Debug-build-only logging. Release builds print nothing — display names,
+/// UUIDs and preset names must not end up in a shared user's console/log.
+@inline(__always)
+func debugLog(_ message: @autoclosure () -> String) {
+    #if DEBUG
+    print(message())
+    #endif
+}

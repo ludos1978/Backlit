@@ -118,7 +118,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     /// Applies a preset: for each entry, finds the matching display and applies settings.
     func applyPreset(_ preset: DisplayPreset) async {
         guard !isApplying else {
-            print("[PresetService] applyPreset: already applying, skipped")
+            debugLog("[PresetService] applyPreset: already applying, skipped")
             return
         }
         isApplying = true
@@ -130,37 +130,37 @@ final class PresetService: ObservableObject, @unchecked Sendable {
         lastAppliedPresetID = preset.id
 
         let displays = DisplayManagerAccessor.shared.displays
-        print("[PresetService] applyPreset '\(preset.name)': \(displays.count) display(s) online, preset has \(preset.displays.count) entr(ies)")
+        debugLog("[PresetService] applyPreset '\(preset.name)': \(displays.count) display(s) online, preset has \(preset.displays.count) entr(ies)")
 
         if displays.isEmpty {
-            print("[PresetService] WARNING: displays list is empty – DisplayManagerAccessor may not be set up")
+            debugLog("[PresetService] WARNING: displays list is empty – DisplayManagerAccessor may not be set up")
         }
 
         for (i, display) in displays.enumerated() {
-            print("[PresetService]   display[\(i)] uuid=\(display.displayUUID) id=\(display.displayID) online=\(display.isOnline) modes=\(display.availableModes.count)")
+            debugLog("[PresetService]   display[\(i)] uuid=\(display.displayUUID) id=\(display.displayID) online=\(display.isOnline) modes=\(display.availableModes.count)")
         }
 
         var anyActionTaken = false
 
         for entry in preset.displays {
-            print("[PresetService] entry uuid=\(entry.displayUUID) target=\(entry.width)×\(entry.height) hiDPI=\(entry.isHiDPI)")
+            debugLog("[PresetService] entry uuid=\(entry.displayUUID) target=\(entry.width)×\(entry.height) hiDPI=\(entry.isHiDPI)")
 
             guard let display = displays.first(where: { $0.displayUUID == entry.displayUUID }) else {
-                print("[PresetService]   -> no display matched UUID '\(entry.displayUUID)' – skipping")
+                debugLog("[PresetService]   -> no display matched UUID '\(entry.displayUUID)' – skipping")
                 continue
             }
             guard display.isOnline else {
-                print("[PresetService]   -> display '\(display.name)' is offline – skipping")
+                debugLog("[PresetService]   -> display '\(display.name)' is offline – skipping")
                 continue
             }
 
             let displayID = display.displayID
-            print("[PresetService]   -> matched display '\(display.name)' (id=\(displayID)), \(display.availableModes.count) available modes")
+            debugLog("[PresetService]   -> matched display '\(display.name)' (id=\(displayID)), \(display.availableModes.count) available modes")
 
             // Set resolution — never for the built-in display (policy), but
             // brightness/gamma below still apply to it.
             if display.isBuiltin {
-                print("[PresetService]   -> built-in display, skipping resolution change")
+                debugLog("[PresetService]   -> built-in display, skipping resolution change")
             } else {
                 let targetMode = display.availableModes.first(where: {
                     $0.width == entry.width &&
@@ -176,22 +176,22 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                         && currentMode?.height == mode.height
                         && currentMode?.isHiDPI == mode.isHiDPI
                     if alreadyActive {
-                        print("[PresetService]   -> resolution \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI) already active, skipping mode switch")
+                        debugLog("[PresetService]   -> resolution \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI) already active, skipping mode switch")
                     } else {
-                        print("[PresetService]   -> setting mode \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI)")
+                        debugLog("[PresetService]   -> setting mode \(mode.width)×\(mode.height) hiDPI=\(mode.isHiDPI)")
                         let ok = await ResolutionService.shared.setDisplayMode(mode, for: displayID)
-                        print("[PresetService]   -> setDisplayMode result: \(ok)")
+                        debugLog("[PresetService]   -> setDisplayMode result: \(ok)")
                         anyActionTaken = true
                     }
                 } else {
-                    print("[PresetService]   -> WARNING: no matching mode found for \(entry.width)×\(entry.height) hiDPI=\(entry.isHiDPI)")
-                    print("[PresetService]      available: \(display.availableModes.map { "\($0.width)×\($0.height)/\($0.isHiDPI)" }.joined(separator: ", "))")
+                    debugLog("[PresetService]   -> WARNING: no matching mode found for \(entry.width)×\(entry.height) hiDPI=\(entry.isHiDPI)")
+                    debugLog("[PresetService]      available: \(display.availableModes.map { "\($0.width)×\($0.height)/\($0.isHiDPI)" }.joined(separator: ", "))")
                 }
             }
 
             // Set brightness if specified (convert 0.0-1.0 to 0-100 range used by BrightnessService)
             if let brightness = entry.brightness {
-                print("[PresetService]   -> setting brightness \(brightness)")
+                debugLog("[PresetService]   -> setting brightness \(brightness)")
                 await BrightnessService.shared.setBrightness(
                     brightness * 100.0,
                     for: display,
@@ -203,7 +203,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             // Restore the captured gamma/image adjustment (nil = preset from an
             // older version → leave gamma untouched).
             if let adj = entry.gammaAdjustment {
-                print("[PresetService]   -> applying gamma adjustment (neutral=\(adj.isNeutral))")
+                debugLog("[PresetService]   -> applying gamma adjustment (neutral=\(adj.isNeutral))")
                 if adj.isNeutral {
                     GammaService.shared.clearSavedState(for: displayID)
                     GammaService.shared.resetSingleDisplay(displayID)
@@ -217,7 +217,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             // Restore extra dimming below the hardware minimum (nil = older preset
             // or not applicable to this display → untouched).
             if let dim = entry.softwareDimming, BrightnessService.shared.supportsExtraDimming(display) {
-                print("[PresetService]   -> setting extra dimming \(dim)%")
+                debugLog("[PresetService]   -> setting extra dimming \(dim)%")
                 BrightnessService.shared.setExtraDimming(dim, for: displayID)
                 anyActionTaken = true
             }
@@ -229,11 +229,11 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             if preset.restoresArrangement == true, !display.isBuiltin,
                let x = entry.arrangementX, let y = entry.arrangementY,
                Int(x) != Int(display.bounds.origin.x) || Int(y) != Int(display.bounds.origin.y) {
-                print("[PresetService]   -> setting arrangement x=\(x) y=\(y)")
+                debugLog("[PresetService]   -> setting arrangement x=\(x) y=\(y)")
                 let ok = await ArrangementService.shared.setPosition(
                     x: Int(x), y: Int(y), for: displayID
                 )
-                print("[PresetService]   -> setPosition result: \(ok)")
+                debugLog("[PresetService]   -> setPosition result: \(ok)")
                 anyActionTaken = true
             }
         }
@@ -254,7 +254,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             AccessibilityService.shared.displayContrast = contrast
         }
 
-        print("[PresetService] applyPreset '\(preset.name)' complete. anyActionTaken=\(anyActionTaken)")
+        debugLog("[PresetService] applyPreset '\(preset.name)' complete. anyActionTaken=\(anyActionTaken)")
     }
 
     // MARK: - Capture

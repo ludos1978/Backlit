@@ -58,6 +58,17 @@
       No `Process`/`NSTask`/shell execution, no sockets, no third-party dependencies,
       no encoded/obfuscated blobs found (grep for base64/hex literals: none).
 - [ ] Re-run this audit before each tagged release (network grep + Process grep + blob grep).
+- [x] **Full security review** (2026-09-08, independent reviewer over the entire source + own
+      targeted checks; verdict: safe to share). Findings, all fixed the same day:
+      1. MEDIUM — persisted image adjustment could black out a display and was re-applied at every
+         launch → output-range safety floor in GammaService + crash guard (no automatic re-apply
+         after an unclean exit). 2. LOW — HiDPI enable/disable could clobber foreign override
+         plists → `FreeDisplayManaged` marker, foreign files are never touched. 3. LOW — display
+         names/UUIDs printed in release builds → debug-only logging. 4. LOW — update "View" opened
+         an unvalidated server URL → https + github.com only. 5. LOW — privileged command built by
+         interpolation → character-set guard (plus the earlier private temp-dir staging fix).
+         6. LOW — DDC wrong-monitor warning was never shown → surfaced in the brightness panel.
+      Disclosures for users are in README → Security & Privacy.
 - [x] **Copyright / license provenance audit** (2026-09-08): no files from BrightIntosh (GPL-3.0),
       SimpleDisplay (GPL-3.0) or MacOS-DPIManager (MIT) are in the repo; XDR feature written from
       a prose description, never from source. Mechanical comparison against the BrightIntosh

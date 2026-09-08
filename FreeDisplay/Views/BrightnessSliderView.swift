@@ -4,6 +4,7 @@ import SwiftUI
 
 struct BrightnessSliderView: View {
     @ObservedObject var display: DisplayInfo
+    @ObservedObject private var ddcService = DDCService.shared
     @State private var localBrightness: Double = 50
     @State private var isDragging: Bool = false
     @State private var valueHighlighted: Bool = false
@@ -122,6 +123,23 @@ struct BrightnessSliderView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
+
+            // Surface the DDC monitor-mapping warning instead of silently risking the
+            // wrong monitor being adjusted in multi-display setups.
+            if !display.isBuiltin, let warning = ddcService.mappingWarning {
+                HStack(spacing: 5) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.caption2)
+                        .accessibilityHidden(true)
+                    Text(warning)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 3)
+            }
 
             // Extra software dimming below the hardware floor (built-in / DDC displays).
             ExtraDimmingRow(displays: [display])

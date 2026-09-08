@@ -362,6 +362,18 @@ final class GammaService: @unchecked Sendable {
         gLo = max(0.0, gLo); gHi = min(1.0, gHi)
         bLo = max(0.0, bLo); bHi = min(1.0, bHi)
 
+        // ── Safety floor ────────────────────────────────────────────────
+        // Never let a channel's output range collapse to black or flat: such an
+        // adjustment is persisted and re-applied at every launch/wake, and with a
+        // single display the user could no longer see the menu to undo it.
+        func guardRange(_ lo: inout Double, _ hi: inout Double) {
+            if hi < 0.05 { hi = 0.05 }
+            if abs(hi - lo) < 0.05 {
+                if hi >= lo { hi = min(1.0, lo + 0.05) } else { lo = min(1.0, hi + 0.05) }
+            }
+        }
+        guardRange(&rLo, &rHi); guardRange(&gLo, &gHi); guardRange(&bLo, &bHi)
+
         return ChannelParams(
             rLo: rLo, rHi: rHi, rGam: rGammaExp,
             gLo: gLo, gHi: gHi, gGam: gGammaExp,

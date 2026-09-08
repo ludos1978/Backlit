@@ -4,7 +4,23 @@ import CoreGraphics
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var wakeObserver: NSObjectProtocol?
 
+    /// False when the previous run did not terminate cleanly (crash, force quit,
+    /// power loss). Persisted display adjustments are then NOT re-applied
+    /// automatically at launch — a pathological state (e.g. an almost-black
+    /// gamma) must never lock the user out across relaunches.
+    nonisolated(unsafe) private(set) static var previousExitWasClean = true
+    private static let cleanExitKey = "fd.session.cleanExit"
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Crash guard: was the previous session closed cleanly?
+        let defaults = UserDefaults.standard
+        Self.previousExitWasClean = defaults.object(forKey: Self.cleanExitKey) == nil
+            || defaults.bool(forKey: Self.cleanExitKey)
+        defaults.set(false, forKey: Self.cleanExitKey)   // cleared again in applicationWillTerminate
+        if !Self.previousExitWasClean {
+            print("[FreeDisplay] Previous session did not exit cleanly — persisted display adjustments are not re-applied automatically.")
+        }
+
         // Prevent duplicate launches: exit immediately if another instance is already running
         let runningApps = NSWorkspace.shared.runningApplications.filter {
             $0.bundleIdentifier == Bundle.main.bundleIdentifier
@@ -65,6 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        UserDefaults.standard.set(true, forKey: Self.cleanExitKey)
         if let obs = wakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(obs)
         }

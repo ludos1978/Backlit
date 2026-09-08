@@ -102,10 +102,13 @@ class DisplayManager: ObservableObject {
             }
             // Restore saved gamma/software-brightness adjustments for the reconnected display.
             // Brief delay lets WindowServer settle before we write transfer tables.
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 300_000_000)
-                BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
-                GammaService.shared.reapplyIfNeeded(for: display.displayID)
+            // Skipped when the previous session crashed (see AppDelegate.previousExitWasClean).
+            if AppDelegate.previousExitWasClean {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
+                    GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                }
             }
         }
 
@@ -133,7 +136,7 @@ class DisplayManager: ObservableObject {
         // Only auto-enable for 2K+ displays (width >= 2560 or total pixels >= 2560*1440)
         guard nativeW >= 2560 || (nativeW * nativeH >= 2560 * 1440) else { return }
 
-        print("[DisplayManager] Auto-enabling HiDPI for \(display.name) (\(nativeW)×\(nativeH), vendor=\(vendor), product=\(product))")
+        debugLog("[DisplayManager] Auto-enabling HiDPI for \(display.name) (\(nativeW)×\(nativeH), vendor=\(vendor), product=\(product))")
 
         let err = await HiDPIService.shared.enableHiDPI(
             for: display.displayID,
@@ -144,9 +147,9 @@ class DisplayManager: ObservableObject {
         )
 
         if let err {
-            print("[DisplayManager] Auto-enable HiDPI failed: \(err)")
+            debugLog("[DisplayManager] Auto-enable HiDPI failed: \(err)")
         } else {
-            print("[DisplayManager] Auto-enable HiDPI succeeded, refreshing modes")
+            debugLog("[DisplayManager] Auto-enable HiDPI succeeded, refreshing modes")
             HiDPIService.shared.refreshModes(for: display)
             // Give IOServiceRequestProbe time to re-enumerate modes
             try? await Task.sleep(nanoseconds: 1_000_000_000)

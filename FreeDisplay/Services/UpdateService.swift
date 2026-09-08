@@ -61,7 +61,10 @@ final class UpdateService: ObservableObject, @unchecked Sendable {
             if let tag = json?["tag_name"] as? String {
                 let clean = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
                 latestVersion = clean
-                releaseURL = (json?["html_url"] as? String).flatMap { URL(string: $0) }
+                // Only ever open an https GitHub page — never an arbitrary server-supplied URL.
+                releaseURL = (json?["html_url"] as? String).flatMap { URL(string: $0) }.flatMap { url in
+                    (url.scheme == "https" && url.host == "github.com") ? url : nil
+                }
                 hasUpdate = isNewerVersion(clean, than: currentVersion)
             }
             lastCheckDate = Date()

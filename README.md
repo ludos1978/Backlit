@@ -97,6 +97,42 @@ No internet connection required (except optional update checks via GitHub Releas
 
 ---
 
+## Security & Privacy
+
+Audited 2026-09-08 (full source review). What the app does and does not do:
+
+- **Network:** exactly one HTTPS request exists — the optional update check against the
+  GitHub Releases API (Settings → *Check for Updates at Launch*, once per hour at most,
+  nothing about your machine is sent, only an `https://github.com` page is ever opened).
+  There is no telemetry, analytics, crash reporting, or any other network code.
+- **What it stores:** settings in `UserDefaults` (all keys prefixed `fd.`) and presets in
+  `~/Library/Application Support/FreeDisplay/presets.json` — display UUIDs, resolutions,
+  brightness/gamma values, preset names. Nothing is shared or uploaded.
+- **Privileged operation:** enabling HiDPI overrides copies a plist into
+  `/Library/Displays/…/Overrides/` after the *system's own* administrator password dialog.
+  The command contains only numeric display IDs; the app never sees your password. It only
+  overwrites or deletes override files it created itself (marked `FreeDisplayManaged`).
+  This file affects every user of the Mac for that display model.
+- **Input monitoring (opt-in):** *Intercept Brightness Keys* installs an event tap whose
+  mask covers only system media/function-key events (`NX_SYSDEFINED`) — it cannot see
+  typed text — and acts solely on the two brightness keys.
+- **Screen capture (on demand):** *Show in Window* streams a display with ScreenCaptureKit
+  straight into a local window; frames are never saved or transmitted.
+- **Runs automatically:** at launch/wake the app re-applies *your own* saved settings
+  (gamma, extra dimming, XDR, accessibility contrast, chosen resolution) and probes external
+  displays over DDC. After a crash or force-quit, persisted display adjustments are NOT
+  re-applied (crash guard), so a bad setting can never lock you out.
+- **Private Apple APIs:** used for built-in brightness (DisplayServices), auto-brightness
+  (CoreDisplay), accessibility contrast (UniversalAccess/SkyLight), virtual displays
+  (CGVirtualDisplay) and DDC on Apple Silicon (IOAVService). All local; none can reach
+  beyond its stated purpose. The accessibility-contrast settings are system-wide and persist
+  after quitting.
+- **Sandbox & signing:** unsandboxed (required for IOKit/DDC), hardened runtime with no
+  exceptions. Builds are ad-hoc or development signed, not notarized — Gatekeeper requires a
+  one-time right-click → Open, and permission grants may need re-approval after rebuilds.
+
+---
+
 ## Tech Stack
 
 - **Swift 6** + **SwiftUI** (MenuBarExtra)

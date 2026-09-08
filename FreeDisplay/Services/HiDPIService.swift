@@ -80,9 +80,15 @@ final class HiDPIService: @unchecked Sendable {
         let dirPath = overrideDir(vendor: vendor).path
         let plistPath = overridePlistURL(vendor: vendor, product: product).path
 
+        // Never overwrite an override file that FreeDisplay did not create.
+        if FileManager.default.fileExists(atPath: plistPath) && !isManagedOverride(atPath: plistPath) {
+            return "An override for this display already exists that was not created by FreeDisplay — not touching it."
+        }
+
         let scaledModes = generateScaledModes(nativeWidth: nativeWidth, nativeHeight: nativeHeight)
         let plist: [String: Any] = [
-            "scale-resolutions": scaledModes
+            "scale-resolutions": scaledModes,
+            Self.managedMarkerKey: true
         ]
 
         guard let data = try? PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0) else {
@@ -123,6 +129,10 @@ final class HiDPIService: @unchecked Sendable {
     private func disableHiDPIPlist(vendor: UInt32, product: UInt32) -> String? {
         let plistPath = overridePlistURL(vendor: vendor, product: product).path
         guard FileManager.default.fileExists(atPath: plistPath) else { return nil }
+        // Never delete an override file that FreeDisplay did not create.
+        guard isManagedOverride(atPath: plistPath) else {
+            return "The override for this display was not created by FreeDisplay — not deleting it."
+        }
 
         if let err = executePrivilegedCommand("rm -f '\(plistPath)'") {
             return err
@@ -132,9 +142,27 @@ final class HiDPIService: @unchecked Sendable {
 
     // MARK: - Helpers
 
+    /// Marker written into override plists so enable/disable only ever touch
+    /// files FreeDisplay created itself.
+    private static let managedMarkerKey = "FreeDisplayManaged"
+
+    private func isManagedOverride(atPath path: String) -> Bool {
+        guard let data = FileManager.default.contents(atPath: path),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+        else { return false }
+        return plist[Self.managedMarkerKey] as? Bool == true
+    }
+
     /// Executes a shell command with administrator privileges via AppleScript.
     /// Returns nil on success, or an error message on failure.
+    /// Defence in depth: every path interpolated into the command must consist of
+    /// plain path characters only (they are hex-formatted IDs and our own temp
+    /// path, but this makes injection impossible even if that ever changes).
     private func executePrivilegedCommand(_ command: String) -> String? {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/_.- '&mkdirpcf")
+        guard command.unicodeScalars.allSatisfy({ allowed.contains($0) }) else {
+            return "Refusing to run a privileged command with unexpected characters."
+        }
         let script = """
             do shell script "\(command)" with administrator privileges
             """
