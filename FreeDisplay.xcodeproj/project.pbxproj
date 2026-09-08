@@ -428,6 +428,7 @@
 				CODE_SIGN_ENTITLEMENTS = FreeDisplay/FreeDisplay.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 29W56PHWJR;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -439,6 +440,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.freedisplay.app;
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "FreeDisplay/FreeDisplay-Bridging-Header.h";
@@ -455,6 +457,7 @@
 				CODE_SIGN_ENTITLEMENTS = FreeDisplay/FreeDisplay.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 29W56PHWJR;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -466,6 +469,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.freedisplay.app;
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "FreeDisplay/FreeDisplay-Bridging-Header.h";

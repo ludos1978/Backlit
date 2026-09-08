@@ -6,8 +6,9 @@ import AppKit
 final class UpdateService: ObservableObject, @unchecked Sendable {
     static let shared = UpdateService()
 
-    // Set these when the repo is published. Placeholder values disable the update check.
-    private let repoOwner = "OWNER"
+    // GitHub repository whose Releases are checked (Settings → "Check for Updates
+    // at Launch", off by default). Setting the owner to "OWNER" disables the check.
+    private let repoOwner = "ludos1978"
     private let repoName  = "FreeDisplay"
 
     // Current app bundle version (CFBundleShortVersionString)

@@ -61,7 +61,8 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         didSet { defaults.set(ddcCacheTTL, forKey: Keys.ddcCacheTTL) }
     }
 
-    @Published var checkUpdatesOnLaunch: Bool = true {
+    /// Opt-in (default off): the only network access the app has.
+    @Published var checkUpdatesOnLaunch: Bool = false {
         didSet { defaults.set(checkUpdatesOnLaunch, forKey: Keys.checkUpdatesOnLaunch) }
     }
 
@@ -150,8 +151,7 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
             ? defaults.bool(forKey: Keys.showCombinedBrightness) : true
         ddcCacheTTL = defaults.object(forKey: Keys.ddcCacheTTL) != nil
             ? defaults.double(forKey: Keys.ddcCacheTTL) : 5.0
-        checkUpdatesOnLaunch = defaults.object(forKey: Keys.checkUpdatesOnLaunch) != nil
-            ? defaults.bool(forKey: Keys.checkUpdatesOnLaunch) : true
+        checkUpdatesOnLaunch = defaults.bool(forKey: Keys.checkUpdatesOnLaunch)
         interceptBrightnessKeys = defaults.bool(forKey: Keys.interceptBrightnessKeys)
         autoEnableHiDPI = defaults.bool(forKey: Keys.autoEnableHiDPI)
         colorPickerHistory = defaults.stringArray(forKey: Keys.colorPickerHistory) ?? []

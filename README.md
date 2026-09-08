@@ -4,7 +4,7 @@
 
 BetterDisplay is a great app, but its best features are locked behind a paid Pro license. FreeDisplay implements the most essential BetterDisplay features as a completely free, open-source macOS menu bar app.
 
-[Download Latest Release](https://github.com/huberdf/FreeDisplay/releases/latest) | [Report an Issue](https://github.com/huberdf/FreeDisplay/issues)
+[Download Latest Release](https://github.com/ludos1978/FreeDisplay/releases/latest) | [Report an Issue](https://github.com/huberdf/FreeDisplay/issues)
 
 ---
 
@@ -44,7 +44,7 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 
 ### Option 1: Download DMG
 
-1. Download `FreeDisplay.dmg` from [Releases](https://github.com/huberdf/FreeDisplay/releases/latest)
+1. Download `FreeDisplay.dmg` from [Releases](https://github.com/ludos1978/FreeDisplay/releases/latest)
 2. Open the DMG and drag **FreeDisplay.app** to **Applications**
 3. First launch: right-click → **Open** (unsigned app, one-time approval)
 
@@ -93,7 +93,7 @@ xcodebuild -scheme FreeDisplay -configuration Release clean build \
 | **Screen Recording** | Only for *Show in Window* (streaming a display's content into a floating window) |
 | **Administrator password** | Only when enabling HiDPI overrides (writes to `/Library/Displays`) |
 
-No internet connection required (except optional update checks via GitHub Releases API).
+No internet connection required (the optional update check is off by default).
 
 ---
 
@@ -102,8 +102,9 @@ No internet connection required (except optional update checks via GitHub Releas
 Audited 2026-09-08 (full source review). What the app does and does not do:
 
 - **Network:** exactly one HTTPS request exists — the optional update check against the
-  GitHub Releases API (Settings → *Check for Updates at Launch*, once per hour at most,
-  nothing about your machine is sent, only an `https://github.com` page is ever opened).
+  GitHub Releases API for `ludos1978/FreeDisplay` (Settings → *Check for Updates at Launch*,
+  **off by default**, once per hour at most, nothing about your machine is sent, only an
+  `https://github.com` page is ever opened).
   There is no telemetry, analytics, crash reporting, or any other network code.
 - **What it stores:** settings in `UserDefaults` (all keys prefixed `fd.`) and presets in
   `~/Library/Application Support/FreeDisplay/presets.json` — display UUIDs, resolutions,
