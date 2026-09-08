@@ -50,12 +50,37 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 
 ### Option 2: Build from Source
 
+Requirements: Xcode and [xcodegen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+
 ```bash
-brew install xcodegen
-git clone https://github.com/huberdf/FreeDisplay.git
+git clone https://github.com/ludos1978/FreeDisplay.git
 cd FreeDisplay
+./build.sh --run          # clean Debug build, then launches the app
+```
+
+`build.sh` does a **clean build** every time and prints where the app ended up
+(`build/Build/Products/Debug/FreeDisplay.app`; the full compiler log is in
+`build/xcodebuild.log`). Options:
+
+| Command | What it does |
+|---------|--------------|
+| `./build.sh` | clean Debug build |
+| `./build.sh --release` | clean Release build (`build/Build/Products/Release/FreeDisplay.app`) |
+| `./build.sh --run` | build, then quit any running copy and launch the new one |
+| `SIGN=adhoc ./build.sh` | force ad-hoc signing even if a certificate is installed |
+
+**Signing:** the script uses the project's Apple Development certificate when one is
+installed (`security find-identity -v -p codesigning`), and otherwise signs the app
+**ad-hoc**. Ad-hoc builds run normally, but because every rebuild produces a new
+signature, macOS permission grants (Accessibility, Screen Recording) may need to be
+re-approved after rebuilding.
+
+Manual equivalent, if you prefer not to use the script:
+
+```bash
 xcodegen generate
-xcodebuild -scheme FreeDisplay -configuration Release build
+xcodebuild -scheme FreeDisplay -configuration Release clean build \
+    CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=    # omit these two when you have a certificate
 ```
 
 ---
@@ -64,7 +89,9 @@ xcodebuild -scheme FreeDisplay -configuration Release build
 
 | Permission | Why |
 |------------|-----|
-| **Accessibility** | Required for brightness key interception on external displays |
+| **Accessibility** | Only if you enable *Intercept Brightness Keys* in Settings (F1/F2 → external display under the cursor) |
+| **Screen Recording** | Only for *Show in Window* (streaming a display's content into a floating window) |
+| **Administrator password** | Only when enabling HiDPI overrides (writes to `/Library/Displays`) |
 
 No internet connection required (except optional update checks via GitHub Releases API).
 

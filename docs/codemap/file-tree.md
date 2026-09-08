@@ -35,6 +35,7 @@ FreeDisplay/
 │   ├── habits.md                   # 开发偏好与工作习惯记录
 │   ├── lessons.md                  # 踩坑经验与教训
 │   └── ROADMAP.md                  # 总体进度追踪（autopilot 靠此追踪 [x] 标记）
+├── build.sh                        # Clean build script: xcodegen generate → xcodebuild clean build into build/ (ad-hoc signing when no Apple Development certificate; --release, --run; SIGN=adhoc)
 ├── FreeDisplay/                    # Swift 源码目录（xcodegen 自动包含所有 .swift）
 │   ├── App/                        # 应用入口，SwiftUI App 生命周期
 │   │   ├── AppDelegate.swift       # NSApplicationDelegate，确保仅在菜单栏显示；改动影响 App 生命周期钩子
