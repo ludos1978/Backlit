@@ -49,13 +49,17 @@ attribute is removed. Each option below covers that.
 ### Option 1: Homebrew (recommended)
 
 ```bash
+brew trust ludos1978/freedisplay          # Homebrew ≥ 6 requires trusting third-party taps
 brew tap ludos1978/freedisplay
-brew install --cask --no-quarantine freedisplay
+brew install --cask freedisplay
+xattr -d com.apple.quarantine /Applications/FreeDisplay.app
 ```
 
-Update later with `brew upgrade --cask freedisplay`; uninstall with
-`brew uninstall --cask freedisplay` (add `--zap` to also delete settings and presets).
-Tap repository: [ludos1978/homebrew-freedisplay](https://github.com/ludos1978/homebrew-freedisplay).
+The `xattr` line is required (Homebrew 6 always quarantines downloads and no longer
+offers `--no-quarantine`); repeat it after `brew upgrade --cask freedisplay`.
+Uninstall with `brew uninstall --cask freedisplay` (add `--zap` to also delete settings
+and presets). Tap repository:
+[ludos1978/homebrew-freedisplay](https://github.com/ludos1978/homebrew-freedisplay).
 
 ### Option 2: Download the release
 
@@ -64,7 +68,7 @@ Tap repository: [ludos1978/homebrew-freedisplay](https://github.com/ludos1978/ho
 3. Remove the quarantine attribute once, then launch normally:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/FreeDisplay.app
+xattr -d com.apple.quarantine /Applications/FreeDisplay.app
 ```
 
 (Alternatively: right-click the app → **Open** and confirm the one-time dialog.)
