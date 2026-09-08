@@ -139,6 +139,14 @@ struct MenuBarView: View {
                     .padding(.vertical, 2)
 
                 // ── Individual displays ────────────────────────────────
+                Text("Individual Screens")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 2)
+
                 ForEach(visibleDisplays) { display in
                     VStack(spacing: 0) {
                         DisplayRowView(
@@ -178,9 +186,6 @@ struct MenuBarView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
-
-                // One-click Native 1× / HiDPI 2× switch for all external displays
-                ResolutionPresetsView()
 
                 Divider()
                     .opacity(0.3)

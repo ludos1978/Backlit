@@ -28,10 +28,9 @@ final class PresetService: ObservableObject, @unchecked Sendable {
 
     func loadPresets() {
         let saved = SettingsService.shared.load([DisplayPreset].self, filename: filename) ?? []
-        // Merge saved (non-builtin) with freshly generated built-ins
-        let builtins = makeBuiltinPresets()
-        let userPresets = saved.filter { !$0.isBuiltin }
-        presets = builtins + userPresets
+        // Only user-created presets exist now (the generated Native/HiDPI resolution
+        // presets were removed as confusing); ignore any stale built-in entries.
+        presets = saved.filter { !$0.isBuiltin }
     }
 
     func savePresets() {
@@ -310,94 +309,5 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             if matches && !preset.displays.isEmpty { return preset.id }
         }
         return nil
-    }
-
-    // MARK: - Built-in Presets
-
-    /// Regenerates built-in presets from the current display list and merges with user presets.
-    /// Call this whenever the display list changes (e.g., after DisplayManager.refreshDisplays).
-    func refreshBuiltins() {
-        let userPresets = presets.filter { !$0.isBuiltin }
-        presets = makeBuiltinPresets() + userPresets
-    }
-
-    private func makeBuiltinPresets() -> [DisplayPreset] {
-        // Presets only manage external displays — never touch the built-in screen
-        let externals = DisplayManagerAccessor.shared.displays.filter { $0.isOnline && !$0.isBuiltin }
-        guard !externals.isEmpty else { return [] }
-
-        // --- Native preset ---
-        let nativeEntries: [DisplayPresetEntry] = externals.map { display in
-            let nativeMode: DisplayMode? = display.availableModes
-                .filter { !$0.isHiDPI }
-                .max(by: { ($0.width * $0.height) < ($1.width * $1.height) })
-                ?? display.availableModes.max(by: { ($0.width * $0.height) < ($1.width * $1.height) })
-                ?? display.currentDisplayMode
-            return DisplayPresetEntry(
-                displayUUID: display.displayUUID,
-                width: nativeMode?.width ?? display.pixelWidth,
-                height: nativeMode?.height ?? display.pixelHeight,
-                isHiDPI: nativeMode?.isHiDPI ?? false,
-                brightness: nil,
-                arrangementX: nil,
-                arrangementY: nil
-            )
-        }
-
-        var nativePreset = DisplayPreset(
-            name: "Native 1×",
-            icon: "rectangle.on.rectangle",
-            displays: nativeEntries
-        )
-        nativePreset.isBuiltin = true
-
-        var result: [DisplayPreset] = [nativePreset]
-
-        // --- HiDPI preset ---
-        // Find the best HiDPI mode for each external display (highest logical resolution)
-        let hasExternalWithHiDPI = externals.contains { display in
-            display.availableModes.contains { $0.isHiDPI }
-        }
-
-        if hasExternalWithHiDPI {
-            let hidpiEntries: [DisplayPresetEntry] = externals.map { display in
-                // Pick the highest-resolution HiDPI mode available
-                if let bestHiDPI = display.availableModes
-                    .filter({ $0.isHiDPI })
-                    .max(by: { ($0.width * $0.height) < ($1.width * $1.height) }) {
-                    return DisplayPresetEntry(
-                        displayUUID: display.displayUUID,
-                        width: bestHiDPI.width,
-                        height: bestHiDPI.height,
-                        isHiDPI: true,
-                        brightness: nil,
-                        arrangementX: nil,
-                        arrangementY: nil
-                    )
-                } else {
-                    let nativeMode = display.availableModes
-                        .filter { !$0.isHiDPI }
-                        .max(by: { ($0.width * $0.height) < ($1.width * $1.height) })
-                    return DisplayPresetEntry(
-                        displayUUID: display.displayUUID,
-                        width: nativeMode?.width ?? display.pixelWidth,
-                        height: nativeMode?.height ?? display.pixelHeight,
-                        isHiDPI: nativeMode?.isHiDPI ?? false,
-                        brightness: nil,
-                        arrangementX: nil,
-                        arrangementY: nil
-                    )
-                }
-            }
-            var hidpiPreset = DisplayPreset(
-                name: "HiDPI 2×",
-                icon: "sparkles",
-                displays: hidpiEntries
-            )
-            hidpiPreset.isBuiltin = true
-            result.append(hidpiPreset)
-        }
-
-        return result
     }
 }
