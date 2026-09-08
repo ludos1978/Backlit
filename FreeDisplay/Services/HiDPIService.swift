@@ -89,21 +89,30 @@ final class HiDPIService: @unchecked Sendable {
             return "Failed to generate plist data"
         }
 
-        // Write to a temp file first, then use privileged helper to move it
-        let tmpPath = NSTemporaryDirectory() + "fd_hidpi_override.plist"
+        // Stage the plist in a fresh, private (0700) temp directory with a random
+        // name. The file is copied as root below, so it must not sit in the shared
+        // temp dir under a predictable name where another user could swap it
+        // between our write and the privileged copy.
+        let stagingDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fd-hidpi-\(UUID().uuidString)", isDirectory: true)
+        let tmpURL = stagingDir.appendingPathComponent("override.plist")
         do {
-            try data.write(to: URL(fileURLWithPath: tmpPath), options: .atomic)
+            try FileManager.default.createDirectory(
+                at: stagingDir, withIntermediateDirectories: false,
+                attributes: [.posixPermissions: 0o700])
+            try data.write(to: tmpURL, options: .atomic)
         } catch {
             return "Failed to write temporary file: \(error.localizedDescription)"
         }
+        defer { try? FileManager.default.removeItem(at: stagingDir) }
+        let tmpPath = tmpURL.path
 
-        // Use AppleScript to get admin privileges for writing to /Library/Displays/
+        // Use AppleScript to get admin privileges for writing to /Library/Displays/.
+        // All interpolated parts are either hex-formatted numeric IDs or our own
+        // temp path — nothing here is attacker-controlled.
         if let err = executePrivilegedCommand("mkdir -p '\(dirPath)' && cp '\(tmpPath)' '\(plistPath)'") {
             return err
         }
-
-        // Clean up temp file
-        try? FileManager.default.removeItem(atPath: tmpPath)
 
         // Attempt to trigger display mode re-enumeration via IOServiceRequestProbe
         triggerDisplayReenumeration(vendor: vendor, product: product)
