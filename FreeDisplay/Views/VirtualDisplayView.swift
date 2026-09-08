@@ -24,6 +24,15 @@ struct VirtualDisplayView: View {
                     configRow(config: config)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
+
+                    // Inline confirmation — modal alerts inside the menu panel
+                    // cannot be clicked reliably (non-activating MenuBarExtra window).
+                    if configToDelete == config.id {
+                        deleteConfirmation(config: config)
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 4)
+                            .transition(.opacity)
+                    }
                 }
             }
 
@@ -80,26 +89,36 @@ struct VirtualDisplayView: View {
                 .padding(.bottom, 8)
             }
         }
-        .alert("Confirm Deletion", isPresented: Binding(
-            get: { configToDelete != nil },
-            set: { if !$0 { configToDelete = nil } }
-        )) {
-            Button("Delete", role: .destructive) {
-                if let id = configToDelete {
-                    service.removeConfig(id: id)
-                }
+    }
+
+    // MARK: - Delete confirmation (inline)
+
+    @ViewBuilder
+    private func deleteConfirmation(config: VirtualDisplayService.VirtualDisplayConfig) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+                .font(.caption)
+                .accessibilityHidden(true)
+            Text(service.isActive(config.id)
+                 ? "Delete “\(config.name)”? It is active and will be removed immediately."
+                 : "Delete “\(config.name)”?")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(2)
+            Spacer()
+            Button("Cancel") { configToDelete = nil }
+                .controlSize(.mini)
+            Button("Delete") {
+                service.removeConfig(id: config.id)
                 configToDelete = nil
             }
-            Button("Cancel", role: .cancel) {
-                configToDelete = nil
-            }
-        } message: {
-            if let id = configToDelete, service.isActive(id) {
-                Text("This virtual display is currently active and will be deactivated immediately when deleted.")
-            } else {
-                Text("Delete this virtual display configuration?")
-            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .controlSize(.mini)
         }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 7).fill(Color.red.opacity(0.08)))
     }
 
     // MARK: - Config Row

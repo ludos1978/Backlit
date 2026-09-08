@@ -11,6 +11,7 @@ struct HiDPIRowView: View {
         if display.isBuiltin {
             EmptyView()
         } else {
+            VStack(alignment: .leading, spacing: 0) {
             HStack {
                 MenuItemIcon(systemName: "sparkles", color: .orange)
                 VStack(alignment: .leading, spacing: 1) {
@@ -48,18 +49,20 @@ struct HiDPIRowView: View {
                     product: display.modelNumber
                 )
             }
-            .alert("HiDPI Operation Failed", isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
-            )) {
-                Button("OK") { errorMessage = nil }
-            } message: {
-                if let msg = errorMessage {
-                    Text(msg)
-                }
+
+            // Inline error — modal alerts inside the menu panel cannot be dismissed reliably.
+            if let msg = errorMessage {
+                Text(msg)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
+                    .onTapGesture { errorMessage = nil }
+                    .help("Click to dismiss")
+            }
+            }
             }
         }
-    }
 
     private func toggle() {
         isLoading = true
