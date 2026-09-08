@@ -72,11 +72,11 @@ FreeDisplay/
 │   └── Views/                      # SwiftUI 视图层
 │       ├── ArrangementView.swift           # 多显示器拖拽排列画布（内外屏缩略图区分）+ 设为主显示器按钮；依赖 ArrangementService
 │       ├── AutoBrightnessView.swift        # 自动亮度开关 + 灵敏度滑块 + 环境光 lux 显示；依赖 AutoBrightnessService
-│       ├── BrightnessSliderView.swift      # 单显示器亮度滑块（200ms 去抖）+ 全局组合亮度控制；依赖 BrightnessService + DDCService。Also CombinedGammaView (all-displays gamma) and ExtraDimmingRow ("Dim Below Minimum": software dimming below the hardware floor via BrightnessService.setExtraDimming; per-display + all-displays)
+│       ├── BrightnessSliderView.swift      # All-displays controls: CombinedBrightnessView, CombinedGammaView, ExtraDimmingRow (the per-display brightness/dim rows now live inside ImageAdjustmentView)。Also CombinedGammaView (all-displays gamma) and ExtraDimmingRow ("Dim Below Minimum": software dimming below the hardware floor via BrightnessService.setExtraDimming; per-display + all-displays)
 │       ├── ColorProfileView.swift          # ICC Profile 列表（推荐/全部分组）和切换；依赖 ColorProfileService
 │       ├── DisplayDetailView.swift         # ⚠️ 每显示器展开面板，可折叠 Section 的容器（三组分组）；新增/删除 Section 都要改此文件，且需同步 MenuBarView
 │       ├── DisplayModeListView.swift       # 分辨率模式列表（HiDPI/原生/其他分组）、收藏置顶星标、点击切换；依赖 ResolutionService
-│       ├── ImageAdjustmentView.swift       # 11 个图像调整滑块（对比度/Gamma/增益/色温/各通道/量化/反色）；依赖 GammaService
+│       ├── ImageAdjustmentView.swift       # Image adjustment fold: brightness + Dim Below Min rows (BrightnessService) followed by contrast/gamma/gain/temp/levels/per-channel/quantization/invert (GammaService), all in the same AdjustRow style
 │       ├── MainDisplayView.swift           # "设为主显示屏"行，当前已是主屏时显示状态标签；依赖 ArrangementService
 │       ├── MenuBarView.swift               # ⚠️ 菜单栏主视图：显示器列表 + 展开/折叠 + 工具区 + 设置区 + PresetListView；是所有功能的入口容器，改动影响全局布局
 │       ├── NotchView.swift                 # 刘海信息显示 + 遮罩开关（仅有刘海的内建屏显示）；依赖 NotchOverlayManager

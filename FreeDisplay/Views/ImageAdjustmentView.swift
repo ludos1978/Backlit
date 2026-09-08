@@ -24,8 +24,49 @@ struct ImageAdjustmentView: View {
     @State private var isInverted: Bool = false
     @State private var isPaused: Bool = false
 
+    // MARK: - Brightness / extra dimming (same row style as the adjustments)
+    @ObservedObject private var ddcService = DDCService.shared
+    @State private var brightness: Double = 50        // 5 … 100 (hardware / DDC / software)
+    @State private var extraDim: Double = 0           // 0 … 95 (software dimming below the floor)
+    @State private var lastDDCWrite: Date = .distantPast
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+
+            // ── Brightness + Dim Below Minimum ─────────────────────────────
+            AdjustRow(icon: "sun.max.fill", label: "Brightness", value: $brightness, accent: .orange,
+                      range: 5...100, defaultValue: 50,
+                      beginAction: captureBrightnessUndo,
+                      commitAction: commitBrightness,
+                      liveAction: liveBrightness)
+                .help(brightnessHelp)
+            if !display.isBuiltin, let warning = ddcService.mappingWarning {
+                // DDC monitor-mapping warning (multi-display setups)
+                HStack(spacing: 5) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.caption2)
+                        .accessibilityHidden(true)
+                    Text(warning)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 2)
+            }
+            if BrightnessService.shared.supportsExtraDimming(display) {
+                AdjustRow(icon: "moon.zzz.fill", label: "Dim Below Min", value: $extraDim, accent: .indigo,
+                          range: 0...95, defaultValue: 0,
+                          beginAction: captureExtraDimUndo,
+                          commitAction: commitExtraDim,
+                          liveAction: { _ in commitExtraDim() })
+                    .help("Software dimming below the hardware minimum (applied via the gamma ramp)")
+            }
+
+            Divider()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 2)
 
             // ── Group 1: Global adjustments ────────────────────────────────
             adjustRow(icon: "circle.righthalf.filled",   label: "Contrast", value: $contrast).help("Adjust contrast")
@@ -121,6 +162,23 @@ struct ImageAdjustmentView: View {
         }
         .onAppear {
             reloadFromSaved(reapply: true)
+            brightness = display.brightness
+            extraDim = BrightnessService.shared.extraDimming(for: display.displayID)
+        }
+        .onChange(of: display.brightness) { _, newValue in
+            if abs(newValue - brightness) >= 1 { brightness = newValue }
+        }
+        .onReceive(UndoService.shared.$undoTick) { _ in
+            extraDim = BrightnessService.shared.extraDimming(for: display.displayID)
+        }
+        .task(id: display.displayID) {
+            // Built-in brightness changes outside the app (brightness keys pass
+            // through to macOS, Control Center) — poll while visible so the slider follows.
+            guard display.isBuiltin else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                await BrightnessService.shared.refreshBrightness(for: display)
+            }
         }
         .onReceive(GammaService.stateDidChange) { changedID in
             // Another control (combined gamma slider, undo, …) edited this
@@ -150,6 +208,55 @@ struct ImageAdjustmentView: View {
                 GammaService.shared.saveState(adj, for: display.displayID)
             }
         }
+    }
+
+    // MARK: - Brightness / extra dimming helpers
+
+    private var brightnessHelp: String {
+        if display.isBuiltin { return "Brightness (system backlight)" }
+        switch BrightnessService.shared.isDDCAvailable(for: display.displayID) {
+        case true: return "Brightness (DDC hardware control)"
+        case false: return "Brightness (software, via the gamma ramp)"
+        default: return "Brightness"
+        }
+    }
+
+    private func captureBrightnessUndo() {
+        let displayID = display.displayID
+        let previous = display.brightness
+        UndoService.shared.push {
+            Task { @MainActor in
+                guard let d = DisplayManagerAccessor.shared.displays.first(where: { $0.displayID == displayID }) else { return }
+                d.brightness = previous
+                await BrightnessService.shared.setBrightness(previous, for: d)
+            }
+        }
+    }
+
+    /// Live drag: apply immediately; throttle DDC writes to ~100 ms so the I2C bus is not flooded.
+    private func liveBrightness(_ value: Double) {
+        let isDDC = BrightnessService.shared.isDDCAvailable(for: display.displayID) == true
+        let now = Date()
+        display.brightness = value
+        if isDDC && now.timeIntervalSince(lastDDCWrite) < 0.1 { return }
+        lastDDCWrite = now
+        Task { @MainActor in await BrightnessService.shared.setBrightness(value, for: display) }
+    }
+
+    private func commitBrightness() {
+        display.brightness = brightness
+        BrightnessService.shared.setBrightnessSmooth(brightness, for: display)
+        lastDDCWrite = Date()
+    }
+
+    private func captureExtraDimUndo() {
+        let displayID = display.displayID
+        let previous = BrightnessService.shared.extraDimming(for: displayID)
+        UndoService.shared.push { BrightnessService.shared.setExtraDimming(previous, for: displayID) }
+    }
+
+    private func commitExtraDim() {
+        BrightnessService.shared.setExtraDimming(extraDim, for: display.displayID)
     }
 
     // MARK: - Slider row builder
@@ -319,8 +426,11 @@ private struct AdjustRow: View {
     var defaultValue: Double = 0
     let beginAction: () -> Void
     let commitAction: () -> Void
+    /// Called with every value change during a drag (for controls that should follow live).
+    var liveAction: ((Double) -> Void)? = nil
 
     @State private var highlighted: Bool = false
+    @State private var isDragging: Bool = false
 
     private func percentLabel(_ v: Double) -> String {
         // Only show a "+" sign for bipolar ranges where 0 is the neutral midpoint.
@@ -337,9 +447,10 @@ private struct AdjustRow: View {
 
             Text(label)
                 .font(.caption)
-                .frame(width: 72, alignment: .leading)
+                .frame(width: 80, alignment: .leading)
 
             Slider(value: $value, in: range, step: 1) { editing in
+                isDragging = editing
                 if editing {
                     beginAction()
                 } else {
@@ -352,6 +463,10 @@ private struct AdjustRow: View {
                 }
             }
             .tint(accent)
+            .onChange(of: value) { _, newValue in
+                guard isDragging else { return }
+                liveAction?(newValue)
+            }
 
             Text(percentLabel(value))
                 .font(.caption)

@@ -76,12 +76,7 @@ struct DisplayDetailView: View {
                     ))
             }
 
-            Divider().opacity(0.3).padding(.vertical, 2)
-
-            // Brightness + "Dim Below Minimum" — grouped with the image adjustments
-            BrightnessSliderView(display: display)
-
-            // Image adjustment section
+            // Image adjustment section (brightness and Dim Below Minimum live inside)
             ExpandableRow(
                 icon: "slider.horizontal.3",
                 label: "Image Adjustment",
