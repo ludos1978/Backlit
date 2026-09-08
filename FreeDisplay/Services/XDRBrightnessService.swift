@@ -245,13 +245,15 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
     private func boostFactor(headroom: Double, screen: NSScreen) -> Double {
         let displayID = screen.displayID
 
-        // Full-backlight reference. Headroom scales inversely with the backlight,
-        // so for the built-in panel it is simply headroom × backlight — measured
-        // right now, no history and no per-model constants. Externals (backlight
+        // Full-backlight reference, measured right now (no history, no per-model
+        // constants). Headroom scales inversely with emitted light, and the system
+        // backlight slider is perceptual — light output goes roughly with the
+        // square of the slider value (measured on a Liquid Retina XDR: headroom
+        // 11.4 at 50 % vs 3.2 at 100 %; 11.4 × 0.5² ≈ 2.9). Externals (backlight
         // unreadable) use the smallest headroom seen once engagement has settled.
         let reference: Double
         if let backlight = BrightnessService.shared.hardwareBacklight(for: displayID), backlight > 0.02 {
-            reference = max(Self.engagedThreshold, headroom * backlight)
+            reference = max(Self.engagedThreshold, headroom * backlight * backlight)
         } else {
             let since = engagedSince[displayID] ?? Date()
             if Date().timeIntervalSince(since) >= Self.settleSeconds {
