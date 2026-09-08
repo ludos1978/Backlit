@@ -19,16 +19,9 @@ struct PresetListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if !builtinPresets.isEmpty {
-                PresetSegmentedControl(
-                    presets: builtinPresets,
-                    matchID: presetService.currentPresetMatch(),
-                    applyingID: presetService.applyingPresetID,
-                    isApplying: presetService.isApplying
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-            }
+            // Built-in resolution presets live in ResolutionPresetsView (below the
+            // display list) — they are a multi-display resolution switch, not a preset
+            // of the user's settings, and were confusing at the top of the menu.
 
             // User-created presets as rows
             ForEach(userPresets) { preset in
@@ -64,6 +57,47 @@ struct PresetListView: View {
             return
         }
         if modifiedPresetID != id { modifiedPresetID = id }
+    }
+}
+
+// MARK: - ResolutionPresetsView (built-in Native 1× / HiDPI 2× switch)
+
+/// Switches every EXTERNAL display to its highest native (1×) or HiDPI (2×)
+/// mode in one click. Shown below the display list; hidden without externals.
+struct ResolutionPresetsView: View {
+    @ObservedObject private var presetService = PresetService.shared
+
+    private var builtinPresets: [DisplayPreset] {
+        presetService.presets.filter { $0.isBuiltin }
+    }
+
+    var body: some View {
+        if !builtinPresets.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "rectangle.on.rectangle")
+                        .foregroundColor(.blue)
+                        .font(.caption)
+                        .accessibilityHidden(true)
+                    Text("External Displays Resolution")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                PresetSegmentedControl(
+                    presets: builtinPresets,
+                    matchID: presetService.currentPresetMatch(),
+                    applyingID: presetService.applyingPresetID,
+                    isApplying: presetService.isApplying
+                )
+                Text("Switches every external display to its highest native (1×) or HiDPI (2×) mode. The built-in display is never changed.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .help("One-click resolution switch for all external displays")
+        }
     }
 }
 

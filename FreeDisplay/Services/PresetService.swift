@@ -345,7 +345,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
         }
 
         var nativePreset = DisplayPreset(
-            name: "Native",
+            name: "Native 1×",
             icon: "rectangle.on.rectangle",
             displays: nativeEntries
         )
@@ -390,7 +390,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 }
             }
             var hidpiPreset = DisplayPreset(
-                name: "HiDPI",
+                name: "HiDPI 2×",
                 icon: "sparkles",
                 displays: hidpiEntries
             )

@@ -179,6 +179,9 @@ struct MenuBarView: View {
                     }
                 }
 
+                // One-click Native 1× / HiDPI 2× switch for all external displays
+                ResolutionPresetsView()
+
                 Divider()
                     .opacity(0.3)
                     .padding(.vertical, 2)
