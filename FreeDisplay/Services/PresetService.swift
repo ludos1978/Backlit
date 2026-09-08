@@ -11,9 +11,17 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     @Published var applyingPresetID: UUID? = nil
 
     private let filename = "presets.json"
+    private let lastAppliedKey = "fd.presets.lastApplied"
+
+    /// The preset the user last applied or saved — the one an "Update" button
+    /// refers to once the live state drifts from what it stores.
+    @Published private(set) var lastAppliedPresetID: UUID? {
+        didSet { UserDefaults.standard.set(lastAppliedPresetID?.uuidString, forKey: lastAppliedKey) }
+    }
 
     private init() {
         loadPresets()
+        lastAppliedPresetID = UserDefaults.standard.string(forKey: lastAppliedKey).flatMap(UUID.init)
     }
 
     // MARK: - Persistence
@@ -37,6 +45,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     func addPreset(_ preset: DisplayPreset) {
         presets.append(preset)
         savePresets()
+        lastAppliedPresetID = preset.id
     }
 
     func deletePreset(id: UUID) {
@@ -44,6 +53,65 @@ final class PresetService: ObservableObject, @unchecked Sendable {
               !presets[index].isBuiltin else { return }
         presets.remove(at: index)
         savePresets()
+        if lastAppliedPresetID == id { lastAppliedPresetID = nil }
+    }
+
+    // MARK: - Update (selected preset modified by the user)
+
+    /// True when the live display state differs from what `preset` stores.
+    /// Only the values a preset actually carries are compared (older presets with
+    /// nil fields ignore those); disconnected displays are skipped.
+    func isModified(_ preset: DisplayPreset) -> Bool {
+        guard !preset.isBuiltin else { return false }
+        let now = captureCurrentState(name: preset.name, icon: preset.icon,
+                                      includeArrangement: preset.restoresArrangement == true)
+        let displays = DisplayManagerAccessor.shared.displays
+        for entry in preset.displays {
+            guard let cur = now.displays.first(where: { $0.displayUUID == entry.displayUUID }) else { continue }
+            let isBuiltin = displays.first { $0.displayUUID == entry.displayUUID }?.isBuiltin ?? false
+            if !isBuiltin,
+               entry.width != cur.width || entry.height != cur.height || entry.isHiDPI != cur.isHiDPI {
+                return true
+            }
+            if let b = entry.brightness, let c = cur.brightness, abs(b - c) > 0.01 { return true }
+            if let adj = entry.gammaAdjustment, let c = cur.gammaAdjustment, adj != c { return true }
+            if let d = entry.softwareDimming, let c = cur.softwareDimming, abs(d - c) > 0.5 { return true }
+            if preset.restoresArrangement == true,
+               let x = entry.arrangementX, let y = entry.arrangementY,
+               let cx = cur.arrangementX, let cy = cur.arrangementY,
+               Int(x) != Int(cx) || Int(y) != Int(cy) {
+                return true
+            }
+        }
+        if let enabled = preset.xdrEnabled {
+            if enabled != XDRBrightnessService.shared.isEnabled { return true }
+            if enabled, let level = preset.xdrLevel,
+               abs(level - XDRBrightnessService.shared.level) > 0.005 { return true }
+        }
+        if let ic = preset.increaseContrast, ic != AccessibilityService.shared.increaseContrast { return true }
+        if let dc = preset.displayContrast, abs(dc - AccessibilityService.shared.displayContrast) > 0.005 { return true }
+        return false
+    }
+
+    /// Overwrites a user preset with the current display state, keeping its id,
+    /// name, icon and arrangement opt-in. Undoable with ⌘Z.
+    func updatePreset(id: UUID) {
+        guard let index = presets.firstIndex(where: { $0.id == id }),
+              !presets[index].isBuiltin else { return }
+        let previous = presets[index]
+        var fresh = captureCurrentState(name: previous.name, icon: previous.icon,
+                                        includeArrangement: previous.restoresArrangement == true)
+        fresh.id = previous.id
+        presets[index] = fresh
+        savePresets()
+        lastAppliedPresetID = previous.id
+        UndoService.shared.push { [weak self] in
+            Task { @MainActor in
+                guard let self, let i = self.presets.firstIndex(where: { $0.id == previous.id }) else { return }
+                self.presets[i] = previous
+                self.savePresets()
+            }
+        }
     }
 
     // MARK: - Apply
@@ -60,6 +128,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             isApplying = false
             applyingPresetID = nil
         }
+        lastAppliedPresetID = preset.id
 
         let displays = DisplayManagerAccessor.shared.displays
         print("[PresetService] applyPreset '\(preset.name)': \(displays.count) display(s) online, preset has \(preset.displays.count) entr(ies)")

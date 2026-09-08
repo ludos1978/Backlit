@@ -7,7 +7,7 @@ import CoreGraphics
 /// All slider values are in the range -100...+100 with 0 = neutral,
 /// except quantizationLevels (2...256, 256 = no quantization).
 /// Codable so presets can snapshot and restore it.
-struct GammaAdjustment: Codable {
+struct GammaAdjustment: Codable, Equatable {
     var contrast: Double = 0.0          // -100 to +100, 0 = neutral
     var gammaVal: Double = 0.0          // -100 to +100, 0 = neutral (gamma exponent 1.0)
     var gain: Double = 0.0              // -100 to +100, 0 = neutral (multiplier 1.0)

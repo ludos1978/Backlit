@@ -6,6 +6,8 @@ import SwiftUI
 /// plus a list for user-created presets.
 struct PresetListView: View {
     @ObservedObject private var presetService = PresetService.shared
+    /// The last applied preset whose stored values no longer match the live state.
+    @State private var modifiedPresetID: UUID?
 
     private var builtinPresets: [DisplayPreset] {
         presetService.presets.filter { $0.isBuiltin }
@@ -33,13 +35,35 @@ struct PresetListView: View {
                 PresetRow(
                     preset: preset,
                     isCurrentMatch: presetService.currentPresetMatch() == preset.id,
-                    isApplying: presetService.applyingPresetID == preset.id
+                    isApplying: presetService.applyingPresetID == preset.id,
+                    showUpdate: modifiedPresetID == preset.id,
+                    onUpdate: {
+                        presetService.updatePreset(id: preset.id)
+                        modifiedPresetID = nil
+                    }
                 )
             }
 
             // Save preset button
             SavePresetView()
         }
+        .onAppear { refreshModified() }
+        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
+            refreshModified()
+        }
+        .onReceive(GammaService.stateDidChange) { _ in refreshModified() }
+        .onReceive(UndoService.shared.$undoTick) { _ in refreshModified() }
+    }
+
+    /// Recomputes whether the last applied preset has been modified by the user.
+    private func refreshModified() {
+        guard let id = presetService.lastAppliedPresetID,
+              let preset = presetService.presets.first(where: { $0.id == id }),
+              presetService.isModified(preset) else {
+            if modifiedPresetID != nil { modifiedPresetID = nil }
+            return
+        }
+        if modifiedPresetID != id { modifiedPresetID = id }
     }
 }
 
@@ -130,6 +154,8 @@ struct PresetRow: View {
     let preset: DisplayPreset
     let isCurrentMatch: Bool
     let isApplying: Bool
+    var showUpdate: Bool = false
+    var onUpdate: () -> Void = {}
 
     @State private var isHovered = false
 
@@ -148,6 +174,13 @@ struct PresetRow: View {
                 .lineLimit(1)
 
             Spacer()
+
+            if showUpdate {
+                Button("Update", action: onUpdate)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
+                    .help("Overwrite this preset with the current settings (⌘Z to undo)")
+            }
 
             if isCurrentMatch {
                 Text("Current")
