@@ -27,11 +27,6 @@ struct DisplayDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
-            // Brightness slider
-            BrightnessSliderView(display: display)
-
-            Divider().opacity(0.3).padding(.vertical, 2)
-
             // HiDPI toggle — before mode list (natural workflow: enable HiDPI → pick resolution)
             HiDPIRowView(display: display)
 
@@ -80,6 +75,11 @@ struct DisplayDetailView: View {
                         removal: .opacity
                     ))
             }
+
+            Divider().opacity(0.3).padding(.vertical, 2)
+
+            // Brightness + "Dim Below Minimum" — grouped with the image adjustments
+            BrightnessSliderView(display: display)
 
             // Image adjustment section
             ExpandableRow(
