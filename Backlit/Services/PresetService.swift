@@ -65,6 +65,10 @@ final class PresetService: ObservableObject, @unchecked Sendable {
         let now = captureCurrentState(name: preset.name, icon: preset.icon,
                                       includeArrangement: preset.restoresArrangement == true)
         let displays = DisplayManagerAccessor.shared.displays
+        // A connected display the preset does not cover yet (e.g. presets saved
+        // before an external was attached) — updating would add it.
+        let covered = Set(preset.displays.map(\.displayUUID))
+        if now.displays.contains(where: { !covered.contains($0.displayUUID) }) { return true }
         for entry in preset.displays {
             guard let cur = now.displays.first(where: { $0.displayUUID == entry.displayUUID }) else { continue }
             let isBuiltin = displays.first { $0.displayUUID == entry.displayUUID }?.isBuiltin ?? false
@@ -296,19 +300,14 @@ final class PresetService: ObservableObject, @unchecked Sendable {
         return preset
     }
 
-    /// Returns the preset ID that matches the current display state, if any.
+    /// The preset whose stored state matches the live state, preferring the one
+    /// last applied. nil when nothing matches (then the last applied preset shows
+    /// its Update button instead of the Current badge).
     func currentPresetMatch() -> UUID? {
-        let displays = DisplayManagerAccessor.shared.displays
-        for preset in presets {
-            let matches = preset.displays.allSatisfy { entry in
-                guard let display = displays.first(where: { $0.displayUUID == entry.displayUUID }),
-                      display.isOnline else { return false }
-                let mode = display.currentDisplayMode
-                let modeMatch = mode?.width == entry.width && mode?.height == entry.height
-                return modeMatch
-            }
-            if matches && !preset.displays.isEmpty { return preset.id }
+        if let id = lastAppliedPresetID, let p = presets.first(where: { $0.id == id }), !isModified(p) {
+            return id
         }
-        return nil
+        return presets.first { !$0.isBuiltin && !$0.displays.isEmpty && !isModified($0) }?.id
     }
+
 }
