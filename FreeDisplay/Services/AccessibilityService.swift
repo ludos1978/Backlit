@@ -73,7 +73,10 @@ final class AccessibilityService: ObservableObject, @unchecked Sendable {
         let saved = UserDefaults.standard.double(forKey: Keys.displayContrast)
         if saved > 0 {
             displayContrast = saved
-            _ = _CGSSetDisplayContrast?(Float(min(max(saved, 0), 1)))
+            // Apply only while FreeDisplay owns accessibility contrast.
+            if SettingsService.shared.isAuthoritative(.accessibilityContrast) {
+                _ = _CGSSetDisplayContrast?(Float(min(max(saved, 0), 1)))
+            }
         }
         // Follow changes made in System Settings while the app runs.
         observer = NSWorkspace.shared.notificationCenter.addObserver(

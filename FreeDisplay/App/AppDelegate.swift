@@ -39,7 +39,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Restore XDR brightness mode if it was enabled in the previous session.
-        XDRBrightnessService.shared.restoreSavedState()
+        if SettingsService.shared.isAuthoritative(.xdr) {
+            XDRBrightnessService.shared.restoreSavedState()
+        }
 
         // Warm up auto-brightness so an enabled setting starts at launch — it is a
         // lazy singleton, and starting it on first UI access (unfolding its row)
@@ -68,13 +70,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let dm = DisplayManager.shared
                 dm.refreshDisplays()
                 try? await Task.sleep(nanoseconds: 500_000_000)
+                // Each area re-applies only while FreeDisplay owns it (Settings →
+                // "Who controls each setting"); macOS-controlled areas are left alone.
+                let settings = SettingsService.shared
                 for display in dm.displays {
                     // Apply software brightness factor first so GammaService
                     // can read the up-to-date factor when it re-applies its formula.
-                    BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
-                    GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                    if settings.isAuthoritative(.brightness) {
+                        BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
+                    }
+                    if settings.isAuthoritative(.imageAdjustment) {
+                        GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                    }
                     // Re-apply any custom resolution that macOS may have reset on wake
-                    ResolutionService.shared.reapplySavedModeIfNeeded(for: display.displayID)
+                    if settings.isAuthoritative(.resolution) {
+                        ResolutionService.shared.reapplySavedModeIfNeeded(for: display.displayID)
+                    }
                 }
             }
         }

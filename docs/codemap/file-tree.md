@@ -58,7 +58,7 @@ FreeDisplay/
 │   │   ├── MirrorService.swift             # CGDisplayConfiguration 硬件级屏幕镜像的启用/停止；enableMirror/disableMirror 已异步化，CG 事务在 CGHelpers.runWithTimeout 内执行；改动影响镜像功能
 │   │   ├── NotchOverlayManager.swift       # 在内建屏刘海区域创建黑色遮罩 NSWindow（screenSaver 级别）；改动影响刘海遮罩的视觉效果和层级
 │   │   ├── ResolutionService.swift         # 通过 CGConfigureDisplayWithDisplayMode 切换显示模式；applyModeSync 已异步化，整个 CG 事务在 CGHelpers.runWithTimeout 内执行；resolvedTargetDisplayID() 在镜像检测时回退到 VirtualDisplayService；改动影响分辨率切换成功率
-│   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；改动需注意 key 命名（必须 fd. 前缀）和向后兼容。Opt-in (default OFF) switches: interceptBrightnessKeys (event tap), autoEnableHiDPI (override plist on new 2K+ externals)
+│   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；PreferenceArea ownership model (authoritativeAreas: FreeDisplay-controlled vs macOS-controlled per area, gates launch/wake re-apply) + per-display brightness by UUID；改动需注意 key 命名（必须 fd. 前缀）和向后兼容。Opt-in (default OFF) switches: interceptBrightnessKeys (event tap), autoEnableHiDPI (override plist on new 2K+ externals)
 │   │   ├── AccessibilityService.swift      # Bridges macOS Accessibility "Increase contrast" + "Display Contrast" via private SPI (UAIncreaseContrastSetEnabled, CGSSetDisplayContrast, dlsym) — the pref domain is TCC-protected and pref writes are not applied live; follows System Settings changes via NSWorkspace notification
 │   │   ├── DisplayStreamService.swift      # Live stream window for a (virtual) display: ScreenCaptureKit SCStream → AVSampleBufferDisplayLayer in a floating aspect-locked NSWindow on a physical screen; needs Screen Recording permission
 │   │   ├── UndoService.swift               # App-wide undo stack for display adjustments (⌘Z in the menu window); controls push restore closures on gesture begin, views re-sync via undoTick
@@ -83,6 +83,7 @@ FreeDisplay/
 │       ├── ResolutionSliderView.swift      # 分辨率横向拖动滑块（松手生效）；依赖 ResolutionService，读取 DisplayInfo.availableModes
 │       ├── SystemColorView.swift           # 系统取色器（NSColorSampler）+ HEX/RGB/HSB 显示 + 历史记录；依赖 SettingsService 持久化颜色历史
 │       ├── DisplayStreamRowView.swift      # "Show in Window" row in each display panel (physical or virtual) → DisplayStreamService
+│       ├── OSControlledModifier.swift      # .osControlled(area): read-only + click opens the macOS settings panel while the area is macOS-controlled
 │       ├── HiDPIView.swift                 # HiDPI Override 状态行（plist 方案）+ 写入/还原按钮；依赖 HiDPIService
 │       ├── AccessibilityContrastView.swift # System-wide accessibility contrast controls (Increase Contrast toggle + Display Contrast slider) in the top section; depends on AccessibilityService
 │       ├── XDRBrightnessView.swift         # XDR brightness section (tools panel: toggle + level slider) + XDRQuickSliderView (top-section quick slider, 0 = off); depends on XDRBrightnessService

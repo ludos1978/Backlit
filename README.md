@@ -122,6 +122,22 @@ No internet connection required (the optional update check is off by default).
 
 ---
 
+## Who Controls What
+
+Settings → *Who controls each setting* has a switch per area (Brightness & Dimming,
+Image Adjustment, XDR Brightness, Accessibility Contrast, Resolution & HiDPI,
+Arrangement & Main Display, Color Profile):
+
+- **On — FreeDisplay controls it:** the app owns the values, applies its saved state at
+  launch and after wake, and you change them in the menu.
+- **Off — macOS controls it:** FreeDisplay only *shows* the current value; the controls
+  are read-only and clicking one opens the matching macOS System Settings panel. Nothing
+  in that area is applied automatically.
+
+Everything is FreeDisplay-controlled by default.
+
+---
+
 ## Security & Privacy
 
 Audited 2026-09-08 (full source review). What the app does and does not do:

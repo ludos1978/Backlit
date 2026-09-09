@@ -1,6 +1,74 @@
+import AppKit
 import Foundation
 import CoreGraphics
 import Combine
+import SwiftUI
+
+/// An area of display preferences that is owned either by FreeDisplay or by macOS.
+///
+/// - FreeDisplay-controlled ("authoritative"): the app applies its saved values at
+///   launch/wake and the user edits them in the menu.
+/// - macOS-controlled: the app only shows the current value; its controls are
+///   read-only and clicking one opens the matching macOS System Settings panel.
+enum PreferenceArea: String, CaseIterable, Identifiable {
+    case brightness, imageAdjustment, xdr, accessibilityContrast, resolution, arrangement, colorProfile
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .brightness:            return "Brightness & Dimming"
+        case .imageAdjustment:       return "Image Adjustment (gamma, levels, color)"
+        case .xdr:                   return "XDR Brightness"
+        case .accessibilityContrast: return "Accessibility Contrast"
+        case .resolution:            return "Resolution & HiDPI"
+        case .arrangement:           return "Arrangement & Main Display"
+        case .colorProfile:          return "Color Profile"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .brightness:            return "sun.max.fill"
+        case .imageAdjustment:       return "slider.horizontal.3"
+        case .xdr:                   return "sun.max.circle.fill"
+        case .accessibilityContrast: return "circle.righthalf.filled"
+        case .resolution:            return "rectangle.on.rectangle"
+        case .arrangement:           return "rectangle.3.offgrid"
+        case .colorProfile:          return "paintpalette.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .brightness:            return .orange
+        case .imageAdjustment:       return .blue
+        case .xdr:                   return .yellow
+        case .accessibilityContrast: return .gray
+        case .resolution:            return .blue
+        case .arrangement:           return .blue
+        case .colorProfile:          return .purple
+        }
+    }
+
+    /// The macOS System Settings panel that owns this area when FreeDisplay does not.
+    var osPanelURL: URL {
+        switch self {
+        case .accessibilityContrast:
+            return URL(string: "x-apple.systempreferences:com.apple.Accessibility-Settings.extension")!
+        default:
+            return URL(string: "x-apple.systempreferences:com.apple.Displays-Settings.extension")!
+        }
+    }
+
+    var osPanelName: String {
+        self == .accessibilityContrast ? "Accessibility" : "Displays"
+    }
+
+    static func openOSPanel(_ area: PreferenceArea) {
+        NSWorkspace.shared.open(area.osPanelURL)
+    }
+}
 
 /// Centralized settings persistence service.
 /// Simple settings use UserDefaults via @AppStorage-compatible keys.
@@ -30,6 +98,8 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         static let showCombinedBrightness = "fd.showCombinedBrightness"
         static let ddcCacheTTL            = "fd.ddcCacheTTL"
         static let checkUpdatesOnLaunch   = "fd.checkUpdatesOnLaunch"
+        static let authoritativeAreas     = "fd.authoritativeAreas"
+        static let brightnessByUUIDPrefix = "fd.brightness.uuid."
         static let interceptBrightnessKeys = "fd.interceptBrightnessKeys"
         static let autoEnableHiDPI        = "fd.autoEnableHiDPI"
         static let colorPickerHistory     = "fd.colorPickerHistory"
@@ -59,6 +129,33 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
 
     @Published var ddcCacheTTL: Double = 5.0 {
         didSet { defaults.set(ddcCacheTTL, forKey: Keys.ddcCacheTTL) }
+    }
+
+    /// Areas FreeDisplay owns (applies its saved values at launch and lets the user
+    /// edit them). Areas not in the set are macOS-controlled: read-only in the menu,
+    /// click opens System Settings, nothing is applied automatically.
+    /// Default: FreeDisplay owns everything (the app's existing behaviour).
+    @Published var authoritativeAreas: Set<PreferenceArea> = Set(PreferenceArea.allCases) {
+        didSet { defaults.set(authoritativeAreas.map(\.rawValue).sorted(), forKey: Keys.authoritativeAreas) }
+    }
+
+    func isAuthoritative(_ area: PreferenceArea) -> Bool { authoritativeAreas.contains(area) }
+
+    func setAuthoritative(_ area: PreferenceArea, _ on: Bool) {
+        if on { authoritativeAreas.insert(area) } else { authoritativeAreas.remove(area) }
+    }
+
+    // MARK: - Per-display brightness (by stable display UUID; restored at launch
+    // when the Brightness area is FreeDisplay-controlled)
+
+    func savedBrightness(uuid: String) -> Double? {
+        let key = Keys.brightnessByUUIDPrefix + uuid
+        guard defaults.object(forKey: key) != nil else { return nil }
+        return defaults.double(forKey: key)
+    }
+
+    func saveBrightness(_ value: Double, uuid: String) {
+        defaults.set(value, forKey: Keys.brightnessByUUIDPrefix + uuid)
     }
 
     /// Opt-in (default off): the only network access the app has.
@@ -152,6 +249,9 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         ddcCacheTTL = defaults.object(forKey: Keys.ddcCacheTTL) != nil
             ? defaults.double(forKey: Keys.ddcCacheTTL) : 5.0
         checkUpdatesOnLaunch = defaults.bool(forKey: Keys.checkUpdatesOnLaunch)
+        if let raw = defaults.stringArray(forKey: Keys.authoritativeAreas) {
+            authoritativeAreas = Set(raw.compactMap(PreferenceArea.init(rawValue:)))
+        }
         interceptBrightnessKeys = defaults.bool(forKey: Keys.interceptBrightnessKeys)
         autoEnableHiDPI = defaults.bool(forKey: Keys.autoEnableHiDPI)
         colorPickerHistory = defaults.stringArray(forKey: Keys.colorPickerHistory) ?? []

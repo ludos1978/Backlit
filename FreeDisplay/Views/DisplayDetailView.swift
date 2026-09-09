@@ -29,6 +29,7 @@ struct DisplayDetailView: View {
 
             // HiDPI toggle — before mode list (natural workflow: enable HiDPI → pick resolution)
             HiDPIRowView(display: display)
+                .osControlled(.resolution)
 
             // Display mode list toggle row
             ExpandableRow(
@@ -49,6 +50,7 @@ struct DisplayDetailView: View {
 
             if showModeList {
                 DisplayModeListView(display: display)
+                    .osControlled(.resolution)
                     .padding(.leading, 8)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .top)),
@@ -69,6 +71,7 @@ struct DisplayDetailView: View {
 
             if showColorProfile {
                 ColorProfileView(display: display)
+                    .osControlled(.colorProfile)
                     .padding(.leading, 8)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .top)),
@@ -96,6 +99,7 @@ struct DisplayDetailView: View {
 
             // Set as main display
             MainDisplayView(display: display)
+                .osControlled(.arrangement)
 
             // Live view of this display in a floating window on another screen
             DisplayStreamRowView(display: display)

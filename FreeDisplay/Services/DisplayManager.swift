@@ -103,11 +103,21 @@ class DisplayManager: ObservableObject {
             // Restore saved gamma/software-brightness adjustments for the reconnected display.
             // Brief delay lets WindowServer settle before we write transfer tables.
             // Skipped when the previous session crashed (see AppDelegate.previousExitWasClean).
+            // Only for areas FreeDisplay owns (Settings → "Who controls each setting").
             if AppDelegate.previousExitWasClean {
+                let settings = SettingsService.shared
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 300_000_000)
-                    BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
-                    GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                    if settings.isAuthoritative(.brightness) {
+                        BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
+                        // Restore the last brightness the user set for this display.
+                        if let saved = SettingsService.shared.savedBrightness(uuid: display.displayUUID) {
+                            BrightnessService.shared.setBrightnessSmooth(saved, for: display)
+                        }
+                    }
+                    if settings.isAuthoritative(.imageAdjustment) {
+                        GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                    }
                 }
             }
         }

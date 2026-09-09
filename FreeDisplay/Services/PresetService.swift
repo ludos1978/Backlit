@@ -227,6 +227,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             // makes it the main display and displaces every external). Skip no-op
             // moves: every display-configuration transaction dismisses the menu.
             if preset.restoresArrangement == true, !display.isBuiltin,
+               SettingsService.shared.isAuthoritative(.arrangement),
                let x = entry.arrangementX, let y = entry.arrangementY,
                Int(x) != Int(display.bounds.origin.x) || Int(y) != Int(display.bounds.origin.y) {
                 debugLog("[PresetService]   -> setting arrangement x=\(x) y=\(y)")

@@ -40,6 +40,7 @@
 		8020688F9F08D4F744D00974 /* ResolutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6D1243B91C455CE17BE1DF /* ResolutionService.swift */; };
 		80CA5725D4B2AA1D35E1C527 /* DDCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719FFBCF3D3A63A6FFFC7172 /* DDCService.swift */; };
 		80F888F001C7F53E4FA362AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 90F55D10A5241A8DFA941E4C /* Assets.xcassets */; };
+		874EFFD313A1032F32347ABB /* OSControlledModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFDAC6BEC27634F0B29443C /* OSControlledModifier.swift */; };
 		87A763D8B6A6F9D9D9351AB7 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA0E0202B5E5AC58680DDDB /* MenuBarView.swift */; };
 		8BD7199384F977B50A5EAB5B /* MirrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754025E6D6152C81F145C63C /* MirrorService.swift */; };
 		8C52727A3EDEDF23FED32677 /* UndoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EEA1741C50D4C0B67A3B15 /* UndoService.swift */; };
@@ -82,6 +83,7 @@
 		603658292A824E3A3968A4D7 /* ResolutionSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolutionSliderView.swift; sourceTree = "<group>"; };
 		63BF0C6897ED7891956F2715 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		6804E6622DE956669AE0DBCC /* ArrangementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementView.swift; sourceTree = "<group>"; };
+		6BFDAC6BEC27634F0B29443C /* OSControlledModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSControlledModifier.swift; sourceTree = "<group>"; };
 		6E6D1243B91C455CE17BE1DF /* ResolutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolutionService.swift; sourceTree = "<group>"; };
 		6F049322038220CBB75B6985 /* DisplayModeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModeListView.swift; sourceTree = "<group>"; };
 		719FFBCF3D3A63A6FFFC7172 /* DDCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDCService.swift; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 				4720147B44C6328686440A16 /* MainDisplayView.swift */,
 				5CA0E0202B5E5AC58680DDDB /* MenuBarView.swift */,
 				C2419A06679F0A55C454EF1F /* NotchView.swift */,
+				6BFDAC6BEC27634F0B29443C /* OSControlledModifier.swift */,
 				76DF3A1CA21D512F8DC936F9 /* PresetListView.swift */,
 				603658292A824E3A3968A4D7 /* ResolutionSliderView.swift */,
 				58474F9C406F992241963112 /* SavePresetView.swift */,
@@ -345,6 +348,7 @@
 				DEFA538D0EED4A16A0DC987D /* NSScreenExtension.swift in Sources */,
 				5E6835D82CA20AB0673F102F /* NotchOverlayManager.swift in Sources */,
 				CD3C6687C2B23F46A3678E94 /* NotchView.swift in Sources */,
+				874EFFD313A1032F32347ABB /* OSControlledModifier.swift in Sources */,
 				0802EC2814FD3B88A63A337E /* PresetListView.swift in Sources */,
 				3EA5920A3F5338CB1F05642C /* PresetService.swift in Sources */,
 				8020688F9F08D4F744D00974 /* ResolutionService.swift in Sources */,

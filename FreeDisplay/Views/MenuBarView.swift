@@ -124,14 +124,19 @@ struct MenuBarView: View {
                 // ── General (all displays) ─────────────────────────────
                 if settings.showCombinedBrightness {
                     CombinedBrightnessView(displays: displayManager.displays)
+                        .osControlled(.brightness)
                     CombinedGammaView(displays: displayManager.displays)
+                        .osControlled(.imageAdjustment)
                     ExtraDimmingRow(displays: displayManager.displays, title: "Dim Below Minimum (All Displays)")
+                        .osControlled(.brightness)
                     AccessibilityContrastView()
+                        .osControlled(.accessibilityContrast)
                 }
 
                 // Quick XDR slider (XDR-capable panels only)
                 if xdrService.hasEligibleDisplays {
                     XDRQuickSliderView()
+                        .osControlled(.xdr)
                 }
 
                 Divider()
@@ -183,6 +188,7 @@ struct MenuBarView: View {
                     if showArrangement {
                         ArrangementView()
                             .environmentObject(displayManager)
+                            .osControlled(.arrangement)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
@@ -240,6 +246,7 @@ struct MenuBarView: View {
 
                     if showXDRBrightness {
                         XDRBrightnessView()
+                            .osControlled(.xdr)
                             .padding(.leading, 8)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
@@ -484,6 +491,41 @@ struct SettingsView: View {
             .controlSize(.small)
             .padding(.horizontal, 12)
             .help("Write a HiDPI override for newly connected 2K+ external displays (asks for an administrator password)")
+
+            // ── Who controls what ──────────────────────────────────────────
+            Divider()
+                .opacity(0.3)
+                .padding(.vertical, 4)
+            Text("Who controls each setting")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 12)
+            Text("On: FreeDisplay owns it — applies its saved values at launch and lets you change them here. Off: macOS owns it — FreeDisplay only shows the current value, and clicking a control opens the macOS settings panel.")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 2)
+            ForEach(PreferenceArea.allCases) { area in
+                Toggle(isOn: Binding(
+                    get: { settings.isAuthoritative(area) },
+                    set: { settings.setAuthoritative(area, $0) }
+                )) {
+                    HStack(spacing: 6) {
+                        MenuItemIcon(systemName: area.icon, color: area.color)
+                            .accessibilityHidden(true)
+                        Text(area.title)
+                            .font(.body)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .padding(.horizontal, 12)
+                .help("On: FreeDisplay controls \(area.title). Off: macOS controls it (System Settings → \(area.osPanelName)); FreeDisplay only displays it.")
+            }
         }
         .padding(.vertical, 6)
     }

@@ -277,6 +277,7 @@ final class BrightnessService: @unchecked Sendable {
         // Record manual adjust time so auto-brightness can honour the cooldown period.
         if !isAutoAdjust {
             manualAdjustLock.withLock { lastManualAdjustDate = Date() }
+            SettingsService.shared.saveBrightness(clamped, uuid: display.displayUUID)
         }
 
         if isBuiltin {
@@ -353,6 +354,7 @@ final class BrightnessService: @unchecked Sendable {
 
         if !isAutoAdjust {
             manualAdjustLock.withLock { lastManualAdjustDate = Date() }
+            SettingsService.shared.saveBrightness(clamped, uuid: display.displayUUID)
         }
 
         let anim = animator(for: displayID)

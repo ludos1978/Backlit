@@ -34,6 +34,7 @@ struct ImageAdjustmentView: View {
         VStack(alignment: .leading, spacing: 0) {
 
             // ── Brightness + Dim Below Minimum ─────────────────────────────
+            Group {
             AdjustRow(icon: "sun.max.fill", label: "Brightness", value: $brightness, accent: .orange,
                       range: 5...100, defaultValue: 50,
                       beginAction: captureBrightnessUndo,
@@ -63,11 +64,14 @@ struct ImageAdjustmentView: View {
                           liveAction: { _ in commitExtraDim() })
                     .help("Software dimming below the hardware minimum (applied via the gamma ramp)")
             }
+            }
+            .osControlled(.brightness)
 
             Divider()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 2)
 
+            Group {
             // ── Group 1: Global adjustments ────────────────────────────────
             adjustRow(icon: "circle.righthalf.filled",   label: "Contrast", value: $contrast).help("Adjust contrast")
             adjustRow(icon: "sparkle",                   label: "Gamma", value: $gammaVal).help("Adjust gamma")
@@ -159,9 +163,12 @@ struct ImageAdjustmentView: View {
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
+            }
+            .osControlled(.imageAdjustment)
         }
         .onAppear {
-            reloadFromSaved(reapply: true)
+            // Re-apply visually only while FreeDisplay owns image adjustments.
+            reloadFromSaved(reapply: SettingsService.shared.isAuthoritative(.imageAdjustment))
             brightness = display.brightness
             extraDim = BrightnessService.shared.extraDimming(for: display.displayID)
         }
