@@ -171,6 +171,36 @@ final class BrightnessService: @unchecked Sendable {
         return Double(min(max(value, 0), 1))
     }
 
+    // MARK: - Built-in brightness observation
+
+    private var builtinObserver: Timer?
+    private var lastBuiltinWrite: Date = .distantPast
+
+    /// Keeps the built-in display's model value (and the remembered brightness
+    /// used for the launch restore) in sync with what the OS reports — keys,
+    /// Control Center and System Settings all change the backlight behind the
+    /// app's back. Cheap: one DisplayServices read every 2 s. Started at launch.
+    @MainActor
+    func startBuiltinObservation() {
+        guard builtinObserver == nil else { return }
+        builtinObserver = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            Task { @MainActor in BrightnessService.shared.observeBuiltin() }
+        }
+    }
+
+    @MainActor
+    private func observeBuiltin() {
+        // Don't fight our own in-flight animation.
+        guard Date().timeIntervalSince(lastBuiltinWrite) > 1.0,
+              let display = DisplayManagerAccessor.shared.displays.first(where: { $0.isBuiltin }),
+              let hw = hardwareBacklight(for: display.displayID) else { return }
+        let percent = hw * 100
+        if abs(percent - display.brightness) >= 1 {
+            display.brightness = percent
+            SettingsService.shared.saveBrightness(percent, uuid: display.displayUUID)
+        }
+    }
+
     // MARK: - Extra Dimming (below the hardware minimum)
 
     /// Extra software dimming applied on top of hardware brightness, 0 = none … 95 = darkest.
@@ -238,6 +268,9 @@ final class BrightnessService: @unchecked Sendable {
             }
             if let b = brightness {
                 display.brightness = b
+                // What the hardware reports IS the user's current choice (keys,
+                // Control Center, System Settings) — remember it for the launch restore.
+                SettingsService.shared.saveBrightness(b, uuid: display.displayUUID)
             }
         } else {
             // First check if DDC is already known to be unavailable; if so skip the
@@ -261,7 +294,10 @@ final class BrightnessService: @unchecked Sendable {
                     self.ddcAvailable[displayID] = true
                     self.ddcMaxBrightness[displayID] = result.max
                     self.ddcAvailableLock.unlock()
-                    Task { @MainActor in display.brightness = brightness }
+                    Task { @MainActor in
+                        display.brightness = brightness
+                        SettingsService.shared.saveBrightness(brightness, uuid: display.displayUUID)
+                    }
                 } else {
                     // DDC read returned nil; mark unavailable
                     self.ddcAvailableLock.lock()
@@ -289,6 +325,7 @@ final class BrightnessService: @unchecked Sendable {
         if isBuiltin {
             let value = Float(clamped / 100.0)
             display.brightness = clamped
+            lastBuiltinWrite = Date()
             queue.async { [weak self] in
                 self?.setInternalBrightness(value)
             }
@@ -370,6 +407,7 @@ final class BrightnessService: @unchecked Sendable {
             anim.animate(from: fromBrightness, to: clamped, steps: 8, duration: 0.20) { [weak self, weak display] value, _ in
                 guard let self, let display else { return }
                 display.brightness = value
+                self.lastBuiltinWrite = Date()
                 let floatVal = Float(value / 100.0)
                 self.queue.async { self.setInternalBrightness(floatVal) }
             }

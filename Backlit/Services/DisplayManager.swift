@@ -90,6 +90,9 @@ class DisplayManager: ObservableObject {
 
         // Only load details / refresh brightness for newly appeared displays
         for display in addedDisplays {
+            // The launch restore must use the brightness remembered from BEFORE this
+            // refresh — the refresh itself records whatever the hardware reports now.
+            let rememberedBrightness = SettingsService.shared.savedBrightness(uuid: display.displayUUID)
             Task { await BrightnessService.shared.refreshBrightness(for: display) }
             Task {
                 await display.loadDetails()
@@ -110,9 +113,10 @@ class DisplayManager: ObservableObject {
                     try? await Task.sleep(nanoseconds: 300_000_000)
                     if settings.isAuthoritative(.brightness) {
                         BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
-                        // Restore the last brightness the user set for this display.
-                        if let saved = SettingsService.shared.savedBrightness(uuid: display.displayUUID) {
-                            BrightnessService.shared.setBrightnessSmooth(saved, for: display)
+                        // Restore the last brightness the user had on this display
+                        // (only if it differs from what the hardware already reports).
+                        if let saved = rememberedBrightness, abs(saved - display.brightness) >= 1 {
+                            BrightnessService.shared.setBrightnessSmooth(saved, for: display, isAutoAdjust: true)
                         }
                     }
                     if settings.isAuthoritative(.imageAdjustment) {

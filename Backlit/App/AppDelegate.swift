@@ -59,6 +59,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // explicit user actions (arrangement canvas, Set as Main, presets).
         _ = DisplayManager.shared
 
+        // Track built-in brightness changes made outside the app (keys, Control
+        // Center, System Settings) so the launch restore never uses a stale value.
+        BrightnessService.shared.startBuiltinObservation()
+
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil,
