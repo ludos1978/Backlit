@@ -38,6 +38,43 @@ struct ResetButton: View {
     }
 }
 
+// MARK: - FoldableSectionHeader
+
+/// Small section header ("Individual Screens", "Tools") that folds its section.
+struct FoldableSectionHeader: View {
+    let title: String
+    @Binding var isExpanded: Bool
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundColor(.secondary)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundColor(.secondary)
+                .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                .animation(.easeInOut(duration: 0.2), value: isExpanded)
+                .accessibilityHidden(true)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
+        .contentShape(Rectangle())
+        .background(Color.primary.opacity(isHovered ? 0.04 : 0))
+        .onHover { isHovered = $0 }
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+        }
+        .help("Click to fold or unfold this section")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(isExpanded ? "\(title), expanded" : "\(title), collapsed")
+    }
+}
+
 // MARK: - ExpandableRow
 
 struct ExpandableRow: View {
@@ -97,6 +134,9 @@ struct MenuBarView: View {
     @State private var showXDRBrightness: Bool = false
     @State private var showSettings: Bool = false
     @State private var quitHovered = false
+    /// Section folds (persisted — the menu content is rebuilt on every open).
+    @AppStorage("fd.menu.screensExpanded") private var showScreens: Bool = true
+    @AppStorage("fd.menu.toolsExpanded") private var showTools: Bool = true
     /// Natural height of the scrollable content, reported via preference key.
     /// Inside a MenuBarExtra `.window` panel a ScrollView collapses to zero
     /// height (the panel sizes to the view's ideal size), so the ScrollView
@@ -143,53 +183,28 @@ struct MenuBarView: View {
                     .opacity(0.3)
                     .padding(.vertical, 2)
 
-                // ── Individual displays ────────────────────────────────
-                Text("Individual Screens")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, 2)
+                // ── Individual displays (foldable) ─────────────────────
+                FoldableSectionHeader(title: "Individual Screens", isExpanded: $showScreens)
 
-                ForEach(visibleDisplays) { display in
-                    VStack(spacing: 0) {
-                        DisplayRowView(
-                            display: display,
-                            isExpanded: expandedDisplayIDs.contains(display.displayID),
-                            onToggleExpand: {
-                                if expandedDisplayIDs.contains(display.displayID) {
-                                    expandedDisplayIDs.remove(display.displayID)
-                                } else {
-                                    expandedDisplayIDs.insert(display.displayID)
+                if showScreens {
+                    ForEach(visibleDisplays) { display in
+                        VStack(spacing: 0) {
+                            DisplayRowView(
+                                display: display,
+                                isExpanded: expandedDisplayIDs.contains(display.displayID),
+                                onToggleExpand: {
+                                    if expandedDisplayIDs.contains(display.displayID) {
+                                        expandedDisplayIDs.remove(display.displayID)
+                                    } else {
+                                        expandedDisplayIDs.insert(display.displayID)
+                                    }
                                 }
+                            )
+
+                            if expandedDisplayIDs.contains(display.displayID) {
+                                DisplayDetailView(display: display)
                             }
-                        )
-
-                        if expandedDisplayIDs.contains(display.displayID) {
-                            DisplayDetailView(display: display)
                         }
-                    }
-                }
-
-                // Arrange-displays section (Phase 4)
-                if visibleDisplays.count > 1 {
-                    Divider()
-                        .opacity(0.3)
-                        .padding(.vertical, 2)
-
-                    ExpandableRow(
-                        icon: "rectangle.3.offgrid",
-                        iconColor: .blue,
-                        label: "Arrange Displays",
-                        isExpanded: $showArrangement
-                    )
-
-                    if showArrangement {
-                        ArrangementView()
-                            .environmentObject(displayManager)
-                            .osControlled(.arrangement)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
 
@@ -197,58 +212,71 @@ struct MenuBarView: View {
                     .opacity(0.3)
                     .padding(.vertical, 2)
 
-                // Tools section header
-                Text("Tools")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, 2)
+                // ── Tools (foldable) ────────────────────────────────────
+                FoldableSectionHeader(title: "Tools", isExpanded: $showTools)
 
-                // Virtual displays tool entry (Phase 10)
-                ExpandableRow(
-                    icon: "display.2",
-                    iconColor: .blue,
-                    label: "Virtual Displays",
-                    isExpanded: $showVirtualDisplays
-                )
+                if showTools {
+                    // Arrange displays (Phase 4) — only with more than one display
+                    if visibleDisplays.count > 1 {
+                        ExpandableRow(
+                            icon: "rectangle.3.offgrid",
+                            iconColor: .blue,
+                            label: "Arrange Displays",
+                            isExpanded: $showArrangement
+                        )
 
-                if showVirtualDisplays {
-                    VirtualDisplayView()
-                        .padding(.leading, 8)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                        if showArrangement {
+                            ArrangementView()
+                                .environmentObject(displayManager)
+                                .osControlled(.arrangement)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
 
-                // Auto-brightness entry (Phase 11)
-                ExpandableRow(
-                    icon: "sun.and.horizon.fill",
-                    iconColor: .orange,
-                    label: "Auto Brightness",
-                    isExpanded: $showAutoBrightness
-                )
-
-                if showAutoBrightness {
-                    AutoBrightnessView()
-                        .padding(.leading, 8)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-
-                // XDR brightness entry (only for XDR-capable panels)
-                if xdrService.hasEligibleDisplays {
+                    // Virtual displays tool entry (Phase 10)
                     ExpandableRow(
-                        icon: "sun.max.circle.fill",
-                        iconColor: .yellow,
-                        label: "XDR Brightness",
-                        subtitle: xdrService.isEnabled ? "On" : "",
-                        isExpanded: $showXDRBrightness
+                        icon: "display.2",
+                        iconColor: .blue,
+                        label: "Virtual Displays",
+                        isExpanded: $showVirtualDisplays
                     )
 
-                    if showXDRBrightness {
-                        XDRBrightnessView()
-                            .osControlled(.xdr)
+                    if showVirtualDisplays {
+                        VirtualDisplayView()
                             .padding(.leading, 8)
                             .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    // Auto-brightness entry (Phase 11)
+                    ExpandableRow(
+                        icon: "sun.and.horizon.fill",
+                        iconColor: .orange,
+                        label: "Auto Brightness",
+                        isExpanded: $showAutoBrightness
+                    )
+
+                    if showAutoBrightness {
+                        AutoBrightnessView()
+                            .padding(.leading, 8)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    // XDR brightness entry (only for XDR-capable panels)
+                    if xdrService.hasEligibleDisplays {
+                        ExpandableRow(
+                            icon: "sun.max.circle.fill",
+                            iconColor: .yellow,
+                            label: "XDR Brightness",
+                            subtitle: xdrService.isEnabled ? "On" : "",
+                            isExpanded: $showXDRBrightness
+                        )
+
+                        if showXDRBrightness {
+                            XDRBrightnessView()
+                                .osControlled(.xdr)
+                                .padding(.leading, 8)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
                 }
 
