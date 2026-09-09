@@ -129,6 +129,12 @@ final class BrightnessService: @unchecked Sendable {
     /// Set when the user manually adjusts brightness; auto-brightness skips updates for 30 s.
     private(set) var lastManualAdjustDate: Date? = nil
     private let manualAdjustLock = NSLock()
+    private var manualAdjustDates: [CGDirectDisplayID: Date] = [:]
+
+    /// When the user last adjusted this display manually (slider/keys), if ever.
+    func lastManualAdjust(for displayID: CGDirectDisplayID) -> Date? {
+        manualAdjustLock.withLock { manualAdjustDates[displayID] }
+    }
 
     // MARK: - Software Brightness Factors
 
@@ -276,7 +282,7 @@ final class BrightnessService: @unchecked Sendable {
 
         // Record manual adjust time so auto-brightness can honour the cooldown period.
         if !isAutoAdjust {
-            manualAdjustLock.withLock { lastManualAdjustDate = Date() }
+            manualAdjustLock.withLock { lastManualAdjustDate = Date(); manualAdjustDates[displayID] = Date() }
             SettingsService.shared.saveBrightness(clamped, uuid: display.displayUUID)
         }
 
@@ -353,7 +359,7 @@ final class BrightnessService: @unchecked Sendable {
         let fromBrightness = display.brightness
 
         if !isAutoAdjust {
-            manualAdjustLock.withLock { lastManualAdjustDate = Date() }
+            manualAdjustLock.withLock { lastManualAdjustDate = Date(); manualAdjustDates[displayID] = Date() }
             SettingsService.shared.saveBrightness(clamped, uuid: display.displayUUID)
         }
 

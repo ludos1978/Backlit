@@ -247,16 +247,19 @@ struct MenuBarView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
-                    // Auto-brightness entry (Phase 11)
+                    // Adaptive brightness (screen content + ambient light, learning)
                     ExpandableRow(
                         icon: "sun.and.horizon.fill",
                         iconColor: .orange,
-                        label: "Auto Brightness",
+                        label: "Adaptive Brightness",
+                        subtitle: AdaptiveBrightnessService.shared.isEnabled ? "On" : "",
                         isExpanded: $showAutoBrightness
                     )
 
                     if showAutoBrightness {
-                        AutoBrightnessView()
+                        AdaptiveBrightnessView()
+                            .environmentObject(displayManager)
+                            .osControlled(.brightness)
                             .padding(.leading, 8)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }

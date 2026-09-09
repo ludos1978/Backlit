@@ -43,10 +43,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             XDRBrightnessService.shared.restoreSavedState()
         }
 
-        // Warm up auto-brightness so an enabled setting starts at launch — it is a
-        // lazy singleton, and starting it on first UI access (unfolding its row)
-        // suddenly synced every external display to the built-in brightness.
-        _ = AutoBrightnessService.shared
+        // Warm up adaptive brightness so an enabled setting starts at launch (it is
+        // a lazy singleton; starting it on first UI access would be a surprise).
+        if SettingsService.shared.isAuthoritative(.brightness) {
+            _ = AdaptiveBrightnessService.shared
+        }
 
         // Warm up the accessibility bridge so saved display contrast is restored
         // and System Settings changes are observed before the menu is first opened.

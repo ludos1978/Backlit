@@ -17,12 +17,11 @@
 		10A4E4A67CCF2DE9A74C6AD3 /* SystemColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA093FE81C9AA28F0D11538 /* SystemColorView.swift */; };
 		164E1C0F2C88B437FC1800D7 /* DisplayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A5C51D525AD2D8B51A43C43 /* DisplayDetailView.swift */; };
 		173AF3313CA4B3F523108B8D /* HiDPIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B74753F080C66989C4A402 /* HiDPIView.swift */; };
-		19E6F14B551F6A5B7B7FE8D2 /* AutoBrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598A6887C62E47F993097FBD /* AutoBrightnessService.swift */; };
-		19F09D117C46DF9FFBC470F8 /* AutoBrightnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 031EF19829F320F374EAEA4D /* AutoBrightnessView.swift */; };
 		1CCA3EB553D42C774471E4E1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ADB8B789A3B60513FF117DD8 /* Assets.xcassets */; };
 		274ED32602BFA6C13760722F /* PresetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398EFDE9AE0C244612CEB619 /* PresetListView.swift */; };
 		2C9CA50541CC0D3C7CF2C498 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1510136A54998A716866FFAE /* UpdateService.swift */; };
 		2D7A821F7B699CB9C6827C23 /* CGHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72A1D6628D719E706F94344 /* CGHelpers.swift */; };
+		321C2E10D98DBB6A95D15A5D /* ContentLightnessSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB91274D8817C180B3F20BB /* ContentLightnessSampler.swift */; };
 		36DBE87DA84D8565ED230D26 /* ResolutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2066D1FCA3B1FFC597C0CB5 /* ResolutionService.swift */; };
 		3D39BCA33F836F2813314DB0 /* ArrangementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 173C59F15C39B2527931A8A4 /* ArrangementView.swift */; };
 		570BFC5C4D3C49FB37417C11 /* MainDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD0DAC186AE0D4315789EE /* MainDisplayView.swift */; };
@@ -32,6 +31,7 @@
 		6AEFEDF71CB8E6E1871E159A /* BrightnessSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22AF36027D3B14EC2238976 /* BrightnessSliderView.swift */; };
 		6CAC2AA2FA332AAD34E8798F /* NSScreenExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6849C254B91A1CD4215742 /* NSScreenExtension.swift */; };
 		6F483B5F447F70956D2B1B72 /* VirtualDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC43BEDFE97334362F342E5B /* VirtualDisplayView.swift */; };
+		73BD8034B400EFD2C5C16800 /* AdaptiveBrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39C6B398395E87CE499637B /* AdaptiveBrightnessService.swift */; };
 		7A496D01A9B4563705A42B4E /* DisplayModeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E1B823FF0C9230184D2375 /* DisplayModeListView.swift */; };
 		7E2D408C4B660291C409BD3A /* AccessibilityContrastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02533D470A6C242FB106D118 /* AccessibilityContrastView.swift */; };
 		7E798EED3A4F65B85E8B3670 /* BrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 240EE584B83C592248B3F54A /* BrightnessService.swift */; };
@@ -49,6 +49,7 @@
 		C845D489330F0C4E1964E1BE /* DisplayInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720A7B037655FC845A492ABF /* DisplayInfo.swift */; };
 		CFFA63B54CE70382C590B8BF /* FreeDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5CA394AE7209A4B6A03C0C /* FreeDisplayApp.swift */; };
 		D1C357388F985EA50A898E6A /* MirrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2961A7F722B50E16191F4FF0 /* MirrorService.swift */; };
+		E548EE484030B7BCBAC22CB5 /* AdaptiveBrightnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E20854DA9CEB177B5BCDA04 /* AdaptiveBrightnessView.swift */; };
 		EAACDC70ADB5A4DBB8378320 /* DDCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434AE54196E2A9CE0807B90E /* DDCService.swift */; };
 		EAE07BAC955F965779F6648A /* PresetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB3911A95390404E8814D7D /* PresetService.swift */; };
 		ECE52E8F4DA8CD893356B842 /* SavePresetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5043ED1526A3B4738798EB /* SavePresetView.swift */; };
@@ -58,13 +59,13 @@
 		FBE9578D632D752A2C192D83 /* XDRBrightnessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37358C1023898B607CB9345 /* XDRBrightnessService.swift */; };
 		FDD519191F34633A19E0CFB7 /* ColorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E17ADE361E7DB81432DA0AC /* ColorProfileView.swift */; };
 		FE41FED093760080FFFBEB93 /* BrightnessKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B953CBEE2806D6EA565DCE /* BrightnessKeyService.swift */; };
+		FF7B81D2D01204867220495B /* AmbientLightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C58D6A2D91396254D4BE62D /* AmbientLightService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0045443F9FA57F2C2383C91A /* Backlit-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Backlit-Bridging-Header.h"; sourceTree = "<group>"; };
 		0145C78886067F4B86E1C120 /* DisplayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayManager.swift; sourceTree = "<group>"; };
 		02533D470A6C242FB106D118 /* AccessibilityContrastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityContrastView.swift; sourceTree = "<group>"; };
-		031EF19829F320F374EAEA4D /* AutoBrightnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBrightnessView.swift; sourceTree = "<group>"; };
 		0A1F34C2A3C5B0BB76BEDE4A /* ColorProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorProfileService.swift; sourceTree = "<group>"; };
 		1510136A54998A716866FFAE /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		173C59F15C39B2527931A8A4 /* ArrangementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementView.swift; sourceTree = "<group>"; };
@@ -72,8 +73,10 @@
 		240EE584B83C592248B3F54A /* BrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessService.swift; sourceTree = "<group>"; };
 		2961A7F722B50E16191F4FF0 /* MirrorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorService.swift; sourceTree = "<group>"; };
 		2BB3911A95390404E8814D7D /* PresetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetService.swift; sourceTree = "<group>"; };
+		2DB91274D8817C180B3F20BB /* ContentLightnessSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentLightnessSampler.swift; sourceTree = "<group>"; };
 		398EFDE9AE0C244612CEB619 /* PresetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetListView.swift; sourceTree = "<group>"; };
 		3E17ADE361E7DB81432DA0AC /* ColorProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorProfileView.swift; sourceTree = "<group>"; };
+		3E20854DA9CEB177B5BCDA04 /* AdaptiveBrightnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveBrightnessView.swift; sourceTree = "<group>"; };
 		434AE54196E2A9CE0807B90E /* DDCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDCService.swift; sourceTree = "<group>"; };
 		441EDB8CA69BC7A2F9CF233C /* DisplayMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayMode.swift; sourceTree = "<group>"; };
 		49604FEE79BC866A0D452B85 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
@@ -82,7 +85,6 @@
 		53CFF7F76EBE7F191F1994FF /* AccessibilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityService.swift; sourceTree = "<group>"; };
 		55DAFD2563AF3095C0382FB3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		575C7C7EEE645194E6147808 /* ImageAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAdjustmentView.swift; sourceTree = "<group>"; };
-		598A6887C62E47F993097FBD /* AutoBrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBrightnessService.swift; sourceTree = "<group>"; };
 		608AA11FBC96A393F680E4C3 /* LaunchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchService.swift; sourceTree = "<group>"; };
 		61F6F40CA8D6737C2704AEDF /* ResolutionSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolutionSliderView.swift; sourceTree = "<group>"; };
 		6560324A222AE5131EAFB82C /* NotchOverlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchOverlayManager.swift; sourceTree = "<group>"; };
@@ -92,6 +94,7 @@
 		6FF42C5C29C39A670C87B590 /* ArrangementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementService.swift; sourceTree = "<group>"; };
 		720A7B037655FC845A492ABF /* DisplayInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayInfo.swift; sourceTree = "<group>"; };
 		79E1B823FF0C9230184D2375 /* DisplayModeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModeListView.swift; sourceTree = "<group>"; };
+		9C58D6A2D91396254D4BE62D /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
 		A2066D1FCA3B1FFC597C0CB5 /* ResolutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolutionService.swift; sourceTree = "<group>"; };
 		A34D9E7857B28B17C283CCFF /* SettingsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsService.swift; sourceTree = "<group>"; };
 		A5BD0DAC186AE0D4315789EE /* MainDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainDisplayView.swift; sourceTree = "<group>"; };
@@ -112,6 +115,7 @@
 		D7C67F8B5FCC2EBDEDDE355E /* GammaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GammaService.swift; sourceTree = "<group>"; };
 		DC43BEDFE97334362F342E5B /* VirtualDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualDisplayView.swift; sourceTree = "<group>"; };
 		DEBBB6E58E98622881E5E86F /* DisplayPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayPreset.swift; sourceTree = "<group>"; };
+		E39C6B398395E87CE499637B /* AdaptiveBrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveBrightnessService.swift; sourceTree = "<group>"; };
 		E4B953CBEE2806D6EA565DCE /* BrightnessKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessKeyService.swift; sourceTree = "<group>"; };
 		E7E0FB09B47CDD4877229CE1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FA93C2AD153AB2D25933EC6C /* Backlit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Backlit.entitlements; sourceTree = "<group>"; };
@@ -131,8 +135,8 @@
 			isa = PBXGroup;
 			children = (
 				02533D470A6C242FB106D118 /* AccessibilityContrastView.swift */,
+				3E20854DA9CEB177B5BCDA04 /* AdaptiveBrightnessView.swift */,
 				173C59F15C39B2527931A8A4 /* ArrangementView.swift */,
-				031EF19829F320F374EAEA4D /* AutoBrightnessView.swift */,
 				C22AF36027D3B14EC2238976 /* BrightnessSliderView.swift */,
 				3E17ADE361E7DB81432DA0AC /* ColorProfileView.swift */,
 				4A5C51D525AD2D8B51A43C43 /* DisplayDetailView.swift */,
@@ -208,13 +212,15 @@
 			isa = PBXGroup;
 			children = (
 				53CFF7F76EBE7F191F1994FF /* AccessibilityService.swift */,
+				E39C6B398395E87CE499637B /* AdaptiveBrightnessService.swift */,
+				9C58D6A2D91396254D4BE62D /* AmbientLightService.swift */,
 				6FF42C5C29C39A670C87B590 /* ArrangementService.swift */,
-				598A6887C62E47F993097FBD /* AutoBrightnessService.swift */,
 				C74AA8402D751CA568D31AB0 /* BrightnessHUDService.swift */,
 				E4B953CBEE2806D6EA565DCE /* BrightnessKeyService.swift */,
 				240EE584B83C592248B3F54A /* BrightnessService.swift */,
 				B72A1D6628D719E706F94344 /* CGHelpers.swift */,
 				0A1F34C2A3C5B0BB76BEDE4A /* ColorProfileService.swift */,
+				2DB91274D8817C180B3F20BB /* ContentLightnessSampler.swift */,
 				434AE54196E2A9CE0807B90E /* DDCService.swift */,
 				0145C78886067F4B86E1C120 /* DisplayManager.swift */,
 				B8BF4C9934EB99430648269D /* DisplayStreamService.swift */,
@@ -315,11 +321,12 @@
 			files = (
 				7E2D408C4B660291C409BD3A /* AccessibilityContrastView.swift in Sources */,
 				EFE811376348EA00736B6B1C /* AccessibilityService.swift in Sources */,
+				73BD8034B400EFD2C5C16800 /* AdaptiveBrightnessService.swift in Sources */,
+				E548EE484030B7BCBAC22CB5 /* AdaptiveBrightnessView.swift in Sources */,
+				FF7B81D2D01204867220495B /* AmbientLightService.swift in Sources */,
 				1069ED6A07963C725962398C /* AppDelegate.swift in Sources */,
 				8EE521E3D105E369E08B2D6E /* ArrangementService.swift in Sources */,
 				3D39BCA33F836F2813314DB0 /* ArrangementView.swift in Sources */,
-				19E6F14B551F6A5B7B7FE8D2 /* AutoBrightnessService.swift in Sources */,
-				19F09D117C46DF9FFBC470F8 /* AutoBrightnessView.swift in Sources */,
 				0A199D581D990BED165FAC94 /* BrightnessHUDService.swift in Sources */,
 				FE41FED093760080FFFBEB93 /* BrightnessKeyService.swift in Sources */,
 				7E798EED3A4F65B85E8B3670 /* BrightnessService.swift in Sources */,
@@ -327,6 +334,7 @@
 				2D7A821F7B699CB9C6827C23 /* CGHelpers.swift in Sources */,
 				97D0782A3B19D386AE1F918F /* ColorProfileService.swift in Sources */,
 				FDD519191F34633A19E0CFB7 /* ColorProfileView.swift in Sources */,
+				321C2E10D98DBB6A95D15A5D /* ContentLightnessSampler.swift in Sources */,
 				EAACDC70ADB5A4DBB8378320 /* DDCService.swift in Sources */,
 				164E1C0F2C88B437FC1800D7 /* DisplayDetailView.swift in Sources */,
 				C845D489330F0C4E1964E1BE /* DisplayInfo.swift in Sources */,

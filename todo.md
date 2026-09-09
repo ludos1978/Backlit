@@ -55,6 +55,10 @@
          frameworks; all local, no data leaves the machine.
       6. `DisplayStreamService.swift` — ScreenCaptureKit capture of a display for the
          virtual-display stream window (local rendering only; needs Screen Recording permission).
+      7. `ContentLightnessSampler.swift` — ScreenCaptureKit low-res capture for adaptive brightness
+         (frames reduced to one lightness number in memory, never stored/sent).
+      8. `AmbientLightService.swift` — IOKit HID event-system SPI (`IOHIDEventSystemClient*`,
+         BezelServices `ALCALSCopyALSServiceClient`) to read the ambient light sensor; local only.
       No `Process`/`NSTask`/shell execution, no sockets, no third-party dependencies,
       no encoded/obfuscated blobs found (grep for base64/hex literals: none).
 - [ ] Re-run this audit before each tagged release (network grep + Process grep + blob grep).

@@ -207,3 +207,13 @@ class DisplayManager: ObservableObject {
         }
     }
 }
+
+// MARK: - Display Manager Accessor
+
+/// Thin wrapper so AutoBrightnessService can reach displays without a direct EnvironmentObject.
+@MainActor
+final class DisplayManagerAccessor {
+    static let shared = DisplayManagerAccessor()
+    var displays: [DisplayInfo] = []
+    private init() {}
+}
