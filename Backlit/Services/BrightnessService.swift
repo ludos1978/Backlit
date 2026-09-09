@@ -103,7 +103,7 @@ final class BrightnessService: @unchecked Sendable {
     static let shared = BrightnessService()
     private init() {}
 
-    private let queue = DispatchQueue(label: "com.freedisplay.brightness", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "io.github.ludos1978.backlit.brightness", qos: .userInitiated)
 
     // MARK: - Per-display Animators (main thread only)
 
@@ -208,7 +208,7 @@ final class BrightnessService: @unchecked Sendable {
     /// Records DDC availability from a DDC-queue completion.
     ///
     /// Must stay a plain (nonisolated) method with explicit lock()/unlock(): the
-    /// completions are invoked on `com.freedisplay.ddc`, and a `withLock { }`
+    /// completions are invoked on `io.github.ludos1978.backlit.ddc`, and a `withLock { }`
     /// closure created inside a `@MainActor` function is inferred main-actor
     /// isolated — the Swift 6 runtime traps (EXC_BREAKPOINT) when it runs there.
     private func setDDCAvailable(_ available: Bool, for displayID: CGDirectDisplayID) {

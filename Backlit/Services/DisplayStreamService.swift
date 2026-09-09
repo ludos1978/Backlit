@@ -87,7 +87,7 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
     private let videoLayer = AVSampleBufferDisplayLayer()
     private var stream: SCStream?
     private var output: StreamOutput?
-    private let sampleQueue = DispatchQueue(label: "com.freedisplay.displaystream", qos: .userInteractive)
+    private let sampleQueue = DispatchQueue(label: "io.github.ludos1978.backlit.displaystream", qos: .userInteractive)
 
     init(displayID: CGDirectDisplayID, title: String, onClose: @escaping () -> Void) {
         self.displayID = displayID
@@ -144,7 +144,7 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
     func startStreaming() async throws {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let scDisplay = content.displays.first(where: { $0.displayID == displayID }) else {
-            throw NSError(domain: "FreeDisplay.DisplayStream", code: 1,
+            throw NSError(domain: "Backlit.DisplayStream", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "the display is no longer available"])
         }
         // Exclude this very window from the capture: if it must live on the display

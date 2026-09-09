@@ -13,7 +13,7 @@
 
 - [x] **Task 1**: 创建 Objective-C Bridging Header（DDC + 虚拟显示器私有 API 共同前置）
   - 实现提示：
-    1. 在项目根目录创建 `FreeDisplay/FreeDisplay-Bridging-Header.h`，声明以下内容：
+    1. 在项目根目录创建 `Backlit/Backlit-Bridging-Header.h`，声明以下内容：
 
        ```objc
        // ── CGVirtualDisplay 私有类（macOS 14+ 虚拟显示器）──────────────────────
@@ -79,13 +79,13 @@
                                            uint32_t inputBufferSize);
        ```
 
-    2. 打开 `project.yml`，在 `targets.FreeDisplay.settings.base` 下添加：
+    2. 打开 `project.yml`，在 `targets.Backlit.settings.base` 下添加：
        ```yaml
-       SWIFT_OBJC_BRIDGING_HEADER: FreeDisplay/FreeDisplay-Bridging-Header.h
+       SWIFT_OBJC_BRIDGING_HEADER: Backlit/Backlit-Bridging-Header.h
        ```
-    3. 运行 `cd ~/Desktop/FreeDisplay && xcodegen generate`
+    3. 运行 `cd ~/Desktop/Backlit && xcodegen generate`
     4. 运行验证链确认编译通过（bridging header 空用也不应报错）
-  - 验证：`xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -5` 显示 `BUILD SUCCEEDED`
+  - 验证：`xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5` 显示 `BUILD SUCCEEDED`
 
 ---
 
@@ -180,9 +180,9 @@
        - 在滑块标题旁添加小标签：DDC 可用时显示 "DDC" (蓝色)，软件模式显示 "Software" (灰色)
        - 实现：从 `BrightnessService.shared.isDDCAvailable[display.id]` 读取状态
 
-  - 文件：`FreeDisplay/Services/DDCService.swift`（新增 `#if arch(arm64)` 块，现有 Intel 代码重命名）
-  - 文件：`FreeDisplay/Services/BrightnessService.swift`（新增软件降级逻辑）
-  - 文件：`FreeDisplay/Views/BrightnessSliderView.swift`（可选：模式指示标签）
+  - 文件：`Backlit/Services/DDCService.swift`（新增 `#if arch(arm64)` 块，现有 Intel 代码重命名）
+  - 文件：`Backlit/Services/BrightnessService.swift`（新增软件降级逻辑）
+  - 文件：`Backlit/Views/BrightnessSliderView.swift`（可选：模式指示标签）
   - 参考：MonitorControl `Arm64DDC.swift`、`m1ddc` 项目、alinpanaitiu.com/blog/journey-to-ddc-on-m1-macs/
   - 验证：外接显示器亮度滑块拖动 → 显示器亮度实际变化（DDC 成功）；DDC 不支持的显示器 → 自动降级到软件调光，滑块仍可用，标签显示 "Software"
 
@@ -270,8 +270,8 @@
        - 若失败（如权限不足），再退回到 plist override 路径
        - 在 UI 中区分两种路径：虚拟显示器路径立即生效，plist 路径需要重连显示器
 
-  - 文件：`FreeDisplay/Services/VirtualDisplayService.swift`（主要实现，替换占位 false）
-  - 文件：`FreeDisplay/Services/HiDPIService.swift`（切换 primary/fallback 路径）
+  - 文件：`Backlit/Services/VirtualDisplayService.swift`（主要实现，替换占位 false）
+  - 文件：`Backlit/Services/HiDPIService.swift`（切换 primary/fallback 路径）
   - 注意：`CGVirtualDisplay` 对象必须保持强引用（存到 `activeDisplayObjects` 字典），一旦 ARC 释放，虚拟显示器立即消失
   - 注意：`CGVirtualDisplayDescriptor.colorSpace` 是 `CGColorSpaceRef`（Core Foundation），在 Swift 里用 `CGColorSpace(name:)` 创建后直接赋值，不需要手动 retain
   - 参考：BetterDummy 项目 bridging header、KhaosT/CGVirtualDisplay 示例
@@ -325,15 +325,15 @@
        }
        ```
 
-  - 文件：`FreeDisplay/Services/NotchOverlayManager.swift`
-  - 文件：`FreeDisplay/Views/NotchView.swift`（若存在；否则在包含刘海 Toggle 的 View 文件中修改）
+  - 文件：`Backlit/Services/NotchOverlayManager.swift`
+  - 文件：`Backlit/Views/NotchView.swift`（若存在；否则在包含刘海 Toggle 的 View 文件中修改）
   - 验证：刘海开关反复 ON/OFF 十次 → 不崩溃；关闭菜单再重新打开 → 刘海开关状态与实际遮罩状态一致；Console.app 中无 EXC_BAD_ACCESS 或 objc over-release 日志
 
 ---
 
 - [x] **Task 5**: 集成测试与 UI 更新
   - 实现提示：
-    1. **DDC 验证**：外接 HKC H2435Q 接入 → 打开 FreeDisplay → 拖动亮度滑块 → 观察显示器物理亮度是否变化（可用眼睛判断或查看 IntegratedControlView 的 DDC 读值是否有回显）
+    1. **DDC 验证**：外接 HKC H2435Q 接入 → 打开 Backlit → 拖动亮度滑块 → 观察显示器物理亮度是否变化（可用眼睛判断或查看 IntegratedControlView 的 DDC 读值是否有回显）
     2. **HiDPI 验证**：外接 2K 显示器 → 打开 HiDPI 开关 → 系统偏好设置"显示器"中查看是否出现新的虚拟显示器 → 分辨率列表中是否出现 `1920×1080 (Retina)` → 选择该分辨率 → 文字是否明显更清晰
     3. **刘海验证**：内建 MacBook 屏幕 → 刘海开关 ON → 遮罩出现 → OFF → 遮罩消失 → 重复 10 次 → 不崩溃；关闭菜单再打开 → 状态一致
     4. **更新 `DisplayDetailView.swift` / `MenuBarView.swift`**（按需）：
@@ -342,8 +342,8 @@
     5. **更新 `docs/BLOCKING.md`**：
        - 将 B-002（DDC Apple Silicon 不可用）标记为已解决，移至"已解决区"
        - 将 B-003（HiDPI 虚拟显示器创建失败）标记为已解决，移至"已解决区"
-  - 文件：`FreeDisplay/Views/DisplayDetailView.swift`（按需小改）
-  - 文件：`FreeDisplay/Views/MenuBarView.swift`（按需小改）
+  - 文件：`Backlit/Views/DisplayDetailView.swift`（按需小改）
+  - 文件：`Backlit/Views/MenuBarView.swift`（按需小改）
   - 文件：`docs/BLOCKING.md`（移动已解决项）
   - 验证：见上三条手动测试；编译无警告无错误
 
@@ -353,7 +353,7 @@
 
 ```bash
 # 1. 编译检查
-cd ~/Desktop/FreeDisplay && xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -5
+cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5
 
 # 2. 手动测试清单：
 # [ ] DDC: 外接显示器亮度滑块 → 屏幕亮度实际变化（或软件模式标签正确显示）

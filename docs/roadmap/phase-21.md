@@ -40,7 +40,7 @@
 **实现提示**: MirrorService.swift 不能删！VirtualDisplayService 的 HiDPI 功能依赖 MirrorService.enableMirror/disableMirror。
 
 ### Task 4: 编译验证 + 清理
-- [x] `xcodegen generate && xcodebuild -scheme FreeDisplay -configuration Debug build`
+- [x] `xcodegen generate && xcodebuild -scheme Backlit -configuration Debug build`
 - [x] 更新 `docs/CODEMAP.md`：移除已删除文件的记录
 - [x] 更新 `README.md`：从功能列表中移除已删除功能
 - [x] 更新 `CHANGELOG.md`：添加 v1.1.0 条目记录功能精简
@@ -49,14 +49,14 @@
 
 ```bash
 # 编译通过
-xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -3
+xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -3
 
 # 确认文件已删除
-ls FreeDisplay/Services/RotationService.swift 2>&1  # should not exist
-ls FreeDisplay/Views/RotationView.swift 2>&1         # should not exist
-ls FreeDisplay/Views/StreamControlView.swift 2>&1    # should not exist
+ls Backlit/Services/RotationService.swift 2>&1  # should not exist
+ls Backlit/Views/RotationView.swift 2>&1         # should not exist
+ls Backlit/Views/StreamControlView.swift 2>&1    # should not exist
 
 # 确认无残留引用
-grep -r "RotationService\|RotationView\|StreamControlView\|PiPControlView\|ColorModeView\|MirrorView" FreeDisplay/ --include="*.swift" | grep -v "^Binary"
+grep -r "RotationService\|RotationView\|StreamControlView\|PiPControlView\|ColorModeView\|MirrorView" Backlit/ --include="*.swift" | grep -v "^Binary"
 # should return nothing
 ```

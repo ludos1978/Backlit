@@ -1,4 +1,4 @@
-# Roadmap — FreeDisplay
+# Roadmap — Backlit
 
 > 创建: 2026-03-02 | 目标: 完整替代 BetterDisplay 的免费 macOS 显示器管理菜单栏应用
 > **详细实现提示见**: `docs/roadmap/phase-N.md`
@@ -56,7 +56,7 @@
 ### Task 1: 预设数据模型
 - [x] 创建 `Models/DisplayPreset.swift`
 - [x] 创建 `Services/PresetService.swift`：加载/保存/应用预设
-- [x] 预设存储在 `~/Library/Application Support/FreeDisplay/presets.json`
+- [x] 预设存储在 `~/Library/Application Support/Backlit/presets.json`
 
 ### Task 2: 内置默认预设
 - [x] "HiDPI 模式"：enableHiDPIVirtual + 1920×1080 + 排列
@@ -87,7 +87,7 @@
 
 ### Task 3: DMG 打包
 - [x] 创建 `scripts/build-dmg.sh` 脚本
-- [x] Release 构建 + DMG 打包（FreeDisplay.app + Applications 快捷方式）
+- [x] Release 构建 + DMG 打包（Backlit.app + Applications 快捷方式）
 
 ### Task 4: GitHub Release
 - [x] README.md 添加功能截图

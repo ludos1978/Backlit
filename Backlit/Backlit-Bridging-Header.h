@@ -1,13 +1,13 @@
 //
-//  FreeDisplay-Bridging-Header.h
-//  FreeDisplay
+//  Backlit-Bridging-Header.h
+//  Backlit
 //
 //  Private API declarations for CGVirtualDisplay and IOAVService.
 //  Property names verified against Chromium's virtual_display_mac_util.mm.
 //
 
-#ifndef FreeDisplay_Bridging_Header_h
-#define FreeDisplay_Bridging_Header_h
+#ifndef Backlit_Bridging_Header_h
+#define Backlit_Bridging_Header_h
 
 #import <Foundation/Foundation.h>
 #import <CoreGraphics/CoreGraphics.h>
@@ -80,4 +80,4 @@ extern IOReturn IOAVServiceWriteI2C(IOAVServiceRef service,
                                     void *inputBuffer,
                                     uint32_t inputBufferSize);
 
-#endif /* FreeDisplay_Bridging_Header_h */
+#endif /* Backlit_Bridging_Header_h */

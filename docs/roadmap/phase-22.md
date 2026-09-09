@@ -8,7 +8,7 @@
 
 ## 技术方案
 
-macOS 系统已在为内建屏自动调节亮度（根据环境光）。FreeDisplay 只需要：
+macOS 系统已在为内建屏自动调节亮度（根据环境光）。Backlit 只需要：
 1. 每 2 秒轮询内建屏当前亮度（`IODisplayGetFloatParameter` 或 CoreDisplay 私有 API）
 2. 如果亮度变化超过阈值（2%），按用户设定的映射曲线同步到外接显示器
 3. 外接显示器通过 DDC VCP 0x10 或 gamma table 软件降级设置亮度
@@ -60,7 +60,7 @@ macOS 系统已在为内建屏自动调节亮度（根据环境光）。FreeDisp
 
 ```bash
 # 编译通过
-xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -3
+xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -3
 
 # 手动测试
 # 1. 开启自动亮度 → 调节 MacBook 亮度 → 外接显示器亮度跟随变化

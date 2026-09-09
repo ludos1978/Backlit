@@ -80,9 +80,9 @@ final class HiDPIService: @unchecked Sendable {
         let dirPath = overrideDir(vendor: vendor).path
         let plistPath = overridePlistURL(vendor: vendor, product: product).path
 
-        // Never overwrite an override file that FreeDisplay did not create.
+        // Never overwrite an override file that Backlit did not create.
         if FileManager.default.fileExists(atPath: plistPath) && !isManagedOverride(atPath: plistPath) {
-            return "An override for this display already exists that was not created by FreeDisplay — not touching it."
+            return "An override for this display already exists that was not created by Backlit — not touching it."
         }
 
         let scaledModes = generateScaledModes(nativeWidth: nativeWidth, nativeHeight: nativeHeight)
@@ -129,9 +129,9 @@ final class HiDPIService: @unchecked Sendable {
     private func disableHiDPIPlist(vendor: UInt32, product: UInt32) -> String? {
         let plistPath = overridePlistURL(vendor: vendor, product: product).path
         guard FileManager.default.fileExists(atPath: plistPath) else { return nil }
-        // Never delete an override file that FreeDisplay did not create.
+        // Never delete an override file that Backlit did not create.
         guard isManagedOverride(atPath: plistPath) else {
-            return "The override for this display was not created by FreeDisplay — not deleting it."
+            return "The override for this display was not created by Backlit — not deleting it."
         }
 
         if let err = executePrivilegedCommand("rm -f '\(plistPath)'") {
@@ -143,7 +143,7 @@ final class HiDPIService: @unchecked Sendable {
     // MARK: - Helpers
 
     /// Marker written into override plists so enable/disable only ever touch
-    /// files FreeDisplay created itself.
+    /// files Backlit created itself.
     private static let managedMarkerKey = "FreeDisplayManaged"
 
     private func isManagedOverride(atPath path: String) -> Bool {

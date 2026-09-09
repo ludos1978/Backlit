@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现分辨率模式枚举 (`FreeDisplay/Models/DisplayMode.swift`)
+- [x] 实现分辨率模式枚举 (`Backlit/Models/DisplayMode.swift`)
   - 实现提示：
     模型属性：`width: Int`、`height: Int`、`refreshRate: Double`、`bitDepth: Int`、
     `isHiDPI: Bool`、`isNative: Bool`、`ioDisplayModeID: Int32`。
@@ -15,7 +15,7 @@
     显示格式仿照 BetterDisplay：`1470x956` + 标签（刘海/60Hz/10bit）。
   - 验证：能列出内建屏的所有模式，包括 1470x956(HiDPI)、2560x1664(原生) 等
 
-- [x] 实现分辨率切换 (`FreeDisplay/Services/ResolutionService.swift`)
+- [x] 实现分辨率切换 (`Backlit/Services/ResolutionService.swift`)
   - 实现提示：
     ```swift
     func setDisplayMode(_ mode: CGDisplayMode, for displayID: CGDirectDisplayID) -> Bool
@@ -27,7 +27,7 @@
     或者通过创建自定义 timing 来注入 HiDPI 模式（Phase 10 虚拟显示器部分深入）。
   - 验证：切换分辨率后显示器实际分辨率变化
 
-- [x] 实现分辨率滑块 UI (`FreeDisplay/Views/ResolutionSliderView.swift`)
+- [x] 实现分辨率滑块 UI (`Backlit/Views/ResolutionSliderView.swift`)
   - 实现提示：
     仿照 BetterDisplay 截图的分辨率区域：水平 Slider + 右侧显示当前分辨率文本。
     Slider 的 step 对应可用模式列表的索引。
@@ -35,7 +35,7 @@
     拖动时实时预览分辨率文本变化，松手后切换。
   - 验证：拖动滑块显示分辨率文本变化
 
-- [x] 实现显示模式列表 UI (`FreeDisplay/Views/DisplayModeListView.swift`)
+- [x] 实现显示模式列表 UI (`Backlit/Views/DisplayModeListView.swift`)
   - 实现提示：
     可展开的"显示模式"section（仿照 BetterDisplay 截图布局）。
     分两组：
@@ -47,7 +47,7 @@
     添加"收藏"功能和"过滤..."按钮（仿截图的☆管理和⊙过滤）。
   - 验证：显示模式列表与 BetterDisplay 截图布局一致
 
-- [x] HiDPI 模式注入 (`FreeDisplay/Services/HiDPIService.swift`)
+- [x] HiDPI 模式注入 (`Backlit/Services/HiDPIService.swift`)
   - 实现提示：
     外接显示器默认不提供 HiDPI 模式。需要通过以下方式启用：
     1. 使用 `CGVirtualDisplay` 创建匹配外接分辨率的虚拟显示器（推荐，Phase 10 完善）

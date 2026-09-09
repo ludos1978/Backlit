@@ -1,4 +1,4 @@
-# Module Relationships — FreeDisplay
+# Module Relationships — Backlit
 
 > 模块关系图、Services 内部依赖、数据流。快速参考见 [CLAUDE.md](CLAUDE.md)，文件树见 [file-tree.md](file-tree.md)。
 
@@ -7,7 +7,7 @@
 ## 模块关系图 / Module Relationship Diagram
 
 ```
-App (FreeDisplayApp)
+App (BacklitApp)
   └── @StateObject DisplayManager
         └── @Published [DisplayInfo]
               └── MenuBarView (@EnvironmentObject DisplayManager)

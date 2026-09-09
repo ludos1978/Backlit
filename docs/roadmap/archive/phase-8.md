@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现硬件镜像 (`FreeDisplay/Services/MirrorService.swift`)
+- [x] 实现硬件镜像 (`Backlit/Services/MirrorService.swift`)
   - 实现提示：
     macOS 原生支持硬件级屏幕镜像，通过 CoreGraphics API：
     ```swift
@@ -27,7 +27,7 @@
     注意：硬件镜像要求两个显示器分辨率兼容。
   - 验证：启用镜像后两个显示器显示相同内容
 
-- [x] 实现屏幕镜像 UI (`FreeDisplay/Views/MirrorView.swift`)
+- [x] 实现屏幕镜像 UI (`Backlit/Views/MirrorView.swift`)
   - 实现提示：
     可展开的"屏幕镜像"section，仿照 BetterDisplay 截图：
     标题下方文字："将此显示器内容镜像到："

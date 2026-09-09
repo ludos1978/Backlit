@@ -18,7 +18,7 @@
     - `arrangement: CGPoint?`（可选排列位置）
     - `enableHiDPIVirtual: Bool`（是否启用 HiDPI 虚拟显示器）
 - [x] 创建 `Services/PresetService.swift`：加载/保存/应用预设
-- [x] 预设存储在 `~/Library/Application Support/FreeDisplay/presets.json`
+- [x] 预设存储在 `~/Library/Application Support/Backlit/presets.json`
 
 **实现提示**: 用 `display.displayUUID` 匹配显示器（已有稳定 UUID 生成逻辑）。预设应用时如果某个显示器不在线，跳过该条目。
 
@@ -49,7 +49,7 @@
 
 ```bash
 # 编译通过
-xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -3
+xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -3
 
 # 手动测试
 # 1. 开启 HiDPI → 保存为预设"工作模式" → 关闭 HiDPI → 点击"工作模式" → HiDPI 恢复

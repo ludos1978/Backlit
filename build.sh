@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# build.sh — clean build of FreeDisplay from the command line.
+# build.sh — clean build of Backlit from the command line.
 #
 #   ./build.sh                 clean Debug build
 #   ./build.sh --release       clean Release build
@@ -16,7 +16,7 @@
 # Requirements: Xcode (command line tools selected), and xcodegen
 # (brew install xcodegen) — used to regenerate the .xcodeproj from project.yml.
 #
-# Output: build/Build/Products/<Debug|Release>/FreeDisplay.app
+# Output: build/Build/Products/<Debug|Release>/Backlit.app
 # Full compiler log: build/xcodebuild.log
 
 set -euo pipefail
@@ -37,10 +37,10 @@ done
 # 1. Regenerate the Xcode project (new source files are picked up automatically).
 if command -v xcodegen >/dev/null 2>&1; then
     xcodegen generate >/dev/null
-elif [ ! -d FreeDisplay.xcodeproj ]; then
+elif [ ! -d Backlit.xcodeproj ]; then
     echo "xcodegen is required to generate the project: brew install xcodegen"; exit 1
 else
-    echo "note: xcodegen not installed — using the existing FreeDisplay.xcodeproj"
+    echo "note: xcodegen not installed — using the existing Backlit.xcodeproj"
 fi
 
 # 2. Decide how to sign.
@@ -55,9 +55,9 @@ fi
 # 3. Clean build.
 mkdir -p build
 echo "building: $CONFIG (clean) …"
-if xcodebuild -scheme FreeDisplay -configuration "$CONFIG" -derivedDataPath build \
+if xcodebuild -scheme Backlit -configuration "$CONFIG" -derivedDataPath build \
         clean build "${SIGN_ARGS[@]}" > build/xcodebuild.log 2>&1; then
-    APP="build/Build/Products/$CONFIG/FreeDisplay.app"
+    APP="build/Build/Products/$CONFIG/Backlit.app"
     echo "ok: $APP"
 else
     echo "BUILD FAILED — errors:"
@@ -68,7 +68,7 @@ fi
 
 # 4. Optionally (re)launch.
 if [ "$RUN" = 1 ]; then
-    pkill -f "FreeDisplay.app/Contents/MacOS/FreeDisplay" 2>/dev/null || true
+    pkill -f "Backlit.app/Contents/MacOS/Backlit" 2>/dev/null || true
     sleep 1
     open "$APP"
     echo "launched"

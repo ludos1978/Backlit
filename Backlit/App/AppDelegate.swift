@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             || defaults.bool(forKey: Self.cleanExitKey)
         defaults.set(false, forKey: Self.cleanExitKey)   // cleared again in applicationWillTerminate
         if !Self.previousExitWasClean {
-            print("[FreeDisplay] Previous session did not exit cleanly — persisted display adjustments are not re-applied automatically.")
+            print("[Backlit] Previous session did not exit cleanly — persisted display adjustments are not re-applied automatically.")
         }
 
         // Prevent duplicate launches: exit immediately if another instance is already running
@@ -26,7 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             $0.bundleIdentifier == Bundle.main.bundleIdentifier
         }
         if runningApps.count > 1 {
-            print("[FreeDisplay] Another instance is already running, exiting.")
+            print("[Backlit] Another instance is already running, exiting.")
             NSApp.terminate(nil)
             return
         }
@@ -70,7 +70,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let dm = DisplayManager.shared
                 dm.refreshDisplays()
                 try? await Task.sleep(nanoseconds: 500_000_000)
-                // Each area re-applies only while FreeDisplay owns it (Settings →
+                // Each area re-applies only while Backlit owns it (Settings →
                 // "Who controls each setting"); macOS-controlled areas are left alone.
                 let settings = SettingsService.shared
                 for display in dm.displays {

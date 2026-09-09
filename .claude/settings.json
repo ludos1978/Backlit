@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '⚠️ Remember: rebuild & relaunch FreeDisplay after edits'"
+            "command": "echo '⚠️ Remember: rebuild & relaunch Backlit after edits'"
           }
         ]
       }

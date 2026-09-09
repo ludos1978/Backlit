@@ -1,16 +1,16 @@
-# FreeDisplay
+# Backlit
 
 > **Free & open-source alternative to [BetterDisplay](https://github.com/waydabber/BetterDisplay)** — all the core display management features, zero cost.
 
-BetterDisplay is a great app, but its best features are locked behind a paid Pro license. FreeDisplay implements the most essential BetterDisplay features as a completely free, open-source macOS menu bar app.
+BetterDisplay is a great app, but its best features are locked behind a paid Pro license. Backlit implements the most essential BetterDisplay features as a completely free, open-source macOS menu bar app.
 
-[Download Latest Release](https://github.com/ludos1978/FreeDisplay/releases/latest) | [Report an Issue](https://github.com/huberdf/FreeDisplay/issues)
+[Download Latest Release](https://github.com/ludos1978/Backlit/releases/latest) | [Report an Issue](https://github.com/huberdf/FreeDisplay/issues)
 
 ---
 
 ## What BetterDisplay Features Does This Replace?
 
-| BetterDisplay Feature | FreeDisplay | Notes |
+| BetterDisplay Feature | Backlit | Notes |
 |----------------------|:-----------:|-------|
 | DDC Brightness & Contrast | ✅ | Hardware control via IOKit I2C (Intel) / IOAVService (Apple Silicon) |
 | Software Brightness (Gamma) | ✅ | Per-display gamma table control with smooth transitions |
@@ -42,33 +42,33 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 
 ## Installation
 
-FreeDisplay is ad-hoc signed and **not notarized**, so macOS shows "cannot be opened
+Backlit is ad-hoc signed and **not notarized**, so macOS shows "cannot be opened
 because the developer cannot be verified" on first launch unless the quarantine
 attribute is removed. Each option below covers that.
 
 ### Option 1: Homebrew (recommended)
 
 ```bash
-brew trust ludos1978/freedisplay          # Homebrew ≥ 6 requires trusting third-party taps
-brew tap ludos1978/freedisplay
-brew install --cask freedisplay
-xattr -d com.apple.quarantine /Applications/FreeDisplay.app
+brew trust ludos1978/backlit          # Homebrew ≥ 6 requires trusting third-party taps
+brew tap ludos1978/backlit
+brew install --cask backlit
+xattr -d com.apple.quarantine /Applications/Backlit.app
 ```
 
 The `xattr` line is required (Homebrew 6 always quarantines downloads and no longer
-offers `--no-quarantine`); repeat it after `brew upgrade --cask freedisplay`.
-Uninstall with `brew uninstall --cask freedisplay` (add `--zap` to also delete settings
+offers `--no-quarantine`); repeat it after `brew upgrade --cask backlit`.
+Uninstall with `brew uninstall --cask backlit` (add `--zap` to also delete settings
 and presets). Tap repository:
-[ludos1978/homebrew-freedisplay](https://github.com/ludos1978/homebrew-freedisplay).
+[ludos1978/homebrew-backlit](https://github.com/ludos1978/homebrew-backlit).
 
 ### Option 2: Download the release
 
-1. Download `FreeDisplay-<version>.zip` from [Releases](https://github.com/ludos1978/FreeDisplay/releases/latest)
-2. Unzip and move **FreeDisplay.app** to **Applications**
+1. Download `Backlit-<version>.zip` from [Releases](https://github.com/ludos1978/Backlit/releases/latest)
+2. Unzip and move **Backlit.app** to **Applications**
 3. Remove the quarantine attribute once, then launch normally:
 
 ```bash
-xattr -d com.apple.quarantine /Applications/FreeDisplay.app
+xattr -d com.apple.quarantine /Applications/Backlit.app
 ```
 
 (Alternatively: right-click the app → **Open** and confirm the one-time dialog.)
@@ -78,19 +78,19 @@ xattr -d com.apple.quarantine /Applications/FreeDisplay.app
 Requirements: Xcode and [xcodegen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
 ```bash
-git clone https://github.com/ludos1978/FreeDisplay.git
-cd FreeDisplay
+git clone https://github.com/ludos1978/Backlit.git
+cd Backlit
 ./build.sh --run          # clean Debug build, then launches the app
 ```
 
 `build.sh` does a **clean build** every time and prints where the app ended up
-(`build/Build/Products/Debug/FreeDisplay.app`; the full compiler log is in
+(`build/Build/Products/Debug/Backlit.app`; the full compiler log is in
 `build/xcodebuild.log`). Options:
 
 | Command | What it does |
 |---------|--------------|
 | `./build.sh` | clean Debug build |
-| `./build.sh --release` | clean Release build (`build/Build/Products/Release/FreeDisplay.app`) |
+| `./build.sh --release` | clean Release build (`build/Build/Products/Release/Backlit.app`) |
 | `./build.sh --run` | build, then quit any running copy and launch the new one |
 | `SIGN=adhoc ./build.sh` | force ad-hoc signing even if a certificate is installed |
 
@@ -104,7 +104,7 @@ Manual equivalent, if you prefer not to use the script:
 
 ```bash
 xcodegen generate
-xcodebuild -scheme FreeDisplay -configuration Release clean build \
+xcodebuild -scheme Backlit -configuration Release clean build \
     CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=    # omit these two when you have a certificate
 ```
 
@@ -128,13 +128,13 @@ Settings → *Who controls each setting* has a switch per area (Brightness & Dim
 Image Adjustment, XDR Brightness, Accessibility Contrast, Resolution & HiDPI,
 Arrangement & Main Display, Color Profile):
 
-- **On — FreeDisplay controls it:** the app owns the values, applies its saved state at
+- **On — Backlit controls it:** the app owns the values, applies its saved state at
   launch and after wake, and you change them in the menu.
-- **Off — macOS controls it:** FreeDisplay only *shows* the current value; the controls
+- **Off — macOS controls it:** Backlit only *shows* the current value; the controls
   are read-only and clicking one opens the matching macOS System Settings panel. Nothing
   in that area is applied automatically.
 
-Everything is FreeDisplay-controlled by default.
+Everything is Backlit-controlled by default.
 
 ---
 
@@ -143,12 +143,12 @@ Everything is FreeDisplay-controlled by default.
 Audited 2026-09-08 (full source review). What the app does and does not do:
 
 - **Network:** exactly one HTTPS request exists — the optional update check against the
-  GitHub Releases API for `ludos1978/FreeDisplay` (Settings → *Check for Updates at Launch*,
+  GitHub Releases API for `ludos1978/Backlit` (Settings → *Check for Updates at Launch*,
   **off by default**, once per hour at most, nothing about your machine is sent, only an
   `https://github.com` page is ever opened).
   There is no telemetry, analytics, crash reporting, or any other network code.
 - **What it stores:** settings in `UserDefaults` (all keys prefixed `fd.`) and presets in
-  `~/Library/Application Support/FreeDisplay/presets.json` — display UUIDs, resolutions,
+  `~/Library/Application Support/Backlit/presets.json` — display UUIDs, resolutions,
   brightness/gamma values, preset names. Nothing is shared or uploaded.
 - **Privileged operation:** enabling HiDPI overrides copies a plist into
   `/Library/Displays/…/Overrides/` after the *system's own* administrator password dialog.
@@ -190,7 +190,7 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
 ## Project Structure
 
 ```
-FreeDisplay/
+Backlit/
 ├── App/              # AppDelegate, app entry point
 ├── Models/           # DisplayInfo, DisplayMode, DisplayPreset
 ├── Services/         # System-level services (DDC, brightness, resolution, gamma, etc.)
@@ -201,7 +201,7 @@ FreeDisplay/
 
 ## How It Works
 
-FreeDisplay sits in your menu bar and talks directly to your displays:
+Backlit sits in your menu bar and talks directly to your displays:
 
 - **External monitors**: Uses DDC/CI protocol over I2C (Intel) or IOAVService (Apple Silicon) to control hardware brightness, contrast, and other settings
 - **Built-in display**: Uses CoreGraphics gamma tables for software brightness adjustment
@@ -228,5 +228,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
+- Backlit started as a fork of [FreeDisplay](https://github.com/huberdf/FreeDisplay) by huberdf
 - Inspired by [BetterDisplay](https://github.com/waydabber/BetterDisplay), [MonitorControl](https://github.com/MonitorControl/MonitorControl), and [Lunar](https://lunar.fyi/)
 - CGVirtualDisplay bridging header based on [Chromium's virtual_display_mac_util.mm](https://chromium.googlesource.com/chromium/src/+/main/ui/display/mac/test/virtual_display_mac_util.mm)

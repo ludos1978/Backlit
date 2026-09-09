@@ -9,7 +9,7 @@ final class UpdateService: ObservableObject, @unchecked Sendable {
     // GitHub repository whose Releases are checked (Settings → "Check for Updates
     // at Launch", off by default). Setting the owner to "OWNER" disables the check.
     private let repoOwner = "ludos1978"
-    private let repoName  = "FreeDisplay"
+    private let repoName  = "Backlit"
 
     // Current app bundle version (CFBundleShortVersionString)
     let currentVersion: String = {

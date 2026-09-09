@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现 Gamma Table 调整引擎 (`FreeDisplay/Services/GammaService.swift`)
+- [x] 实现 Gamma Table 调整引擎 (`Backlit/Services/GammaService.swift`)
   - 实现提示：
     macOS 通过 gamma table 实现软件级色彩调整。核心 API：
     ```swift
@@ -45,7 +45,7 @@
     或使用辅助功能 API `CGDisplaySetInvertedPolarity(true)` 如果可用。
   - 验证：开启反转后屏幕颜色全部反转
 
-- [x] 实现图像调整 UI (`FreeDisplay/Views/ImageAdjustmentView.swift`)
+- [x] 实现图像调整 UI (`Backlit/Views/ImageAdjustmentView.swift`)
   - 实现提示：
     可展开的"图像调整"section，仿照 BetterDisplay 截图：
     垂直排列多个滑块组：

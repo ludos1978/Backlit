@@ -1,4 +1,4 @@
-# FreeDisplay — Claude 上下文入口
+# Backlit — Claude 上下文入口
 
 > 版本: 2026-03-05 | 状态: Phase 22 完成
 
@@ -37,7 +37,7 @@ BetterDisplay 的免费开源替代品。macOS 菜单栏应用，管理显示器
 > **修复/开发类：**
 - 编译失败 → 先修到通过，不跳过
 - Swift 6 并发报错 → 用 `@MainActor` 或 `@unchecked Sendable`（项目已设 `SWIFT_STRICT_CONCURRENCY: minimal`）
-- 新增文件不需要改 project.yml（xcodegen 自动包含 FreeDisplay/ 下所有源文件）
+- 新增文件不需要改 project.yml（xcodegen 自动包含 Backlit/ 下所有源文件）
 
 > **SwiftUI 组件规则：**
 - 需要本地状态（isHovered、isLoading）的行组件 → 必须是独立 `struct`，❌ 不能是 `@ViewBuilder` 函数（@ViewBuilder 函数不支持 @State）
@@ -104,10 +104,10 @@ BetterDisplay 的免费开源替代品。macOS 菜单栏应用，管理显示器
 
 ```bash
 # 1. 编译检查
-cd ~/Desktop/FreeDisplay && xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -5
+cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5
 
 # 2. 联动检查（改了接口/模型时）
-grep -r "DisplayInfo\|DisplayManager\|DDCService" FreeDisplay/ --include="*.swift" | grep -v "^Binary"
+grep -r "DisplayInfo\|DisplayManager\|DDCService" Backlit/ --include="*.swift" | grep -v "^Binary"
 ```
 
 ## 常见操作 Playbook
@@ -137,14 +137,14 @@ grep -r "DisplayInfo\|DisplayManager\|DDCService" FreeDisplay/ --include="*.swif
 - **App 图标设计**: 使用 [Nano Banana](https://nano-banana.ai/)（Google Gemini 驱动的 AI 图像生成器）生成高质量图标
   - 支持文字描述生成图标、Logo、UI 元素
   - 生成后用 Python PIL 裁剪/缩放为 macOS 所需的多尺寸 PNG（16/32/64/128/256/512/1024）
-  - 图标文件位于 `FreeDisplay/Assets.xcassets/AppIcon.appiconset/`
+  - 图标文件位于 `Backlit/Assets.xcassets/AppIcon.appiconset/`
 
 ## 关键约定
 
 - **语言**: Swift 6.0（并发检查 minimal）
 - **最低系统**: macOS 14.0
 - **架构**: MVVM（View → ViewModel → Service）
-- **构建**: `xcodegen generate && xcodebuild -scheme FreeDisplay -configuration Debug build`
+- **构建**: `xcodegen generate && xcodebuild -scheme Backlit -configuration Debug build`
 - **无 Sandbox**: entitlements 已关闭 App Sandbox（DDC/IOKit 需要）
 - **无第三方依赖**: 全部用系统框架
 

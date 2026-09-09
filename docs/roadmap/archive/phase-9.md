@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现屏幕捕获引擎 (`FreeDisplay/Services/ScreenCaptureService.swift`)
+- [x] 实现屏幕捕获引擎 (`Backlit/Services/ScreenCaptureService.swift`)
   - 实现提示：
     使用 ScreenCaptureKit（macOS 12.3+）：
     ```swift
@@ -32,7 +32,7 @@
     需要屏幕录制权限：首次使用弹出授权对话框。
   - 验证：启动捕获后能获取到显示器画面帧
 
-- [x] 实现串流窗口 (`FreeDisplay/Views/StreamWindow.swift`)
+- [x] 实现串流窗口 (`Backlit/Views/StreamWindow.swift`)
   - 实现提示：
     创建独立 NSWindow 显示捕获画面：
     - `NSWindow(contentRect:, styleMask: [.titled, .closable, .resizable], ...)`
@@ -47,7 +47,7 @@
     窗口支持：调整大小时按比例缩放内容。
   - 验证：串流窗口实时显示目标显示器画面
 
-- [x] 实现串流选项 (`FreeDisplay/ViewModels/StreamViewModel.swift`)
+- [x] 实现串流选项 (`Backlit/ViewModels/StreamViewModel.swift`)
   - 实现提示：仿照 BetterDisplay 截图的屏幕串流区域，实现以下选项：
     - 显示鼠标指针：`config.showsCursor = true/false`
     - 1:1 像素映射：窗口大小 = 捕获分辨率
@@ -63,7 +63,7 @@
     - "连接时恢复串流"：UserDefaults 持久化
   - 验证：各选项切换后串流画面实际变化
 
-- [x] 实现画中画 (`FreeDisplay/Views/PiPWindow.swift`)
+- [x] 实现画中画 (`Backlit/Views/PiPWindow.swift`)
   - 实现提示：
     画中画 = 更小的浮动串流窗口 + 额外控制选项。
     基于 StreamWindow 扩展，增加：
@@ -78,7 +78,7 @@
     - 排除画中画窗口（不被自身捕获）：ScreenCaptureKit 的 `excludingWindows` 参数
   - 验证：PiP 窗口浮动在其他窗口之上，各选项工作
 
-- [x] 实现串流/PiP 的菜单 UI (`FreeDisplay/Views/StreamControlView.swift`, `PiPControlView.swift`)
+- [x] 实现串流/PiP 的菜单 UI (`Backlit/Views/StreamControlView.swift`, `PiPControlView.swift`)
   - 实现提示：
     两个可展开的 section："屏幕串流"和"画中画"，仿照 BetterDisplay 截图。
     串流区域：目标选择列表 + 停止按钮 + 所有选项开关/滑块

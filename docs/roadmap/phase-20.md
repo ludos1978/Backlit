@@ -4,7 +4,7 @@
 
 ## 目标
 
-将 FreeDisplay 从开发状态打包成可分发的正式 macOS 应用，含图标、代码清理、DMG 安装包、GitHub Release。
+将 Backlit 从开发状态打包成可分发的正式 macOS 应用，含图标、代码清理、DMG 安装包、GitHub Release。
 
 ## 任务
 
@@ -13,7 +13,7 @@
 - [x] 搜索并清理其他未使用代码/dead code
 - [x] 用 Python PIL/Pillow 脚本生成 App 图标：圆角矩形显示器 + "F" 字母 + 渐变蓝紫色
 - [x] 生成 AppIcon.appiconset 所有尺寸（16/32/64/128/256/512/1024）
-- [x] 创建 `FreeDisplay/Assets.xcassets/AppIcon.appiconset/Contents.json` + PNG 文件
+- [x] 创建 `Backlit/Assets.xcassets/AppIcon.appiconset/Contents.json` + PNG 文件
 - [x] 更新 project.yml 引用 AppIcon asset catalog
 
 **实现提示**: 用 Python 脚本生成 1024×1024 PNG，`sips -z H W` 缩放各尺寸。project.yml 需添加 `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon`。
@@ -28,12 +28,12 @@
 
 ### Task 3: Release 构建 + Ad-hoc 签名 + DMG 打包
 - [x] 创建 `scripts/build-dmg.sh` 一键脚本
-- [x] Release 构建：`xcodebuild -scheme FreeDisplay -configuration Release build`
-- [x] Ad-hoc 签名：`codesign --force --deep --sign - FreeDisplay.app`（无 Developer ID 时的最低要求）
-- [x] 使用 `hdiutil` 打包 DMG：FreeDisplay.app + Applications 快捷方式
+- [x] Release 构建：`xcodebuild -scheme Backlit -configuration Release build`
+- [x] Ad-hoc 签名：`codesign --force --deep --sign - Backlit.app`（无 Developer ID 时的最低要求）
+- [x] 使用 `hdiutil` 打包 DMG：Backlit.app + Applications 快捷方式
 - [x] 在 README 中说明首次打开需要右键→打开（绕过 Gatekeeper）
 
-**实现提示**: `hdiutil create -volname "FreeDisplay" -srcfolder build/ -ov -format UDZO FreeDisplay.dmg`。无 Developer ID 签名的 app 需要用户手动信任。
+**实现提示**: `hdiutil create -volname "Backlit" -srcfolder build/ -ov -format UDZO Backlit.dmg`。无 Developer ID 签名的 app 需要用户手动信任。
 
 ### Task 4: README + CHANGELOG + GitHub Release 脚本
 - [x] 编写 README.md：项目简介、功能列表、安装说明、截图占位符、Gatekeeper 绕过说明
@@ -41,11 +41,11 @@
 - [x] 创建 `scripts/release.sh`：构建 → 签名 → 打包 DMG → `gh release create`
 - [x] README 添加下载徽章
 
-**实现提示**: 截图需要人工运行 app 后用 `screencapture` 截取，先用占位符。`gh release create v1.0.0 --title "FreeDisplay v1.0.0" --notes-file CHANGELOG.md *.dmg`。
+**实现提示**: 截图需要人工运行 app 后用 `screencapture` 截取，先用占位符。`gh release create v1.0.0 --title "Backlit v1.0.0" --notes-file CHANGELOG.md *.dmg`。
 
 ### Task 5: UpdateService 完善
 - [x] 确认 UpdateService 检查更新逻辑指向 GitHub Releases API
-- [x] URL 用占位符 `https://api.github.com/repos/OWNER/FreeDisplay/releases/latest`（用户发布时替换）
+- [x] URL 用占位符 `https://api.github.com/repos/OWNER/Backlit/releases/latest`（用户发布时替换）
 - [x] 检测到新版本时在菜单栏显示下载链接
 - [x] 设置界面的"启动时检查更新"toggle 确认正常
 
@@ -55,7 +55,7 @@
 
 ```bash
 # Release 构建
-xcodebuild -scheme FreeDisplay -configuration Release build 2>&1 | tail -3
+xcodebuild -scheme Backlit -configuration Release build 2>&1 | tail -3
 
 # DMG 打包
 ./scripts/build-dmg.sh

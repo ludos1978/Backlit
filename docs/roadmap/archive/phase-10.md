@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现虚拟显示器创建 (`FreeDisplay/Services/VirtualDisplayService.swift`)
+- [x] 实现虚拟显示器创建 (`Backlit/Services/VirtualDisplayService.swift`)
   - 实现提示：
     使用 macOS 14+ 的 `CGVirtualDisplay` API：
     ```swift
@@ -12,7 +12,7 @@
 
     let descriptor = CGVirtualDisplayDescriptor()
     descriptor.queue = DispatchQueue.global()
-    descriptor.name = "FreeDisplay Virtual"
+    descriptor.name = "Backlit Virtual"
     descriptor.maxPixelsWide = 3840
     descriptor.maxPixelsHigh = 2160
     descriptor.sizeInMillimeters = CGSize(width: 600, height: 340) // 27 inch
@@ -47,7 +47,7 @@
     在 ResolutionService 中增加"高分辨率 (HiDPI)"开关，开启时自动创建配对虚拟显示器。
   - 验证：外接显示器开启 HiDPI 后分辨率列表出现缩放模式
 
-- [x] 实现虚拟显示器管理 UI (`FreeDisplay/Views/VirtualDisplayView.swift`)
+- [x] 实现虚拟显示器管理 UI (`Backlit/Views/VirtualDisplayView.swift`)
   - 实现提示：
     在"工具"区域添加"显示器和虚拟屏幕"入口（仿截图）。
     点击打开管理面板/窗口：

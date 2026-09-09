@@ -73,7 +73,7 @@ final class AccessibilityService: ObservableObject, @unchecked Sendable {
         let saved = UserDefaults.standard.double(forKey: Keys.displayContrast)
         if saved > 0 {
             displayContrast = saved
-            // Apply only while FreeDisplay owns accessibility contrast.
+            // Apply only while Backlit owns accessibility contrast.
             if SettingsService.shared.isAuthoritative(.accessibilityContrast) {
                 _ = _CGSSetDisplayContrast?(Float(min(max(saved, 0), 1)))
             }

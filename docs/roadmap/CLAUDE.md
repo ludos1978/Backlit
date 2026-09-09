@@ -1,4 +1,4 @@
-# Roadmap — FreeDisplay
+# Roadmap — Backlit
 
 > 创建: 2026-03-02 | 目标: 完整替代 BetterDisplay 的免费 macOS 显示器管理菜单栏应用
 
@@ -84,7 +84,7 @@ BetterDisplay 是 macOS 上功能最全面的显示器管理工具，但价格�
 | 日期 | 确认项 | 内容 |
 |------|--------|------|
 | 2026-03-02 | 功能范围 | 用户确认：全部功能都要，包括串流/PiP/虚拟显示器 |
-| 2026-03-02 | 项目位置 | ~/Desktop/FreeDisplay |
+| 2026-03-02 | 项目位置 | ~/Desktop/Backlit |
 | 2026-03-02 | 开发环境 | Xcode 已安装，xcodegen 2.44.1 已安装 |
 | 2026-03-02 | 用户硬件 | MacBook 内建显示屏 + HKC H2435Q 2K 外接显示器 |
 | 2026-03-04 | HiDPI 调试经验 | CGVirtualDisplay vendorID 非零、主线程创建、HiDPI 配置纯运行时等约束已记入 lessons |

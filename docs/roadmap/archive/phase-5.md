@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现 ICC Profile 枚举 (`FreeDisplay/Services/ColorProfileService.swift`)
+- [x] 实现 ICC Profile 枚举 (`Backlit/Services/ColorProfileService.swift`)
   - 实现提示：
     使用 ColorSync 框架枚举系统 ICC profiles：
     ```swift
@@ -34,7 +34,7 @@
     注意：需要通过 `CGDisplayCreateUUIDFromDisplayID` 获取 display UUID。
   - 验证：切换 profile 后显示器色彩明显变化
 
-- [x] 实现颜色描述文件 UI (`FreeDisplay/Views/ColorProfileView.swift`)
+- [x] 实现颜色描述文件 UI (`Backlit/Views/ColorProfileView.swift`)
   - 实现提示：
     可展开的"颜色描述文件"section。
     顶部显示当前 profile（如"彩色 LCD"），蓝色图标。
@@ -47,7 +47,7 @@
     仿照 BetterDisplay 截图的颜色描述文件区域布局。
   - 验证：profile 列表完整显示，点击可切换
 
-- [x] 实现色彩模式 UI (`FreeDisplay/Views/ColorModeView.swift`)
+- [x] 实现色彩模式 UI (`Backlit/Views/ColorModeView.swift`)
   - 实现提示：
     可展开的"色彩模式"section。
     显示当前模式信息（如"内部 (8-bit)"）+ 标签（SDR/RGB/全范围）。

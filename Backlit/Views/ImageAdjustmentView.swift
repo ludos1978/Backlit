@@ -167,7 +167,7 @@ struct ImageAdjustmentView: View {
             .osControlled(.imageAdjustment)
         }
         .onAppear {
-            // Re-apply visually only while FreeDisplay owns image adjustments.
+            // Re-apply visually only while Backlit owns image adjustments.
             reloadFromSaved(reapply: SettingsService.shared.isAuthoritative(.imageAdjustment))
             brightness = display.brightness
             extraDim = BrightnessService.shared.extraDimming(for: display.displayID)
@@ -327,8 +327,8 @@ struct ImageAdjustmentView: View {
                 .font(.caption)
 
             Text("Quantize")
-                .font(.caption)
-                .frame(width: 72, alignment: .leading)
+                .font(.body)
+                .frame(width: 104, alignment: .leading)
 
             Slider(value: $quantLevels, in: 2...256, step: 1) { editing in
                 if editing {
@@ -453,8 +453,9 @@ private struct AdjustRow: View {
                 .font(.caption)
 
             Text(label)
-                .font(.caption)
-                .frame(width: 80, alignment: .leading)
+                .font(.body)
+                .lineLimit(1)
+                .frame(width: 104, alignment: .leading)
 
             Slider(value: $value, in: range, step: 1) { editing in
                 isDragging = editing

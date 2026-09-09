@@ -50,7 +50,8 @@ struct DisplayModeListView: View {
             // Header
             HStack {
                 Text("Display Modes")
-                    .font(.caption)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
                     .foregroundColor(.secondary)
                 Spacer()
                 Button(action: { HiDPIService.shared.refreshModes(for: display) }) {

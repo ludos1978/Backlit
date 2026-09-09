@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现全局设置持久化 (`FreeDisplay/Services/SettingsService.swift`)
+- [x] 实现全局设置持久化 (`Backlit/Services/SettingsService.swift`)
   - 实现提示：
     使用 `UserDefaults.standard` + `@AppStorage` 持久化所有设置：
     - 各显示器的亮度/对比度/伽马偏好
@@ -15,17 +15,17 @@
     - 串流/PiP 窗口位置和大小
     - 收藏的分辨率模式
     复杂配置（虚拟显示器、快照）存储到
-    `~/Library/Application Support/FreeDisplay/` 的 JSON 文件。
+    `~/Library/Application Support/Backlit/` 的 JSON 文件。
   - 验证：修改设置 → 退出 → 重启 → 设置恢复
 
-- [x] 实现开机自启动 (`FreeDisplay/Services/LaunchService.swift`)
+- [x] 实现开机自启动 (`Backlit/Services/LaunchService.swift`)
   - 实现提示：
     使用 `SMAppService.mainApp.register()` (macOS 13+) 注册登录项。
     或使用 `LaunchAtLogin` 库。
     在设置中添加"开机启动"Toggle。
-  - 验证：重启 Mac 后 FreeDisplay 自动启动
+  - 验证：重启 Mac 后 Backlit 自动启动
 
-- [x] 实现"视频滤镜窗口"工具 (`FreeDisplay/Views/VideoFilterWindow.swift`)
+- [x] 实现"视频滤镜窗口"工具 (`Backlit/Views/VideoFilterWindow.swift`)
   - 实现提示：
     在"工具"区域添加入口（仿截图"视频滤镜窗口"）。
     创建独立窗口，实时预览 CIFilter 效果。
@@ -33,7 +33,7 @@
     选择滤镜后应用到串流/PiP 画面。
   - 验证：滤镜窗口正常显示，选择滤镜后串流画面变化
 
-- [x] 实现"系统颜色"工具 (`FreeDisplay/Views/SystemColorView.swift`)
+- [x] 实现"系统颜色"工具 (`Backlit/Views/SystemColorView.swift`)
   - 实现提示：
     在"工具"区域添加入口（仿截图"系统颜色"）。
     弹出取色器窗口：
@@ -42,7 +42,7 @@
     - 颜色历史记录
   - 验证：点击后可从屏幕任意位置取色
 
-- [x] 实现"检查更新"功能 (`FreeDisplay/Services/UpdateService.swift`)
+- [x] 实现"检查更新"功能 (`Backlit/Services/UpdateService.swift`)
   - 实现提示：
     如果开源发布到 GitHub，使用 GitHub Releases API 检查新版本：
     `GET https://api.github.com/repos/{owner}/{repo}/releases/latest`

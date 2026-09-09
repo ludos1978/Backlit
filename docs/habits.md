@@ -1,10 +1,10 @@
-# 工作习惯 — FreeDisplay
+# 工作习惯 — Backlit
 
 > 更新: 2026-03-02
 
 ## 构建与测试
 
-- 构建命令：`cd ~/Desktop/FreeDisplay && xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -5`
+- 构建命令：`cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5`
 - 改了 project.yml 后必须先 `xcodegen generate` 再 build
 - 编译输出很长，只看最后几行即可（`| tail -5`）
 
@@ -17,7 +17,7 @@
 ## 项目管理
 
 - xcodegen 管理项目，不手动编辑 .xcodeproj
-- 新文件放到 FreeDisplay/ 对应子目录，xcodegen 自动包含
+- 新文件放到 Backlit/ 对应子目录，xcodegen 自动包含
 - 每个 Phase 完成后更新 roadmap 中的 `[x]` 标记
 
 ## 代理执行质量控制

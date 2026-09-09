@@ -53,7 +53,7 @@
 
 - **Crash signature**: `EXC_BREAKPOINT` / `SIGTRAP` in `_dispatch_assert_queue_fail` ←
   `swift_task_checkIsolatedSwift`, faulting thread = a background dispatch queue
-  (e.g. `com.freedisplay.ddc`). It only appears when the background path actually runs —
+  (e.g. `io.github.ludos1978.backlit.ddc`). It only appears when the background path actually runs —
   for BrightnessService that meant a DDC external display; a MacBook alone never hit it.
 - **Cause**: a non-Sendable closure created inside a `@MainActor` function (here
   `ddcAvailableLock.withLock { … }` inside a DDC write completion) is inferred

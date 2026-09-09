@@ -17,7 +17,7 @@
 
 ### 改动协议
 
-1. 增删 `@Published` 属性 → `grep -r "DisplayInfo" FreeDisplay/ --include="*.swift"` 找所有引用
+1. 增删 `@Published` 属性 → `grep -r "DisplayInfo" Backlit/ --include="*.swift"` 找所有引用
 2. 同步更新所有引用点（编译通过 ≠ 逻辑正确）
 3. `loadDetails()` 是异步方法，在 `DisplayManager.refreshDisplays()` 中对新显示器调用
 

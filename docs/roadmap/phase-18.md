@@ -43,7 +43,7 @@
 
 ```bash
 # 编译通过
-xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -3
+xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -3
 
 # 手动测试
 # 1. 开启 HiDPI → 合盖睡眠 → 唤醒 → HiDPI 自动恢复 + 排列正确

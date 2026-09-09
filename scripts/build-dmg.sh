@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Configuration
-APP_NAME="FreeDisplay"
-SCHEME="FreeDisplay"
+APP_NAME="Backlit"
+SCHEME="Backlit"
 BUILD_DIR="$(pwd)/build"
 DMG_NAME="${APP_NAME}.dmg"
 

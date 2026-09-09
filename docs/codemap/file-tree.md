@@ -1,11 +1,11 @@
-# File Tree — FreeDisplay (Annotated)
+# File Tree — Backlit (Annotated)
 
 > 完整带注释的目录结构。快速参考见 [CLAUDE.md](CLAUDE.md)，模块关系见 [relationships.md](relationships.md)。
 
 ---
 
 ```
-FreeDisplay/
+Backlit/
 ├── docs/                           # 项目文档目录
 │   ├── roadmap/                    # Phase 规划文档（planner 产出，不要手改结构）
 │   │   ├── CLAUDE.md               # roadmap 总览与当前阶段说明
@@ -36,10 +36,10 @@ FreeDisplay/
 │   ├── lessons.md                  # 踩坑经验与教训
 │   └── ROADMAP.md                  # 总体进度追踪（autopilot 靠此追踪 [x] 标记）
 ├── build.sh                        # Clean build script: xcodegen generate → xcodebuild clean build into build/ (ad-hoc signing when no Apple Development certificate; --release, --run; SIGN=adhoc)
-├── FreeDisplay/                    # Swift 源码目录（xcodegen 自动包含所有 .swift）
+├── Backlit/                    # Swift 源码目录（xcodegen 自动包含所有 .swift）
 │   ├── App/                        # 应用入口，SwiftUI App 生命周期
 │   │   ├── AppDelegate.swift       # NSApplicationDelegate，确保仅在菜单栏显示；改动影响 App 生命周期钩子
-│   │   └── FreeDisplayApp.swift    # @main 入口，创建 DisplayManager 并挂载 MenuBarView；改动影响整个 App 初始化链
+│   │   └── BacklitApp.swift    # @main 入口，创建 DisplayManager 并挂载 MenuBarView；改动影响整个 App 初始化链
 │   ├── Models/                     # 数据模型层（纯数据，无副作用）
 │   │   ├── DisplayInfo.swift       # ⚠️ 核心显示器模型，12+ @Published 属性；所有 View/Service 均依赖此类，属性增删需全局 grep 同步
 │   │   ├── DisplayMode.swift       # 单个显示模式（分辨率+刷新率+HiDPI 标志）的值类型；枚举逻辑改动影响分辨率切换和模式列表展示
@@ -58,17 +58,17 @@ FreeDisplay/
 │   │   ├── MirrorService.swift             # CGDisplayConfiguration 硬件级屏幕镜像的启用/停止；enableMirror/disableMirror 已异步化，CG 事务在 CGHelpers.runWithTimeout 内执行；改动影响镜像功能
 │   │   ├── NotchOverlayManager.swift       # 在内建屏刘海区域创建黑色遮罩 NSWindow（screenSaver 级别）；改动影响刘海遮罩的视觉效果和层级
 │   │   ├── ResolutionService.swift         # 通过 CGConfigureDisplayWithDisplayMode 切换显示模式；applyModeSync 已异步化，整个 CG 事务在 CGHelpers.runWithTimeout 内执行；resolvedTargetDisplayID() 在镜像检测时回退到 VirtualDisplayService；改动影响分辨率切换成功率
-│   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；PreferenceArea ownership model (authoritativeAreas: FreeDisplay-controlled vs macOS-controlled per area, gates launch/wake re-apply) + per-display brightness by UUID；改动需注意 key 命名（必须 fd. 前缀）和向后兼容。Opt-in (default OFF) switches: interceptBrightnessKeys (event tap), autoEnableHiDPI (override plist on new 2K+ externals)
+│   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；PreferenceArea ownership model (authoritativeAreas: Backlit-controlled vs macOS-controlled per area, gates launch/wake re-apply) + per-display brightness by UUID；改动需注意 key 命名（必须 fd. 前缀）和向后兼容。Opt-in (default OFF) switches: interceptBrightnessKeys (event tap), autoEnableHiDPI (override plist on new 2K+ externals)
 │   │   ├── AccessibilityService.swift      # Bridges macOS Accessibility "Increase contrast" + "Display Contrast" via private SPI (UAIncreaseContrastSetEnabled, CGSSetDisplayContrast, dlsym) — the pref domain is TCC-protected and pref writes are not applied live; follows System Settings changes via NSWorkspace notification
 │   │   ├── DisplayStreamService.swift      # Live stream window for a (virtual) display: ScreenCaptureKit SCStream → AVSampleBufferDisplayLayer in a floating aspect-locked NSWindow on a physical screen; needs Screen Recording permission
 │   │   ├── UndoService.swift               # App-wide undo stack for display adjustments (⌘Z in the menu window); controls push restore closures on gesture begin, views re-sync via undoTick
 │   │   ├── UpdateService.swift             # GitHub Releases API 检查新版本，语义化版本比较；改动影响更新检查逻辑
 │   │   ├── XDRBrightnessService.swift      # XDR brightness mode (BrightIntosh-style, clean-room): 1×1 EDR trigger overlay per XDR panel + gamma-table boost via GammaService.setXDRBoost; persists fd.xdr.* keys, polls EDR headroom 1s
 │   │   ├── VirtualDisplayService.swift     # 虚拟显示器创建/销毁：CGVirtualDisplay 私有 API（vendorID 必须非零如 0xEEEE，主线程创建），HiDPI via 镜像模式，CGHelpers.runWithTimeout 超时保护，hiDPILog 文件调试日志，ObjC 类型 Sendable 扩展；HiDPI 配置仅运行时生效不持久化；改动影响虚拟显示器和 HiDPI 一键预设功能
-│   │   └── PresetService.swift             # 预设管理（user presets only; generated Native/HiDPI built-ins removed 2026-09-08）：保存/加载/应用显示器配置预设；使用 DisplayManagerAccessor 读取当前显示器状态；presets.json 存储在 ~/Library/Application Support/FreeDisplay/。Captures the built-in display too (brightness + gamma; its resolution is never changed on apply) plus XDR and accessibility contrast state
+│   │   └── PresetService.swift             # 预设管理（user presets only; generated Native/HiDPI built-ins removed 2026-09-08）：保存/加载/应用显示器配置预设；使用 DisplayManagerAccessor 读取当前显示器状态；presets.json 存储在 ~/Library/Application Support/Backlit/。Captures the built-in display too (brightness + gamma; its resolution is never changed on apply) plus XDR and accessibility contrast state
 │   ├── Utilities/                  # 工具扩展
 │   │   └── NSScreenExtension.swift         # NSScreen 扩展：按 CGDirectDisplayID 查找 NSScreen，获取 displayID；被 NotchView、NotchOverlayManager 依赖
-│   ├── FreeDisplay-Bridging-Header.h       # 私有 API 声明：CGVirtualDisplay（macOS 14+）和 IOAVService（Apple Silicon DDC）；属性名已对照 Chromium 源码验证（maxPixelsWide/maxPixelsHigh 非 maxPixelSize）
+│   ├── Backlit-Bridging-Header.h       # 私有 API 声明：CGVirtualDisplay（macOS 14+）和 IOAVService（Apple Silicon DDC）；属性名已对照 Chromium 源码验证（maxPixelsWide/maxPixelsHigh 非 maxPixelSize）
 │   └── Views/                      # SwiftUI 视图层
 │       ├── ArrangementView.swift           # 多显示器拖拽排列画布（内外屏缩略图区分）+ 设为主显示器按钮；依赖 ArrangementService
 │       ├── AutoBrightnessView.swift        # 自动亮度开关 + 灵敏度滑块 + 环境光 lux 显示；依赖 AutoBrightnessService
@@ -89,7 +89,7 @@ FreeDisplay/
 │       ├── XDRBrightnessView.swift         # XDR brightness section (tools panel: toggle + level slider) + XDRQuickSliderView (top-section quick slider, 0 = off); depends on XDRBrightnessService
 │       ├── VirtualDisplayView.swift        # 虚拟显示器配置列表 + 创建表单（预设分辨率）+ HiDPI 一键预设；依赖 VirtualDisplayService
 │       └── SavePresetView.swift            # 保存当前显示器状态为预设；内联表单（名称 + 图标选择器）；调用 PresetService.captureCurrentState + addPreset
-├── FreeDisplay.xcodeproj/          # Xcode 项目文件（由 xcodegen 生成，不要手动编辑）
+├── Backlit.xcodeproj/          # Xcode 项目文件（由 xcodegen 生成，不要手动编辑）
 ├── .gitignore                      # Git 忽略规则
 ├── build.sh                        # 快速构建脚本
 ├── CLAUDE.md                       # Claude 上下文入口（项目规则、决策约定）

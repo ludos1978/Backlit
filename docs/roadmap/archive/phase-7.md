@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现"设为主显示屏"UI 和逻辑 (`FreeDisplay/Views/MainDisplayView.swift`)
+- [x] 实现"设为主显示屏"UI 和逻辑 (`Backlit/Views/MainDisplayView.swift`)
   - 实现提示：
     在菜单中添加"设为主显示屏"选项（Ⓜ 图标），仿截图的蓝色 M 圆形图标。
     逻辑已在 Phase 4 的 ArrangementService 中实现（移到坐标原点）。
@@ -12,7 +12,7 @@
     点击其他显示器的"设为主显示屏"按钮切换。
   - 验证：点击后 Dock 和菜单栏移到目标显示器
 
-- [x] 实现"显示刘海"管理 (`FreeDisplay/Views/NotchView.swift`)
+- [x] 实现"显示刘海"管理 (`Backlit/Views/NotchView.swift`)
   - 实现提示：
     MacBook 有刘海（notch），影响分辨率和布局。
     功能：在分辨率列表中标注"刘海"标签（仿截图中的"刘海 60Hz 10bit"）。
@@ -21,7 +21,7 @@
     （创建一个 borderless、always-on-top 的黑色 NSWindow，覆盖刘海区域）。
   - 验证：内建屏分辨率旁正确显示"刘海"标签
 
-- [x] 实现"集成控制"(DDC 扩展) (`FreeDisplay/Views/IntegratedControlView.swift`)
+- [x] 实现"集成控制"(DDC 扩展) (`Backlit/Views/IntegratedControlView.swift`)
   - 实现提示：
     可展开的"集成控制"section，仿截图布局：
     - "从设备读取并更新"按钮：读取所有 DDC VCP code 并刷新 UI
@@ -33,7 +33,7 @@
     结果存储到 DisplayInfo 的 `ddcValues: [UInt8: UInt16]` 字典中。
   - 验证：点击"从设备读取"后外接显示器的 DDC 参数正确显示
 
-- [x] 实现"管理显示器"设置 (`FreeDisplay/Views/ManageDisplayView.swift`)
+- [x] 实现"管理显示器"设置 (`Backlit/Views/ManageDisplayView.swift`)
   - 实现提示：
     可展开的"管理显示器"section，仿截图：
     - "配置显示..."：打开系统偏好设置的显示器面板

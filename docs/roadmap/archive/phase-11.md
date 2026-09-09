@@ -4,7 +4,7 @@
 
 ## 任务列表
 
-- [x] 实现配置快照 (`FreeDisplay/Services/ConfigProtectionService.swift`)
+- [x] 实现配置快照 (`Backlit/Services/ConfigProtectionService.swift`)
   - 实现提示：
     保存当前显示器完整配置的快照：
     ```swift
@@ -24,7 +24,7 @@
         let origin: CGPoint
     }
     ```
-    快照存储到 `~/Library/Application Support/FreeDisplay/configs/`，JSON 格式。
+    快照存储到 `~/Library/Application Support/Backlit/configs/`，JSON 格式。
     支持多个命名快照（"日间配置"、"夜间配置"等）。
   - 验证：保存快照后 JSON 文件正确生成
 
@@ -38,7 +38,7 @@
     启用/禁用所有保护的快捷按钮。
   - 验证：保护分辨率后，从系统设置改分辨率会被自动恢复
 
-- [x] 实现配置保护 UI (`FreeDisplay/Views/ConfigProtectionView.swift`)
+- [x] 实现配置保护 UI (`Backlit/Views/ConfigProtectionView.swift`)
   - 实现提示：
     可展开的"配置保护"section，仿截图：
     保护项列表，每行一个 Toggle：
@@ -49,7 +49,7 @@
     - 说明文字："此应用程序所做设置受到保护。"
   - 验证：UI 与 BetterDisplay 截图一致
 
-- [x] 实现自动亮度 (`FreeDisplay/Services/AutoBrightnessService.swift`)
+- [x] 实现自动亮度 (`Backlit/Services/AutoBrightnessService.swift`)
   - 实现提示：
     macOS 内建显示器有环境光传感器。
     读取环境光：`IOServiceGetMatchingService` + `AppleLMUController` 读取 lux 值。
@@ -60,7 +60,7 @@
     设置选项："自动亮度"Toggle + 灵敏度滑块。
   - 验证：遮挡环境光传感器时屏幕亮度自动降低
 
-- [x] 实现自动亮度 UI (`FreeDisplay/Views/AutoBrightnessView.swift`)
+- [x] 实现自动亮度 UI (`Backlit/Views/AutoBrightnessView.swift`)
   - 实现提示：
     在菜单底部或显示器详情中添加"自动亮度"选项（Ⓐ蓝色图标），仿截图。
     Toggle 开关 + 可选的灵敏度滑块。

@@ -1,4 +1,4 @@
-# Code Map — FreeDisplay (Quick Reference)
+# Code Map — Backlit (Quick Reference)
 
 > **用途**: Claude 代码导航快速参考。详细文件树见 `file-tree.md`，模块关系图见 `relationships.md`。
 > **维护**: 重大结构变更后更新描述和模块关系图。
@@ -19,7 +19,7 @@
 
 | 模块 | 职责 | 关键文件 | 注意事项 |
 |------|------|---------|---------|
-| **App** | 应用生命周期、MenuBarExtra 场景声明 | `FreeDisplayApp.swift` | DisplayManager 在此创建并注入 environmentObject |
+| **App** | 应用生命周期、MenuBarExtra 场景声明 | `BacklitApp.swift` | DisplayManager 在此创建并注入 environmentObject |
 | **Models** | 纯数据结构，ObservableObject | `DisplayInfo.swift`, `DisplayMode.swift` | 改 DisplayInfo 属性必须全局 grep 同步 |
 | **Services** | 系统框架交互，无 UI | `DDCService.swift`, `DisplayManager.swift`, `BrightnessService.swift` 等 | 大多数 Service 是 @MainActor 单例 |
 | **Views** | SwiftUI 视图，纯展示和交互 | `MenuBarView.swift`, `DisplayDetailView.swift` | 不要在 View 里写业务逻辑，调 Service |
@@ -53,7 +53,7 @@
 | 修改通知/热插拔响应 | `Services/DisplayManager.swift`（displayReconfigCallback + refreshDisplays） |
 | 修改 HiDPI Override 生成 | `Services/HiDPIService.swift`（generateScaledModes + plist 路径） |
 | 修改取色器/颜色历史 | `Views/SystemColorView.swift`（SystemColorViewModel）、`Services/SettingsService.swift`（colorPickerHistory） |
-| 修改虚拟显示器逻辑 | `Services/VirtualDisplayService.swift`、`FreeDisplay-Bridging-Header.h`（私有 API 声明） |
+| 修改虚拟显示器逻辑 | `Services/VirtualDisplayService.swift`、`Backlit-Bridging-Header.h`（私有 API 声明） |
 
 ---
 
@@ -61,9 +61,9 @@
 
 - **DisplayInfo 属性联动**：改了 `DisplayInfo` → grep 所有引用点同步更新，否则编译可能通过但逻辑错误
 - **project.yml**：改了后必须 `xcodegen generate` 重新生成 xcodeproj
-- **新增源文件**：`FreeDisplay/` 目录下所有 `.swift` 文件 xcodegen 自动包含，不需要改 `project.yml`
+- **新增源文件**：`Backlit/` 目录下所有 `.swift` 文件 xcodegen 自动包含，不需要改 `project.yml`
 - **Swift 6 并发**：项目设 `SWIFT_STRICT_CONCURRENCY: minimal`，并发报错用 `@MainActor` 或 `@unchecked Sendable` 处理
 - **无 Sandbox**：entitlements 已关闭 App Sandbox，IOKit / /Library/Displays 等直接访问可用
-- **Bridging Header 私有 API**：`FreeDisplay-Bridging-Header.h` 中的 CGVirtualDisplay / IOAVService 声明基于 Chromium 源码验证，修改前需重新核对属性名
+- **Bridging Header 私有 API**：`Backlit-Bridging-Header.h` 中的 CGVirtualDisplay / IOAVService 声明基于 Chromium 源码验证，修改前需重新核对属性名
 - **HiDPIService 权限**：写 `/Library/Displays/` 需要管理员权限，无权限时返回错误字符串供 UI 展示
 - **CGHelpers.runWithTimeout**：WindowServer IPC 可能阻塞主线程，所有 CG 配置事务须通过此工具在后台线程以超时保护执行

@@ -1,5 +1,5 @@
 
-  autopilot | FreeDisplay | max=5 fail=3 timeout=900s parallel=3
+  autopilot | Backlit | max=5 fail=3 timeout=900s parallel=3
   待完成: 38 | 已完成: 122
 
   [并行模式] 确保 git 环境就绪...

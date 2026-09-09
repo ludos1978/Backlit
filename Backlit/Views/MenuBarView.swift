@@ -136,7 +136,7 @@ struct MenuBarView: View {
     @State private var quitHovered = false
     /// Section folds (persisted — the menu content is rebuilt on every open).
     @AppStorage("fd.menu.screensExpanded") private var showScreens: Bool = true
-    @AppStorage("fd.menu.toolsExpanded") private var showTools: Bool = true
+    @AppStorage("fd.menu.optionsExpanded") private var showOptions: Bool = true
     /// Natural height of the scrollable content, reported via preference key.
     /// Inside a MenuBarExtra `.window` panel a ScrollView collapses to zero
     /// height (the panel sizes to the view's ideal size), so the ScrollView
@@ -212,10 +212,10 @@ struct MenuBarView: View {
                     .opacity(0.3)
                     .padding(.vertical, 2)
 
-                // ── Tools (foldable) ────────────────────────────────────
-                FoldableSectionHeader(title: "Tools", isExpanded: $showTools)
+                // ── Options (foldable): tools + settings ────────────────
+                FoldableSectionHeader(title: "Options", isExpanded: $showOptions)
 
-                if showTools {
+                if showOptions {
                     // Arrange displays (Phase 4) — only with more than one display
                     if visibleDisplays.count > 1 {
                         ExpandableRow(
@@ -278,24 +278,20 @@ struct MenuBarView: View {
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                     }
-                }
 
-                Divider()
-                    .opacity(0.3)
-                    .padding(.vertical, 2)
+                    // Settings (Phase 12) — inside the Options fold
+                    ExpandableRow(
+                        icon: "gearshape.fill",
+                        iconColor: .gray,
+                        label: "Settings",
+                        isExpanded: $showSettings
+                    )
 
-                // Settings section (Phase 12)
-                ExpandableRow(
-                    icon: "gearshape.fill",
-                    iconColor: .gray,
-                    label: "Settings",
-                    isExpanded: $showSettings
-                )
-
-                if showSettings {
-                    SettingsView()
-                        .padding(.leading, 8)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    if showSettings {
+                        SettingsView()
+                            .padding(.leading, 8)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
 
                 Divider()
@@ -340,7 +336,7 @@ struct MenuBarView: View {
 
         // Version + quit footer (pinned, does not scroll with content)
         HStack {
-            Text("FreeDisplay v\(updateService.currentVersion)")
+            Text("Backlit v\(updateService.currentVersion)")
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
@@ -363,7 +359,7 @@ struct MenuBarView: View {
             .buttonStyle(.plain)
             .foregroundColor(quitHovered ? .red : .secondary)
             .onHover { quitHovered = $0 }
-            .help("Quit FreeDisplay")
+            .help("Quit Backlit")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -427,7 +423,7 @@ struct SettingsView: View {
             .toggleStyle(.switch)
             .controlSize(.small)
             .padding(.horizontal, 12)
-            .help("Start FreeDisplay automatically when you log in")
+            .help("Start Backlit automatically when you log in")
 
             // First-launch hint: suggest enabling launch at login
             if !settings.launchAtLoginPrompted {
@@ -504,7 +500,7 @@ struct SettingsView: View {
             .toggleStyle(.switch)
             .controlSize(.small)
             .padding(.horizontal, 12)
-            .help("Route F1/F2 to the external display under the cursor via DDC, with FreeDisplay's own on-screen indicator (needs Accessibility permission)")
+            .help("Route F1/F2 to the external display under the cursor via DDC, with Backlit's own on-screen indicator (needs Accessibility permission)")
 
             // Auto HiDPI on new displays (opt-in)
             Toggle(isOn: $settings.autoEnableHiDPI) {
@@ -529,7 +525,7 @@ struct SettingsView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
-            Text("On: FreeDisplay owns it — applies its saved values at launch and lets you change them here. Off: macOS owns it — FreeDisplay only shows the current value, and clicking a control opens the macOS settings panel.")
+            Text("On: Backlit owns it — applies its saved values at launch and lets you change them here. Off: macOS owns it — Backlit only shows the current value, and clicking a control opens the macOS settings panel.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -552,7 +548,7 @@ struct SettingsView: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .padding(.horizontal, 12)
-                .help("On: FreeDisplay controls \(area.title). Off: macOS controls it (System Settings → \(area.osPanelName)); FreeDisplay only displays it.")
+                .help("On: Backlit controls \(area.title). Off: macOS controls it (System Settings → \(area.osPanelName)); Backlit only displays it.")
             }
         }
         .padding(.vertical, 6)

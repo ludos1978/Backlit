@@ -1,4 +1,4 @@
-# Blocking Issues — FreeDisplay
+# Blocking Issues — Backlit
 
 > 更新: 2026-03-02 | **开工前必读，有未解决的 P0/P1 问题时必须先处理**
 
@@ -37,7 +37,7 @@
 - **经验**: macOS HiDPI 方案只有两条路：(1) plist override（BetterDisplay 方案，需 admin + 重连）(2) CGVirtualDisplay 纯虚拟显示器（不与物理屏镜像）。❌ 绝对不要用 CGConfigureDisplayMirrorOfDisplay。
 
 ### ~~B-002: CGVirtualDisplay 是私有 API，无公开头文件~~
-- **解法**: 用户批准使用私有 API。已创建 FreeDisplay-Bridging-Header.h 声明 CGVirtualDisplay + IOAVService 接口，VirtualDisplayService 已实现完整的虚拟显示器创建/销毁功能。
+- **解法**: 用户批准使用私有 API。已创建 Backlit-Bridging-Header.h 声明 CGVirtualDisplay + IOAVService 接口，VirtualDisplayService 已实现完整的虚拟显示器创建/销毁功能。
 - **解决日期**: 2026-03-03
 
 ### ~~B-003: DDC 亮度控制对部分外接显示器无效~~

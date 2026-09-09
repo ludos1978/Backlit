@@ -171,7 +171,7 @@
 
 ```bash
 # 1. 编译无警告
-xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | grep -E "warning:|error:" | head -20
+xcodebuild -scheme Backlit -configuration Debug build 2>&1 | grep -E "warning:|error:" | head -20
 
 # 2. 手动测试清单
 # - 打开 app → 亮度显示真实值（非 50%）

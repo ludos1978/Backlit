@@ -22,8 +22,7 @@ struct AccessibilityContrastView: View {
                     .font(.caption)
                     .accessibilityHidden(true)
                 Text("Increase Contrast (System)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.body)
                 Spacer()
                 ResetButton(visible: service.increaseContrast) {
                     service.pushUndoSnapshot()

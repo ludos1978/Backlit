@@ -4,9 +4,9 @@ import CoreGraphics
 import Combine
 import SwiftUI
 
-/// An area of display preferences that is owned either by FreeDisplay or by macOS.
+/// An area of display preferences that is owned either by Backlit or by macOS.
 ///
-/// - FreeDisplay-controlled ("authoritative"): the app applies its saved values at
+/// - Backlit-controlled ("authoritative"): the app applies its saved values at
 ///   launch/wake and the user edits them in the menu.
 /// - macOS-controlled: the app only shows the current value; its controls are
 ///   read-only and clicking one opens the matching macOS System Settings panel.
@@ -51,7 +51,7 @@ enum PreferenceArea: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The macOS System Settings panel that owns this area when FreeDisplay does not.
+    /// The macOS System Settings panel that owns this area when Backlit does not.
     var osPanelURL: URL {
         switch self {
         case .accessibilityContrast:
@@ -72,7 +72,7 @@ enum PreferenceArea: String, CaseIterable, Identifiable {
 
 /// Centralized settings persistence service.
 /// Simple settings use UserDefaults via @AppStorage-compatible keys.
-/// Complex configurations are stored as JSON in ~/Library/Application Support/FreeDisplay/.
+/// Complex configurations are stored as JSON in ~/Library/Application Support/Backlit/.
 @MainActor
 final class SettingsService: ObservableObject, @unchecked Sendable {
     static let shared = SettingsService()
@@ -80,13 +80,40 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
     private let defaults = UserDefaults.standard
     private let supportDir: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("FreeDisplay", isDirectory: true)
+        let dir = base.appendingPathComponent("Backlit", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }()
 
     private init() {
+        migrateFromFreeDisplayIfNeeded()
         loadAll()
+    }
+
+    /// One-time migration from the app's former identity (FreeDisplay,
+    /// bundle id com.freedisplay.app): copies the old preference domain's
+    /// `fd.*` keys and the old Application Support folder (presets) if the
+    /// new ones are still empty. Old data is left in place.
+    private func migrateFromFreeDisplayIfNeeded() {
+        let migratedKey = "fd.migratedFromFreeDisplay"
+        guard !defaults.bool(forKey: migratedKey) else { return }
+        defaults.set(true, forKey: migratedKey)
+
+        if let old = UserDefaults(suiteName: "com.freedisplay.app")?.dictionaryRepresentation() {
+            for (key, value) in old where key.hasPrefix("fd.") && defaults.object(forKey: key) == nil {
+                defaults.set(value, forKey: key)
+            }
+        }
+
+        let fm = FileManager.default
+        let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let oldDir = base.appendingPathComponent("FreeDisplay", isDirectory: true)
+        let newDir = base.appendingPathComponent("Backlit", isDirectory: true)
+        guard let items = try? fm.contentsOfDirectory(atPath: oldDir.path) else { return }
+        try? fm.createDirectory(at: newDir, withIntermediateDirectories: true)
+        for item in items where !fm.fileExists(atPath: newDir.appendingPathComponent(item).path) {
+            try? fm.copyItem(at: oldDir.appendingPathComponent(item), to: newDir.appendingPathComponent(item))
+        }
     }
 
     // MARK: - Keys
@@ -131,10 +158,10 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         didSet { defaults.set(ddcCacheTTL, forKey: Keys.ddcCacheTTL) }
     }
 
-    /// Areas FreeDisplay owns (applies its saved values at launch and lets the user
+    /// Areas Backlit owns (applies its saved values at launch and lets the user
     /// edit them). Areas not in the set are macOS-controlled: read-only in the menu,
     /// click opens System Settings, nothing is applied automatically.
-    /// Default: FreeDisplay owns everything (the app's existing behaviour).
+    /// Default: Backlit owns everything (the app's existing behaviour).
     @Published var authoritativeAreas: Set<PreferenceArea> = Set(PreferenceArea.allCases) {
         didSet { defaults.set(authoritativeAreas.map(\.rawValue).sorted(), forKey: Keys.authoritativeAreas) }
     }
@@ -146,7 +173,7 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
     }
 
     // MARK: - Per-display brightness (by stable display UUID; restored at launch
-    // when the Brightness area is FreeDisplay-controlled)
+    // when the Brightness area is Backlit-controlled)
 
     func savedBrightness(uuid: String) -> Double? {
         let key = Keys.brightnessByUUIDPrefix + uuid

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct FreeDisplayApp: App {
+struct BacklitApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     // All launch-time work lives in AppDelegate.applicationDidFinishLaunching:

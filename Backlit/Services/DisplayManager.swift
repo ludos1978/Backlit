@@ -103,7 +103,7 @@ class DisplayManager: ObservableObject {
             // Restore saved gamma/software-brightness adjustments for the reconnected display.
             // Brief delay lets WindowServer settle before we write transfer tables.
             // Skipped when the previous session crashed (see AppDelegate.previousExitWasClean).
-            // Only for areas FreeDisplay owns (Settings → "Who controls each setting").
+            // Only for areas Backlit owns (Settings → "Who controls each setting").
             if AppDelegate.previousExitWasClean {
                 let settings = SettingsService.shared
                 Task { @MainActor in

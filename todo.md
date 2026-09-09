@@ -1,4 +1,4 @@
-# FreeDisplay — Feature TODO
+# Backlit — Feature TODO
 
 > Backlog of researched-but-not-yet-implemented features (2026-09-07).
 > Sources researched: MacOS-DPIManager (MIT), SimpleDisplay (GPL-3.0), BrightIntosh (GPL-3.0).
@@ -28,8 +28,8 @@
       bounded serial-slot per `VirtualDisplayConfig` so identity is stable across relaunches;
       pin profile via `ColorSyncDeviceSetCustomProfiles` (avoid `ColorSyncUnregisterDevice`,
       it hangs). Fixes .icc churn / mode-swap-after-relaunch. Effort: small.
-- [ ] **URL scheme + CLI automation** — `freedisplay://` URL commands plus a tiny
-      `freedisplayctl` binary (create/remove virtual displays, presets, brightness, JSON
+- [ ] **URL scheme + CLI automation** — `backlit://` URL commands plus a tiny
+      `backlitctl` binary (create/remove virtual displays, presets, brightness, JSON
       status export). Scriptable from Shortcuts/SSH/launchd. Effort: medium.
 - [ ] **Virtual display device presets** — iPhone/iPad/TV resolution preset table on top of
       the existing CGVirtualDisplay support. Effort: tiny.

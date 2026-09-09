@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to FreeDisplay are documented here.
+All notable changes to Backlit are documented here.
 
 ---
 

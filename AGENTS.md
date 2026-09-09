@@ -1,4 +1,4 @@
-# AGENTS.md — FreeDisplay Project Harness Configuration
+# AGENTS.md — Backlit Project Harness Configuration
 
 > This file defines the harness rules for AI agents working on this project.
 > AI agents MUST read this file before making any changes.
@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-- **Name**: FreeDisplay
+- **Name**: Backlit
 - **Language**: Swift 6.0（并发检查设为 minimal）
 - **Framework**: SwiftUI (MenuBarExtra) + AppKit
 - **Package Manager**: 无（零第三方依赖，全部系统框架）
@@ -33,12 +33,12 @@ Models/         → 纯数据结构（DisplayInfo、DisplayMode、DisplayPreset�
 
 | 目录 | 职责 |
 |------|------|
-| `FreeDisplay/Services/` | 所有系统级操作（DDC、亮度、分辨率、HiDPI、排列等） |
-| `FreeDisplay/Views/` | SwiftUI 视图，文件名格式：`XxxView.swift` 或 `XxxRow.swift` |
-| `FreeDisplay/ViewModels/` | 状态管理，与 View 1:1 或多 View 共享 |
-| `FreeDisplay/Models/` | 数据结构，无副作用 |
-| `FreeDisplay/Utilities/` | 通用工具函数 |
-| `FreeDisplay/Resources/` | 静态资源 |
+| `Backlit/Services/` | 所有系统级操作（DDC、亮度、分辨率、HiDPI、排列等） |
+| `Backlit/Views/` | SwiftUI 视图，文件名格式：`XxxView.swift` 或 `XxxRow.swift` |
+| `Backlit/ViewModels/` | 状态管理，与 View 1:1 或多 View 共享 |
+| `Backlit/Models/` | 数据结构，无副作用 |
+| `Backlit/Utilities/` | 通用工具函数 |
+| `Backlit/Resources/` | 静态资源 |
 | `docs/` | 项目文档（不要改结构） |
 | `scripts/` | 构建和发布脚本 |
 
@@ -46,7 +46,7 @@ Models/         → 纯数据结构（DisplayInfo、DisplayMode、DisplayPreset�
 
 以下文件修改前需明确说明原因：
 
-- `FreeDisplay/FreeDisplay.entitlements` — 权限声明，改动影响签名和 App Sandbox
+- `Backlit/Backlit.entitlements` — 权限声明，改动影响签名和 App Sandbox
 - `project.yml` — XcodeGen 配置，改后必须重新运行 `xcodegen generate`
 - `ExportOptions.plist` — 发布签名配置
 - `docs/roadmap/` — 规划文档，只更新 `[x]` 进度标记，不改结构
@@ -85,16 +85,16 @@ Models/         → 纯数据结构（DisplayInfo、DisplayMode、DisplayPreset�
 
 ```bash
 # 编译检查（Debug）— 每次改完必跑
-cd ~/Desktop/FreeDisplay && xcodebuild -scheme FreeDisplay -configuration Debug build 2>&1 | tail -20
+cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -20
 
 # 联动检查（改了接口/模型时）
-grep -r "DisplayInfo\|DisplayManager\|DDCService" FreeDisplay/ --include="*.swift" | grep -v "^Binary"
+grep -r "DisplayInfo\|DisplayManager\|DDCService" Backlit/ --include="*.swift" | grep -v "^Binary"
 
 # 重新生成 xcodeproj（改了 project.yml 时必跑）
-cd ~/Desktop/FreeDisplay && xcodegen generate
+cd ~/Desktop/Backlit && xcodegen generate
 
 # Release 构建 + 打包 DMG
-cd ~/Desktop/FreeDisplay && ./build.sh
+cd ~/Desktop/Backlit && ./build.sh
 ```
 
 ### Test Coverage

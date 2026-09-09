@@ -1,33 +1,33 @@
-name: FreeDisplay
+name: Backlit
 options:
-  bundleIdPrefix: com.freedisplay
+  bundleIdPrefix: com.backlit
   deploymentTarget:
     macOS: "14.0"
 
 targets:
-  FreeDisplay:
+  Backlit:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - path: FreeDisplay
+      - path: Backlit
         excludes:
           - "**/*.md"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.freedisplay.app
-        MARKETING_VERSION: "0.3.0"
-        CURRENT_PROJECT_VERSION: "3"
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.ludos1978.backlit
+        MARKETING_VERSION: "0.4.0"
+        CURRENT_PROJECT_VERSION: "4"
         INFOPLIST_KEY_LSUIElement: true
-        INFOPLIST_KEY_NSHumanReadableCopyright: "FreeDisplay - Free & Open Source"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Backlit - Free & Open Source"
         SWIFT_VERSION: "6.0"
-        CODE_SIGN_ENTITLEMENTS: FreeDisplay/FreeDisplay.entitlements
+        CODE_SIGN_ENTITLEMENTS: Backlit/Backlit.entitlements
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGNING_REQUIRED: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         DEVELOPMENT_TEAM: 29W56PHWJR
         SWIFT_STRICT_CONCURRENCY: minimal
-        SWIFT_OBJC_BRIDGING_HEADER: FreeDisplay/FreeDisplay-Bridging-Header.h
+        SWIFT_OBJC_BRIDGING_HEADER: Backlit/Backlit-Bridging-Header.h
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSScreenCaptureUsageDescription: "FreeDisplay needs screen recording permission to show live previews of each display."
+        INFOPLIST_KEY_NSScreenCaptureUsageDescription: "Backlit needs screen recording permission to show live previews of each display."
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

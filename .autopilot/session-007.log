@@ -13,7 +13,7 @@
 Phase 10 的虚拟显示器功能目前使用占位实现（返回 `false`）。要真正创建/销毁虚拟显示器，需要决定：
 
 **选项 A（允许使用私有 API）**:
-- 添加 `FreeDisplay-Bridging-Header.h`，声明 `CGVirtualDisplay` 私有接口
+- 添加 `Backlit-Bridging-Header.h`，声明 `CGVirtualDisplay` 私有接口
 - 在 `project.yml` 设置 `SWIFT_OBJC_BRIDGING_HEADER`
 - 实现完整的虚拟显示器创建/销毁功能
 - 风险：依赖私有 API，macOS 版本升级可能失效
