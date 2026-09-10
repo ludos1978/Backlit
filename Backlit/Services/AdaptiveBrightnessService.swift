@@ -330,15 +330,17 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
         let u = AdaptiveCurve.ambientCoordinate(lux: mode.usesAmbient ? lux : nil)
         let builtin = DisplayManagerAccessor.shared.displays.first(where: { $0.isBuiltin })
 
-        for display in enabledDisplays() {
+        let enabled = enabledDisplays()
+        debugLog("[Adaptive] tick: \(enabled.count) display(s) enabled, lux=\(String(describing: lux))")
+        for display in enabled {
             let id = display.displayID
             let uuid = display.displayUUID
             let l = mode.usesContent ? (lightness[uuid] ?? samplers[id]?.lightness ?? 0.5) : 0.5
 
             // 1. Manual change detection → learn, then hold for a few seconds.
             var manual: Double?
-            if let t = BrightnessService.shared.lastManualAdjust(for: id), t > (lastLearnedManualAt[id] ?? .distantPast),
-               now.timeIntervalSince(t) >= 1.0 {
+            if let t = BrightnessService.shared.lastManualAdjust(for: id), t > (lastLearnedManualAt[id] ?? .distantPast) {
+                if now.timeIntervalSince(t) < 1.0 { continue }   // still being adjusted — do not fight it
                 manual = display.brightness
                 lastLearnedManualAt[id] = t
             } else if display.isBuiltin, let hw = BrightnessService.shared.hardwareBacklight(for: id),
@@ -378,11 +380,13 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
             // 3. Rate-limited move.
             let current = lastApplied[id] ?? display.brightness
             let delta = t - current
+            debugLog("[Adaptive] \(display.name): mode=\(mode.rawValue) L=\(String(format: "%.2f", l)) u=\(String(format: "%.2f", u)) target=\(Int(t)) current=\(Int(current)) ddc=\(String(describing: BrightnessService.shared.isDDCAvailable(for: id)))")
             guard abs(delta) >= 2 else { continue }
             let step = max(-speed.maxStep, min(speed.maxStep, delta))
             let next = current + step
             lastApplied[id] = next
             lastWriteAt[id] = now
+            debugLog("[Adaptive] \(display.name): write \(Int(next))")
             BrightnessService.shared.setBrightnessSmooth(next, for: display, isAutoAdjust: true)
         }
     }
