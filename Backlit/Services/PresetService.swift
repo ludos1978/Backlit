@@ -92,6 +92,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                abs(level - XDRBrightnessService.shared.level) > 0.005 { return true }
         }
         if let ic = preset.increaseContrast, ic != AccessibilityService.shared.increaseContrast { return true }
+        if let ad = preset.adaptiveBrightnessEnabled, ad != AdaptiveBrightnessService.shared.isEnabled { return true }
         if let dc = preset.displayContrast, abs(dc - AccessibilityService.shared.displayContrast) > 0.005 { return true }
         return false
     }
@@ -133,6 +134,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
         }
         lastAppliedPresetID = preset.id
 
+        let settings = SettingsService.shared
         let displays = DisplayManagerAccessor.shared.displays
         debugLog("[PresetService] applyPreset '\(preset.name)': \(displays.count) display(s) online, preset has \(preset.displays.count) entr(ies)")
 
@@ -162,8 +164,9 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             debugLog("[PresetService]   -> matched display '\(display.name)' (id=\(displayID)), \(display.availableModes.count) available modes")
 
             // Set resolution — never for the built-in display (policy), but
-            // brightness/gamma below still apply to it.
-            if display.isBuiltin {
+            // brightness/gamma below still apply to it. Skipped while macOS owns
+            // the Resolution area.
+            if display.isBuiltin || !settings.isAuthoritative(.resolution) {
                 debugLog("[PresetService]   -> built-in display, skipping resolution change")
             } else {
                 let targetMode = display.availableModes.first(where: {
@@ -194,7 +197,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             }
 
             // Set brightness if specified (convert 0.0-1.0 to 0-100 range used by BrightnessService)
-            if let brightness = entry.brightness {
+            if let brightness = entry.brightness, settings.isAuthoritative(.brightness) {
                 debugLog("[PresetService]   -> setting brightness \(brightness)")
                 await BrightnessService.shared.setBrightness(
                     brightness * 100.0,
@@ -206,7 +209,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
 
             // Restore the captured gamma/image adjustment (nil = preset from an
             // older version → leave gamma untouched).
-            if let adj = entry.gammaAdjustment {
+            if let adj = entry.gammaAdjustment, settings.isAuthoritative(.imageAdjustment) {
                 debugLog("[PresetService]   -> applying gamma adjustment (neutral=\(adj.isNeutral))")
                 if adj.isNeutral {
                     GammaService.shared.clearSavedState(for: displayID)
@@ -220,7 +223,8 @@ final class PresetService: ObservableObject, @unchecked Sendable {
 
             // Restore extra dimming below the hardware minimum (nil = older preset
             // or not applicable to this display → untouched).
-            if let dim = entry.softwareDimming, BrightnessService.shared.supportsExtraDimming(display) {
+            if let dim = entry.softwareDimming, settings.isAuthoritative(.brightness),
+               BrightnessService.shared.supportsExtraDimming(display) {
                 debugLog("[PresetService]   -> setting extra dimming \(dim)%")
                 BrightnessService.shared.setExtraDimming(dim, for: displayID)
                 anyActionTaken = true
@@ -243,19 +247,61 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             }
         }
 
+        // Displays the preset does not cover (attached after it was saved) still
+        // get its generic, non-hardware-specific values — brightness, extra
+        // dimming and image adjustment — from a template entry (the built-in's
+        // if stored, else the first). Resolution/refresh rate and positions are
+        // hardware-specific and stay untouched on such displays.
+        let covered = Set(preset.displays.map(\.displayUUID))
+        let template = preset.displays.first(where: { e in displays.first { $0.displayUUID == e.displayUUID }?.isBuiltin == true })
+            ?? preset.displays.first
+        if let template {
+            for display in displays where display.isOnline && !covered.contains(display.displayUUID)
+                && !VirtualDisplayService.shared.isVirtualDisplay(display.displayID) {
+                let displayID = display.displayID
+                debugLog("[PresetService] uncovered display '\(display.name)' → generic values from template")
+                if let brightness = template.brightness, settings.isAuthoritative(.brightness) {
+                    await BrightnessService.shared.setBrightness(brightness * 100.0, for: display, isAutoAdjust: false)
+                    anyActionTaken = true
+                }
+                if let adj = template.gammaAdjustment, settings.isAuthoritative(.imageAdjustment) {
+                    if adj.isNeutral {
+                        GammaService.shared.clearSavedState(for: displayID)
+                        GammaService.shared.resetSingleDisplay(displayID)
+                    } else {
+                        GammaService.shared.apply(adj, for: displayID)
+                        GammaService.shared.saveState(adj, for: displayID)
+                    }
+                    anyActionTaken = true
+                }
+                if let dim = template.softwareDimming, settings.isAuthoritative(.brightness),
+                   BrightnessService.shared.supportsExtraDimming(display) {
+                    BrightnessService.shared.setExtraDimming(dim, for: displayID)
+                    anyActionTaken = true
+                }
+            }
+        }
+
+        // Adaptive brightness would otherwise pull the brightness away again
+        // seconds after the preset applied it — restore the state it was saved with.
+        if let adaptive = preset.adaptiveBrightnessEnabled, settings.isAuthoritative(.brightness),
+           AdaptiveBrightnessService.shared.isEnabled != adaptive {
+            AdaptiveBrightnessService.shared.isEnabled = adaptive
+        }
+
         // Restore app-level state captured with the preset (nil = older preset,
         // leave untouched). Level is set before the enabled flag so start()
         // never applies a stale boost.
-        if let level = preset.xdrLevel {
+        if let level = preset.xdrLevel, settings.isAuthoritative(.xdr) {
             XDRBrightnessService.shared.level = level
         }
-        if let enabled = preset.xdrEnabled, XDRBrightnessService.shared.isEnabled != enabled {
+        if let enabled = preset.xdrEnabled, settings.isAuthoritative(.xdr), XDRBrightnessService.shared.isEnabled != enabled {
             XDRBrightnessService.shared.isEnabled = enabled
         }
-        if let increase = preset.increaseContrast {
+        if let increase = preset.increaseContrast, settings.isAuthoritative(.accessibilityContrast) {
             AccessibilityService.shared.increaseContrast = increase
         }
-        if let contrast = preset.displayContrast {
+        if let contrast = preset.displayContrast, settings.isAuthoritative(.accessibilityContrast) {
             AccessibilityService.shared.displayContrast = contrast
         }
 
@@ -293,6 +339,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
         }
         var preset = DisplayPreset(name: name, icon: icon, displays: entries)
         preset.restoresArrangement = includeArrangement
+        preset.adaptiveBrightnessEnabled = AdaptiveBrightnessService.shared.isEnabled
         preset.xdrEnabled = XDRBrightnessService.shared.isEnabled
         preset.xdrLevel = XDRBrightnessService.shared.level
         preset.increaseContrast = AccessibilityService.shared.increaseContrast

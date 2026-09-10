@@ -27,4 +27,5 @@ struct DisplayPreset: Codable, Identifiable {
     var increaseContrast: Bool?    // accessibility "Increase contrast"
     var displayContrast: Double?   // accessibility "Display Contrast" 0-1
     var restoresArrangement: Bool? // opt-in: apply stored display positions (nil/false = never)
+    var adaptiveBrightnessEnabled: Bool? // adaptive brightness on/off at save time (nil = older preset)
 }
