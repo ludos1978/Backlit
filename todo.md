@@ -72,6 +72,8 @@
          an unvalidated server URL → https + github.com only. 5. LOW — privileged command built by
          interpolation → character-set guard (plus the earlier private temp-dir staging fix).
          6. LOW — DDC wrong-monitor warning was never shown → surfaced in the brightness panel.
+         (Root cause fixed 2026-09-10: AVServices are now matched by EDID UUID + serial number,
+         so identical monitors no longer fall back to index order — see docs/lessons/iokit.md.)
       Disclosures for users are in README → Security & Privacy.
 - [x] **Copyright / license provenance audit** (2026-09-08): no files from BrightIntosh (GPL-3.0),
       SimpleDisplay (GPL-3.0) or MacOS-DPIManager (MIT) are in the repo; XDR feature written from

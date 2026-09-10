@@ -55,17 +55,31 @@ final class DDCService: ObservableObject, @unchecked Sendable {
     /// and we fall back to index-based AVService assignment.
     @Published var mappingWarning: String? = nil
 
-    /// Attempts to match an IOAVService (DCPAVServiceProxy) to a CGDirectDisplayID by
-    /// comparing IORegistry properties against CoreGraphics display attributes.
+    /// Identity of a connected display as published by its IOMobileFramebufferShim node.
+    /// The "EDID UUID" (raw EDID header bytes) links the framebuffer to the DCP endpoint
+    /// that drives it; the product attributes link it to CoreGraphics' display IDs.
+    private struct FramebufferIdentity {
+        let edidUUID: String
+        let vendor: UInt32?
+        let product: UInt32?
+        let serial: UInt32?
+    }
+
+    /// Builds the display→AVService map for all online external displays.
     ///
-    /// Matching strategy (in order of reliability):
-    ///   1. Walk up the IORegistry parent chain from the DCPAVServiceProxy node to find a node
-    ///      that has both "DisplayVendorID" and "DisplayProductID", then compare against
-    ///      CGDisplayVendorNumber / CGDisplayModelNumber for each external display.
-    ///   2. If no vendor/product match is found, fall back to sorted-index assignment and
-    ///      emit a console warning (and set mappingWarning if >1 external display).
+    /// A DCPAVServiceProxy node carries no display identity of its own, and on Apple
+    /// Silicon its ancestors are generic DCP/IOP plumbing. The identity lives elsewhere:
+    ///   1. The DCP endpoint the proxy belongs to (`RTBuddy(DCPEXTn)`) has a sibling
+    ///      branch (`AppleDCPDPTXRemotePortUFP`) whose "DisplayHints" carry the EDID UUID
+    ///      of the connected monitor.
+    ///   2. The IOMobileFramebufferShim for that monitor publishes the same "EDID UUID"
+    ///      plus "DisplayAttributes/ProductAttributes" (vendor, product, serial number).
+    ///   3. CoreGraphics exposes vendor, model and serial number per display ID.
+    /// Comparing vendor + product + serial distinguishes two identical monitors, which the
+    /// previous vendor/product-only matching could not.
     ///
-    /// Returns a dictionary mapping each matched external CGDirectDisplayID to its AVService.
+    /// Fallbacks, in order: legacy "DisplayVendorID"/"DisplayProductID" ancestor properties,
+    /// then sorted-index assignment (with `mappingWarning` set when it is ambiguous).
     private func buildAVServiceMap(
         workingServices: [(service: IOAVServiceRef, ioEntry: io_service_t)]
     ) -> [CGDirectDisplayID: IOAVServiceRef] {
@@ -80,23 +94,22 @@ final class DDCService: ObservableObject, @unchecked Sendable {
 
         guard !externalIDs.isEmpty else { return [:] }
 
+        let identities = framebufferIdentities()
         var result: [CGDirectDisplayID: IOAVServiceRef] = [:]
         var unmatchedServices: [(service: IOAVServiceRef, ioEntry: io_service_t)] = []
 
-        // Strategy 1: IORegistry property matching
+        // Strategy 1: IORegistry identity matching
         for entry in workingServices {
             guard let matched = matchAVServiceToDisplay(
                 ioEntry: entry.ioEntry,
                 candidates: externalIDs,
-                alreadyMapped: Set(result.keys)
+                alreadyMapped: Set(result.keys),
+                identities: identities
             ) else {
                 unmatchedServices.append(entry)
                 continue
             }
             result[matched] = entry.service
-            #if DEBUG
-            print("[DDCService] ARM64: IORegistry matched AVService to display \(matched) (vendor/product)")
-            #endif
         }
 
         // Strategy 2: Index fallback for any remaining unmatched services/displays
@@ -126,14 +139,166 @@ final class DDCService: ObservableObject, @unchecked Sendable {
         return result
     }
 
-    /// Walks up the IORegistry parent chain from `ioEntry` looking for a node
-    /// that has both "DisplayVendorID" and "DisplayProductID" properties.
-    /// Returns the CGDirectDisplayID from `candidates` whose vendor+model matches,
-    /// excluding any IDs already in `alreadyMapped`.
+    /// Reads every IOMobileFramebufferShim node and returns the identity of each display
+    /// that carries an "EDID UUID" (external displays; the built-in panel has none).
+    private func framebufferIdentities() -> [FramebufferIdentity] {
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(
+            kIOMainPortDefault,
+            IOServiceMatching("IOMobileFramebufferShim"),
+            &iterator
+        ) == KERN_SUCCESS else { return [] }
+        defer { IOObjectRelease(iterator) }
+
+        var identities: [FramebufferIdentity] = []
+        var entry = IOIteratorNext(iterator)
+        while entry != IO_OBJECT_NULL {
+            defer { IOObjectRelease(entry); entry = IOIteratorNext(iterator) }
+            guard let uuid = IORegistryEntryCreateCFProperty(
+                entry, "EDID UUID" as CFString, kCFAllocatorDefault, 0
+            )?.takeRetainedValue() as? String else { continue }
+
+            let attributes = IORegistryEntryCreateCFProperty(
+                entry, "DisplayAttributes" as CFString, kCFAllocatorDefault, 0
+            )?.takeRetainedValue() as? [String: Any]
+            let product = attributes?["ProductAttributes"] as? [String: Any]
+            identities.append(FramebufferIdentity(
+                edidUUID: uuid,
+                vendor: Self.uint32(product?["LegacyManufacturerID"]),
+                product: Self.uint32(product?["ProductID"]),
+                serial: Self.uint32(product?["SerialNumber"])
+            ))
+        }
+        #if DEBUG
+        for id in identities {
+            print("[DDCService] ARM64: framebuffer \(id.edidUUID) vendor=\(id.vendor ?? 0) product=\(id.product ?? 0) serial=\(id.serial ?? 0)")
+        }
+        #endif
+        return identities
+    }
+
+    /// Finds the EDID UUID of the monitor driven by the given DCPAVServiceProxy node.
+    /// Walks up the parent chain and searches each ancestor's subtree for "DisplayHints";
+    /// the first ancestor whose subtree names exactly one monitor is the DCP endpoint of
+    /// this service. An ancestor naming several monitors is shared plumbing — give up there.
+    private func edidUUID(forAVServiceEntry ioEntry: io_service_t) -> String? {
+        var current = ioEntry
+        IOObjectRetain(current)
+        defer { IOObjectRelease(current) }
+
+        for _ in 0..<8 {
+            var parent: io_service_t = 0
+            guard IORegistryEntryGetParentEntry(current, kIOServicePlane, &parent) == KERN_SUCCESS,
+                  parent != IO_OBJECT_NULL else { return nil }
+            IOObjectRelease(current)
+            current = parent
+
+            let uuids = edidUUIDs(inSubtreeOf: current)
+            if uuids.count == 1 { return uuids.first }
+            if uuids.count > 1 { return nil }
+        }
+        return nil
+    }
+
+    /// Collects the "DisplayHints"/"EDID UUID" values found anywhere below `root`.
+    private func edidUUIDs(inSubtreeOf root: io_registry_entry_t) -> Set<String> {
+        var iterator: io_iterator_t = 0
+        guard IORegistryEntryCreateIterator(
+            root, kIOServicePlane, IOOptionBits(kIORegistryIterateRecursively), &iterator
+        ) == KERN_SUCCESS else { return [] }
+        defer { IOObjectRelease(iterator) }
+
+        var found = Set<String>()
+        var entry = IOIteratorNext(iterator)
+        while entry != IO_OBJECT_NULL {
+            if let hints = IORegistryEntryCreateCFProperty(
+                entry, "DisplayHints" as CFString, kCFAllocatorDefault, 0
+            )?.takeRetainedValue() as? [String: Any],
+               let uuid = hints["EDID UUID"] as? String {
+                found.insert(uuid)
+            }
+            IOObjectRelease(entry)
+            entry = IOIteratorNext(iterator)
+        }
+        return found
+    }
+
+    /// The EDID UUID begins with the raw EDID bytes 8–11: the vendor ID (big-endian)
+    /// followed by the product code (little-endian).
+    private static func vendorProduct(fromEDIDUUID uuid: String) -> (vendor: UInt32, product: UInt32)? {
+        let hex = uuid.replacingOccurrences(of: "-", with: "")
+        guard hex.count >= 8,
+              let vendor = UInt32(hex.prefix(4), radix: 16),
+              let productLE = UInt32(hex.dropFirst(4).prefix(4), radix: 16) else { return nil }
+        let product = ((productLE & 0xFF) << 8) | (productLE >> 8)
+        return (vendor, product)
+    }
+
+    private static func uint32(_ value: Any?) -> UInt32? {
+        guard let number = value as? NSNumber else { return nil }
+        return UInt32(truncatingIfNeeded: number.int64Value)
+    }
+
+    /// Matches one DCPAVServiceProxy node to a CGDirectDisplayID from `candidates`
+    /// (excluding `alreadyMapped`). See `buildAVServiceMap` for the strategy.
     private func matchAVServiceToDisplay(
         ioEntry: io_service_t,
         candidates: [CGDirectDisplayID],
-        alreadyMapped: Set<CGDirectDisplayID>
+        alreadyMapped: Set<CGDirectDisplayID>,
+        identities: [FramebufferIdentity]
+    ) -> CGDirectDisplayID? {
+        let free = candidates.filter { !alreadyMapped.contains($0) }
+        guard !free.isEmpty else { return nil }
+
+        // Strategy A: EDID UUID → framebuffer product attributes → CG vendor/model/serial
+        if let uuid = edidUUID(forAVServiceEntry: ioEntry) {
+            if let identity = identities.first(where: { $0.edidUUID == uuid }) {
+                let sameModel = free.filter { id in
+                    (identity.vendor.map { CGDisplayVendorNumber(id) == $0 } ?? true)
+                        && (identity.product.map { CGDisplayModelNumber(id) == $0 } ?? true)
+                }
+                if let serial = identity.serial, serial != 0 {
+                    let sameSerial = sameModel.filter { CGDisplaySerialNumber($0) == serial }
+                    if sameSerial.count == 1 {
+                        #if DEBUG
+                        print("[DDCService] ARM64: matched AVService \(uuid) to display \(sameSerial[0]) (serial \(serial))")
+                        #endif
+                        return sameSerial[0]
+                    }
+                }
+                if sameModel.count == 1 {
+                    #if DEBUG
+                    print("[DDCService] ARM64: matched AVService \(uuid) to display \(sameModel[0]) (only display of this model)")
+                    #endif
+                    return sameModel[0]
+                }
+            } else if let (vendor, product) = Self.vendorProduct(fromEDIDUUID: uuid) {
+                // No framebuffer node for this UUID: at least use the vendor/product it encodes.
+                let sameModel = free.filter {
+                    CGDisplayVendorNumber($0) == vendor && CGDisplayModelNumber($0) == product
+                }
+                if sameModel.count == 1 {
+                    #if DEBUG
+                    print("[DDCService] ARM64: matched AVService \(uuid) to display \(sameModel[0]) (EDID vendor/product)")
+                    #endif
+                    return sameModel[0]
+                }
+            }
+            #if DEBUG
+            print("[DDCService] ARM64: EDID UUID \(uuid) is ambiguous among \(free.count) unmapped displays")
+            #endif
+        }
+
+        // Strategy B: legacy "DisplayVendorID"/"DisplayProductID" on an ancestor node
+        return matchAVServiceByAncestorProperties(ioEntry: ioEntry, candidates: free)
+    }
+
+    /// Walks up the IORegistry parent chain from `ioEntry` looking for a node that has
+    /// both "DisplayVendorID" and "DisplayProductID" (older driver layouts) and returns
+    /// the candidate display with the same vendor + model.
+    private func matchAVServiceByAncestorProperties(
+        ioEntry: io_service_t,
+        candidates: [CGDirectDisplayID]
     ) -> CGDirectDisplayID? {
         // Build the ancestor chain (up to 8 levels) including the entry itself
         var chain: [io_service_t] = []
@@ -153,30 +318,17 @@ final class DDCService: ObservableObject, @unchecked Sendable {
         for node in chain {
             guard let cfProps = ioRegistryEntryProperties(node) else { continue }
             let props = cfProps.takeRetainedValue() as? [String: Any] ?? [:]
+            guard let vendor = Self.uint32(props["DisplayVendorID"]),
+                  let product = Self.uint32(props["DisplayProductID"]) else { continue }
 
-            // Extract vendor and product IDs from this node
-            let nodeVendor: UInt32?
-            let nodeProduct: UInt32?
-
-            if let v = props["DisplayVendorID"] as? UInt32 { nodeVendor = v }
-            else if let v = props["DisplayVendorID"] as? Int { nodeVendor = UInt32(bitPattern: Int32(truncatingIfNeeded: v)) }
-            else { nodeVendor = nil }
-
-            if let p = props["DisplayProductID"] as? UInt32 { nodeProduct = p }
-            else if let p = props["DisplayProductID"] as? Int { nodeProduct = UInt32(bitPattern: Int32(truncatingIfNeeded: p)) }
-            else { nodeProduct = nil }
-
-            guard let vendor = nodeVendor, let product = nodeProduct else { continue }
-
-            // Find a candidate display whose vendor+model matches
-            for dispID in candidates {
-                guard !alreadyMapped.contains(dispID) else { continue }
-                if CGDisplayVendorNumber(dispID) == vendor && CGDisplayModelNumber(dispID) == product {
-                    return dispID
-                }
+            for dispID in candidates
+            where CGDisplayVendorNumber(dispID) == vendor && CGDisplayModelNumber(dispID) == product {
+                #if DEBUG
+                print("[DDCService] ARM64: matched AVService to display \(dispID) (ancestor vendor/product)")
+                #endif
+                return dispID
             }
         }
-
         return nil
     }
 
@@ -193,7 +345,7 @@ final class DDCService: ObservableObject, @unchecked Sendable {
     /// Returns nil if no working AVService is found (built-in displays, or displays
     /// that don't support DDC over the Apple Silicon AV path).
     ///
-    /// Matching strategy: IORegistry vendor/product property matching first,
+    /// Matching strategy: IORegistry identity matching (EDID UUID + serial number) first,
     /// falling back to sorted-index assignment if properties are unavailable.
     private func findAVService(for displayID: CGDirectDisplayID) -> IOAVServiceRef? {
         // Fast path: return cached service if present

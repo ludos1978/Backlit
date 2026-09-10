@@ -65,3 +65,30 @@
   applied live by universalaccessd. Use the private SPI instead:
   `UAIncreaseContrastSetEnabled(Bool)` / `UAIncreaseContrastIsEnabled()` (UniversalAccess.framework)
   and `CGSSetDisplayContrast(Float)` (SkyLight, 0 = normal, ~1 = max, global).
+
+## DDC AVService ↔ display mapping on Apple Silicon (2026-09-10)
+
+- **Symptom**: with two identical monitors (2× DELL U3225QE) the log said "index fallback mapped
+  AVService[0] to display 2, AVService[1] to display 5" — the assignment was arbitrary, so DDC
+  brightness (sliders, adaptive brightness, presets) could land on the wrong monitor.
+- **Why the old matching failed**: `DCPAVServiceProxy` and all of its ancestors
+  (AFKEPInterface… → DCPEndpoint → RTBuddy → AppleASCWrap → AppleT602xIO) carry no
+  `DisplayVendorID`/`DisplayProductID` at all, and vendor/product cannot tell two identical
+  monitors apart anyway.
+- **Where the identity actually lives**:
+  1. The DCP endpoint of the proxy, `RTBuddy(DCPEXTn)` (5 levels up), has a sibling branch
+     `AppleDCPDPTXRemotePortUFP(iop-dcpextN-nub)` whose `DisplayHints["EDID UUID"]` names the
+     connected monitor (raw EDID header bytes: vendor big-endian, product little-endian, serial,
+     week/year, …).
+  2. `IOMobileFramebufferShim` under `dispextN` publishes the same `EDID UUID` (also as
+     `IOMFBUUID`) plus `DisplayAttributes/ProductAttributes` with `LegacyManufacturerID`,
+     `ProductID`, `SerialNumber`, `AlphanumericSerialNumber`, `WeekOfManufacture`, …
+  3. `CGDisplaySerialNumber(id)` equals that `SerialNumber`; `CGDisplayVendorNumber` /
+     `CGDisplayModelNumber` equal `LegacyManufacturerID` / `ProductID`.
+- **Implementation** (`DDCService.buildAVServiceMap`): walk up from the proxy, search each
+  ancestor's subtree for `DisplayHints` until exactly one EDID UUID is found (more than one
+  means shared plumbing → stop), look up the shim with that UUID, then pick the CG display with
+  the same vendor + product + serial. Fallbacks: model-only when unique, legacy ancestor
+  vendor/product keys, and finally sorted-index assignment with `mappingWarning`.
+- **Not usable**: `CGDisplayCreateUUIDFromDisplayID` returns a CG-generated UUID
+  (e.g. `C3C64FBC-…`) that appears nowhere in the IORegistry, so it cannot be used as the link.
