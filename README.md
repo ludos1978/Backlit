@@ -4,7 +4,7 @@
 
 BetterDisplay is a great app, but its best features are locked behind a paid Pro license. Backlit implements the most essential BetterDisplay features as a completely free, open-source macOS menu bar app.
 
-[Download Latest Release](https://github.com/ludos1978/Backlit/releases/latest) | [Report an Issue](https://github.com/huberdf/FreeDisplay/issues)
+[Download Latest Release](https://github.com/ludos1978/Backlit/releases/latest) | [Changelog](CHANGELOG.md) | [Report an Issue](https://github.com/ludos1978/Backlit/issues)
 
 ---
 
