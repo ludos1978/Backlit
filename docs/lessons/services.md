@@ -89,3 +89,30 @@
 - **解法**: 创建前先 release 旧 assertion；onDisappear 只在 !preventSleep 时 release（保持开关 ON 时持续生效）
 - **教训**: 系统资源（IOPMAssertion、IO iterator 等）必须严格配对 create/release，覆盖 ID 前先 release 旧的
 - **日期**: 2026-03-04
+
+## ScreenCaptureKit: capture size, not CPU, is the cost (2026-09-10)
+
+- **Symptom**: the "Show in Window" display stream felt slow/laggy.
+- **Measured** (standalone probe, 4 s per configuration, one display, 30 fps requested):
+
+  | capture size | delivered fps | pixel throughput |
+  |---|---|---|
+  | 1728×1117 (native) | 21 | 157 MB/s |
+  | 1920×1241 | 29 | 261 MB/s |
+  | 960×620 | 31 | 72 MB/s |
+
+  The frame rate is bound by how many pixels WindowServer has to hand over, not by the
+  consumer. A 4K display is 4.8× larger again, so a native-size capture of a 3840×2160
+  monitor cannot reach 30 fps at all.
+- **Fix**: ask `SCStreamConfiguration` for the size you actually display (the window's
+  backing pixel size, clamped to the display's native size) and follow window resizes with
+  `SCStream.updateConfiguration(_:)`. ScreenCaptureKit scales on the GPU during capture,
+  so the downscale is free while the transport savings are the full difference.
+- **Also free**: stop the stream while the window is occluded or minimized
+  (`windowDidChangeOcclusionState`) — a hidden window otherwise keeps a full capture
+  pipeline alive.
+- **Not the problem**: the per-frame pixel analysis. The adaptive-brightness lightness
+  loop over a 240×135 frame measures 0.126 ms (a vImage histogram would be 0.042 ms), which
+  at 2–8 fps is noise. Do not optimize the analysis before the capture size.
+- The lightness sampler already captures at 1/16 resolution and only runs when the mode
+  actually uses screen content, so it is not a candidate for further trimming.

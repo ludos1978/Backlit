@@ -88,6 +88,12 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
     private var stream: SCStream?
     private var output: StreamOutput?
     private let sampleQueue = DispatchQueue(label: "io.github.ludos1978.backlit.displaystream", qos: .userInteractive)
+    /// Serializes start / stop / reconfigure so a fast resize cannot interleave them.
+    private var streamWork: Task<Void, Never> = Task {}
+    private var resizeDebounce: DispatchWorkItem?
+    private var lastCaptureSize: (width: Int, height: Int) = (0, 0)
+    /// True while the stream is stopped because the window is hidden or minimized.
+    private var isPaused = false
 
     init(displayID: CGDirectDisplayID, title: String, onClose: @escaping () -> Void) {
         self.displayID = displayID
@@ -141,6 +147,37 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
 
     // MARK: Streaming
 
+    /// Pixel size to capture. ScreenCaptureKit scales on the GPU while capturing, so asking
+    /// for the window's size instead of the display's native resolution saves the whole
+    /// difference in memory bandwidth — and the frame rate is bound by exactly that:
+    /// measured on a 1728x1117 display, a native-size capture delivers 21 fps where a
+    /// 960-wide one delivers the full 30. A 4K display is 4.8x larger again.
+    private func captureConfiguration() -> SCStreamConfiguration {
+        let nativeW = max(1, CGDisplayPixelsWide(displayID))
+        let nativeH = max(1, CGDisplayPixelsHigh(displayID))
+        let scale = (screen ?? NSScreen.main)?.backingScaleFactor ?? 2
+        let points = contentView?.bounds.width ?? frame.width
+        var width = Int((points * scale).rounded())
+        width = max(160, min(width, nativeW))
+        // Derive the height from the display's aspect ratio so the capture never letterboxes.
+        let height = max(90, min(Int((Double(width) * Double(nativeH) / Double(nativeW)).rounded()), nativeH))
+
+        let config = SCStreamConfiguration()
+        config.width = width
+        config.height = height
+        config.pixelFormat = kCVPixelFormatType_32BGRA
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 30)
+        config.showsCursor = true
+        config.queueDepth = 3
+        return config
+    }
+
+    /// Runs stream operations one after another; SCStream rejects overlapping calls.
+    private func enqueueStreamWork(_ body: @escaping @Sendable () async -> Void) {
+        let previous = streamWork
+        streamWork = Task { _ = await previous.value; await body() }
+    }
+
     func startStreaming() async throws {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let scDisplay = content.displays.first(where: { $0.displayID == displayID }) else {
@@ -152,13 +189,9 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
         let ownID = CGWindowID(windowNumber)
         let excluded = content.windows.filter { $0.windowID == ownID }
         let filter = SCContentFilter(display: scDisplay, excludingWindows: excluded)
-        let config = SCStreamConfiguration()
-        config.width = max(1, CGDisplayPixelsWide(displayID))
-        config.height = max(1, CGDisplayPixelsHigh(displayID))
-        config.pixelFormat = kCVPixelFormatType_32BGRA
-        config.minimumFrameInterval = CMTime(value: 1, timescale: 30)
-        config.showsCursor = true
-        config.queueDepth = 5
+        let config = captureConfiguration()
+        lastCaptureSize = (config.width, config.height)
+        debugLog("[DisplayStream] display \(displayID): capturing \(config.width)x\(config.height) of \(CGDisplayPixelsWide(displayID))x\(CGDisplayPixelsHigh(displayID))")
 
         let output = StreamOutput(layer: videoLayer) { [weak self] in
             // Stream stopped on its own (display removed, permission revoked…): close the window.
@@ -172,14 +205,62 @@ final class DisplayStreamWindow: NSWindow, NSWindowDelegate, @unchecked Sendable
     }
 
     func stopStreaming() {
+        resizeDebounce?.cancel()
+        resizeDebounce = nil
         guard let stream else { return }
         self.stream = nil
         self.output = nil
-        Task { try? await stream.stopCapture() }
+        isPaused = false
+        enqueueStreamWork { try? await stream.stopCapture() }
         videoLayer.flushAndRemoveImage()
     }
 
+    /// Re-asks for a capture size that matches the window after a resize or a move to a
+    /// screen with a different backing scale.
+    private func reconfigure() {
+        guard let stream, !isPaused else { return }
+        let config = captureConfiguration()
+        guard (config.width, config.height) != lastCaptureSize else { return }
+        lastCaptureSize = (config.width, config.height)
+        debugLog("[DisplayStream] display \(displayID): capture resized to \(config.width)x\(config.height)")
+        enqueueStreamWork { try? await stream.updateConfiguration(config) }
+    }
+
+    /// Coalesces the many resize notifications of one drag into a single reconfigure.
+    private func scheduleReconfigure() {
+        resizeDebounce?.cancel()
+        let item = DispatchWorkItem { [weak self] in self?.reconfigure() }
+        resizeDebounce = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: item)
+    }
+
+    /// A hidden or minimized window still costs a full capture pipeline, so stop the
+    /// stream entirely while nothing of it is on screen.
+    private func updateStreamActivity() {
+        guard let stream else { return }
+        let visible = occlusionState.contains(.visible) && !isMiniaturized
+        if visible, isPaused {
+            isPaused = false
+            let config = captureConfiguration()
+            lastCaptureSize = (config.width, config.height)
+            enqueueStreamWork {
+                try? await stream.startCapture()
+                try? await stream.updateConfiguration(config)
+            }
+        } else if !visible, !isPaused {
+            isPaused = true
+            enqueueStreamWork { try? await stream.stopCapture() }
+        }
+    }
+
     // MARK: NSWindowDelegate
+
+    func windowDidResize(_ notification: Notification) { scheduleReconfigure() }
+    func windowDidChangeScreen(_ notification: Notification) { scheduleReconfigure() }
+    func windowDidChangeBackingProperties(_ notification: Notification) { scheduleReconfigure() }
+    func windowDidChangeOcclusionState(_ notification: Notification) { updateStreamActivity() }
+    func windowDidMiniaturize(_ notification: Notification) { updateStreamActivity() }
+    func windowDidDeminiaturize(_ notification: Notification) { updateStreamActivity() }
 
     func windowWillClose(_ notification: Notification) {
         stopStreaming()
