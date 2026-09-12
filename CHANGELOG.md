@@ -7,6 +7,25 @@ release is 0.3.0.
 
 ---
 
+## v0.5.2 (2026-09-12)
+
+Bug-fix release. Ad-hoc signed, not notarized: after installing run
+`xattr -d com.apple.quarantine /Applications/Backlit.app` (or use the Homebrew tap `ludos1978/backlit`).
+
+### Fixed
+
+- **"Show in Window" is no longer slow.** The stream captured the display at its full native
+  resolution no matter how small the window was, and the frame rate is bound by exactly that:
+  measured at 30 fps requested on a 1728x1117 display, a native-size capture delivered 21 fps
+  where a 960-pixel-wide one delivered the full 30 at less than half the data rate. A 4K monitor
+  has 4.8x more pixels again, so it could not reach 30 fps at all. The stream now captures at the
+  window's pixel size, follows window resizes and moves between screens, and stops completely
+  while the window is minimized or fully covered by other windows.
+
+### Documentation
+
+- `CHANGELOG.md` now carries the release notes for every version, linked from the README.
+
 ## v0.5.1 (2026-09-10)
 
 Bug-fix release. Ad-hoc signed, not notarized: after installing run
