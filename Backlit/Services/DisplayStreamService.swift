@@ -290,7 +290,10 @@ private final class StreamOutput: NSObject, SCStreamOutput, SCStreamDelegate, @u
         if layer.status == .failed {
             layer.flush()
         }
-        layer.enqueue(sampleBuffer)
+        // The buffer is handed straight to the layer and never touched again here;
+        // Xcode 27's region checker can't see that through the SCStreamOutput callback.
+        nonisolated(unsafe) let frame = sampleBuffer
+        layer.enqueue(frame)
     }
 
     func stream(_ stream: SCStream, didStopWithError error: Error) {
