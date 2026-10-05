@@ -7,6 +7,29 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Added
+
+- **Monitor speaker volume.** External displays with DDC audio get a volume slider and mute
+  button in their panel (hidden when the monitor doesn't support it). Optional *Intercept
+  Volume Keys* routes the volume/mute keys to the monitor when it is the macOS sound output
+  (HDMI/DisplayPort audio).
+
+### Changed
+
+- **Only the Display Modes list changes a resolution.** Presets no longer store or restore
+  resolutions (older presets keep the values but they are ignored), the resolution is no
+  longer re-applied after wake, and *Auto-enable HiDPI on New Displays* is removed.
+
+### Fixed
+
+- **Gamma adjustments on projectors.** Adjustments are re-applied after mode changes and once
+  more after a display connects (macOS reset them), are saved per physical display instead of
+  per display ID, and displays that reject gamma (AirPlay, Sidecar, DisplayLink) show a warning.
+
+---
+
 ## v0.5.2 (2026-09-12)
 
 Bug-fix release. Ad-hoc signed, not notarized: after installing run
