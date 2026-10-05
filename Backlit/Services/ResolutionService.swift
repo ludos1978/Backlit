@@ -2,45 +2,12 @@ import Foundation
 @preconcurrency import CoreGraphics
 
 /// Service responsible for reading and changing display resolution modes.
+/// Policy: a mode is only ever changed by an explicit user pick in the Display Modes
+/// list (and its ⌘Z undo) — never by presets, wake handling or display connects.
 @MainActor
 final class ResolutionService: @unchecked Sendable {
     static let shared = ResolutionService()
     private init() {}
-
-    /// Persisted modeIDs keyed by displayID string. Used to re-apply modes after sleep/wake.
-    private var savedModeIDs: [String: Int32] = {
-        (UserDefaults.standard.dictionary(forKey: "fd.ResolutionService.savedModes") as? [String: Int32]) ?? [:]
-    }()
-
-    private func persistModeID(_ modeID: Int32, for displayID: CGDirectDisplayID) {
-        savedModeIDs["\(displayID)"] = modeID
-        UserDefaults.standard.set(savedModeIDs, forKey: "fd.ResolutionService.savedModes")
-    }
-
-    private func clearSavedModeID(for displayID: CGDirectDisplayID) {
-        savedModeIDs.removeValue(forKey: "\(displayID)")
-        UserDefaults.standard.set(savedModeIDs, forKey: "fd.ResolutionService.savedModes")
-    }
-
-    /// Re-applies the last user-set mode for `displayID` if it differs from the current active mode.
-    /// Called on wake from sleep so macOS mode resets are corrected.
-    func reapplySavedModeIfNeeded(for displayID: CGDirectDisplayID) {
-        guard let savedID = savedModeIDs["\(displayID)"] else { return }
-        let currentID = CGDisplayCopyDisplayMode(displayID)?.ioDisplayModeID
-        guard currentID != savedID else { return }
-
-        // Enumerate modes to find the saved one
-        let options: CFDictionary = [kCGDisplayShowDuplicateLowResolutionModes: true] as CFDictionary
-        guard let rawModes = CGDisplayCopyAllDisplayModes(displayID, options) as? [CGDisplayMode],
-              let cgMode = rawModes.first(where: { $0.ioDisplayModeID == savedID }) else { return }
-
-        Task.detached(priority: .userInitiated) {
-            let ok = await ResolutionService.applyModeSync(cgMode, on: displayID)
-            #if DEBUG
-            print("[ResolutionService] wake re-apply modeID=\(savedID) on displayID=\(displayID) success=\(ok)")
-            #endif
-        }
-    }
 
     // MARK: - Query
 
@@ -120,21 +87,13 @@ final class ResolutionService: @unchecked Sendable {
             await ResolutionService.applyModeSync(cgMode, on: targetID)
         }.value
 
-        if success {
-            // Persist so we can re-apply after sleep/wake
-            persistModeID(mode.ioDisplayModeID, for: displayID)
-            return true
-        }
+        if success { return true }
 
         // Fallback: CGSConfigureDisplayMode
         #if DEBUG
         print("[ResolutionService] Standard API failed, trying CGS fallback modeID=\(cgMode.ioDisplayModeID)")
         #endif
-        let fallbackSuccess = await cgsFallback(modeID: UInt32(bitPattern: cgMode.ioDisplayModeID), on: targetID)
-        if fallbackSuccess {
-            persistModeID(mode.ioDisplayModeID, for: displayID)
-        }
-        return fallbackSuccess
+        return await cgsFallback(modeID: UInt32(bitPattern: cgMode.ioDisplayModeID), on: targetID)
     }
 
     // MARK: - Mirror resolution

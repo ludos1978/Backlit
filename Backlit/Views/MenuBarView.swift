@@ -521,20 +521,6 @@ struct SettingsView: View {
             .padding(.horizontal, 12)
             .help("When the sound output is a monitor (HDMI/DisplayPort audio), route the volume and mute keys to its speakers via DDC (needs Accessibility permission)")
 
-            // Auto HiDPI on new displays (opt-in)
-            Toggle(isOn: $settings.autoEnableHiDPI) {
-                HStack(spacing: 6) {
-                    MenuItemIcon(systemName: "sparkles", color: .orange)
-                        .accessibilityHidden(true)
-                    Text("Auto-enable HiDPI on New Displays")
-                        .font(.body)
-                }
-            }
-            .toggleStyle(.switch)
-            .controlSize(.small)
-            .padding(.horizontal, 12)
-            .help("Write a HiDPI override for newly connected 2K+ external displays (asks for an administrator password)")
-
             // ── Who controls what ──────────────────────────────────────────
             Divider()
                 .opacity(0.3)

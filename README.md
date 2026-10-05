@@ -21,7 +21,7 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 | Resolution & HiDPI Switching | ✅ | Browse and switch all available display modes including HiDPI |
 | ICC Color Profile Management | ✅ | Switch color profiles per display via ColorSync |
 | Image Adjustment (Gamma/Temperature) | ✅ | Software contrast, color temperature, RGB channels, invert |
-| Display Presets | ✅ | Save & restore full display configurations with one click |
+| Display Presets | ✅ | Save & restore brightness, dimming, gamma/image adjustment, XDR and contrast with one click (never resolution) |
 | Virtual Display (Dummy) | ✅ | Create headless virtual displays |
 | Notch Management | ✅ | Hide the MacBook notch with a black overlay |
 | Launch at Login | ✅ | Via SMAppService |
@@ -148,7 +148,7 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
   `https://github.com` page is ever opened).
   There is no telemetry, analytics, crash reporting, or any other network code.
 - **What it stores:** settings in `UserDefaults` (all keys prefixed `fd.`) and presets in
-  `~/Library/Application Support/Backlit/presets.json` — display UUIDs, resolutions,
+  `~/Library/Application Support/Backlit/presets.json` — display UUIDs,
   brightness/gamma values, preset names. Nothing is shared or uploaded.
 - **Privileged operation:** enabling HiDPI overrides copies a plist into
   `/Library/Displays/…/Overrides/` after the *system's own* administrator password dialog.
@@ -161,8 +161,8 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
 - **Screen capture (on demand):** *Show in Window* streams a display with ScreenCaptureKit
   straight into a local window; frames are never saved or transmitted.
 - **Runs automatically:** at launch/wake the app re-applies *your own* saved settings
-  (gamma, extra dimming, XDR, accessibility contrast, chosen resolution) and probes external
-  displays over DDC. After a crash or force-quit, persisted display adjustments are NOT
+  (gamma, extra dimming, XDR, accessibility contrast) and probes external displays over DDC.
+  It never changes a resolution on its own — only a pick in the Display Modes list does. After a crash or force-quit, persisted display adjustments are NOT
   re-applied (crash guard), so a bad setting can never lock you out.
 - **Private Apple APIs:** used for built-in brightness (DisplayServices), auto-brightness
   (CoreDisplay), accessibility contrast (UniversalAccess/SkyLight), virtual displays

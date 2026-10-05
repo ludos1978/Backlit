@@ -86,10 +86,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     if settings.isAuthoritative(.imageAdjustment) {
                         GammaService.shared.reapplyIfNeeded(for: display.displayID)
                     }
-                    // Re-apply any custom resolution that macOS may have reset on wake
-                    if settings.isAuthoritative(.resolution) {
-                        ResolutionService.shared.reapplySavedModeIfNeeded(for: display.displayID)
-                    }
                 }
             }
         }

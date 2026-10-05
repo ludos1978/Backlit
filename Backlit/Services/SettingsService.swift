@@ -129,7 +129,6 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         static let brightnessByUUIDPrefix = "fd.brightness.uuid."
         static let interceptBrightnessKeys = "fd.interceptBrightnessKeys"
         static let interceptVolumeKeys    = "fd.interceptVolumeKeys"
-        static let autoEnableHiDPI        = "fd.autoEnableHiDPI"
         static let colorPickerHistory     = "fd.colorPickerHistory"
         // Per-display keys use prefix + displayID
         static let brightnessPrefix       = "fd.brightness_"
@@ -203,13 +202,6 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
     /// Shares the brightness-key event tap (needs Accessibility permission).
     @Published var interceptVolumeKeys: Bool = false {
         didSet { defaults.set(interceptVolumeKeys, forKey: Keys.interceptVolumeKeys) }
-    }
-
-    /// Opt-in: write a HiDPI override plist for newly connected 2K+ external displays
-    /// (asks for an administrator password). Off by default — it modifies
-    /// /Library/Displays without the user asking.
-    @Published var autoEnableHiDPI: Bool = false {
-        didSet { defaults.set(autoEnableHiDPI, forKey: Keys.autoEnableHiDPI) }
     }
 
     /// Recently sampled colors (hex strings, newest first, max 20).
@@ -289,7 +281,6 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         }
         interceptBrightnessKeys = defaults.bool(forKey: Keys.interceptBrightnessKeys)
         interceptVolumeKeys = defaults.bool(forKey: Keys.interceptVolumeKeys)
-        autoEnableHiDPI = defaults.bool(forKey: Keys.autoEnableHiDPI)
         colorPickerHistory = defaults.stringArray(forKey: Keys.colorPickerHistory) ?? []
     }
 }

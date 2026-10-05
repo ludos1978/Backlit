@@ -99,15 +99,7 @@ class DisplayManager: ObservableObject {
             // refresh — the refresh itself records whatever the hardware reports now.
             let rememberedBrightness = SettingsService.shared.savedBrightness(uuid: display.displayUUID)
             Task { await BrightnessService.shared.refreshBrightness(for: display) }
-            Task {
-                await display.loadDetails()
-                // Auto-enable HiDPI for new external 2K+ displays — opt-in only
-                // (Settings → "Auto-enable HiDPI on New Displays"): it writes to
-                // /Library/Displays and prompts for an administrator password.
-                if !display.isBuiltin && SettingsService.shared.autoEnableHiDPI {
-                    await self.autoEnableHiDPIIfNeeded(for: display)
-                }
-            }
+            Task { await display.loadDetails() }
             // Restore saved gamma/software-brightness adjustments for the reconnected display.
             // Brief delay lets WindowServer settle before we write transfer tables.
             // Skipped when the previous session crashed (see AppDelegate.previousExitWasClean).
@@ -165,43 +157,6 @@ class DisplayManager: ObservableObject {
         }
         if settings.isAuthoritative(.imageAdjustment) {
             GammaService.shared.reapplyIfNeeded(for: displayID)
-        }
-    }
-
-    /// Auto-enables HiDPI plist override for external 2K+ displays that don't have it yet.
-    /// This ensures switching between different monitors "just works" without manual re-enable.
-    private func autoEnableHiDPIIfNeeded(for display: DisplayInfo) async {
-        let vendor = display.vendorNumber
-        let product = display.modelNumber
-        guard vendor != 0, product != 0 else { return }
-
-        // Already enabled — nothing to do
-        guard !HiDPIService.shared.isHiDPIEnabled(vendor: vendor, product: product) else { return }
-
-        // Determine native resolution from available modes
-        let (nativeW, nativeH) = display.nativeResolution
-
-        // Only auto-enable for 2K+ displays (width >= 2560 or total pixels >= 2560*1440)
-        guard nativeW >= 2560 || (nativeW * nativeH >= 2560 * 1440) else { return }
-
-        debugLog("[DisplayManager] Auto-enabling HiDPI for \(display.name) (\(nativeW)×\(nativeH), vendor=\(vendor), product=\(product))")
-
-        let err = await HiDPIService.shared.enableHiDPI(
-            for: display.displayID,
-            vendor: vendor,
-            product: product,
-            nativeWidth: nativeW,
-            nativeHeight: nativeH
-        )
-
-        if let err {
-            debugLog("[DisplayManager] Auto-enable HiDPI failed: \(err)")
-        } else {
-            debugLog("[DisplayManager] Auto-enable HiDPI succeeded, refreshing modes")
-            HiDPIService.shared.refreshModes(for: display)
-            // Give IOServiceRequestProbe time to re-enumerate modes
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            await display.loadDetails()
         }
     }
 

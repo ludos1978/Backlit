@@ -4,9 +4,11 @@ import CoreGraphics
 struct DisplayPresetEntry: Codable, Identifiable {
     var id = UUID()
     var displayUUID: String       // matches physical display
-    var width: Int
-    var height: Int
-    var isHiDPI: Bool
+    // Resolution stored by presets saved before 0.5.3 — decoded for compatibility but
+    // never applied: only the Display Modes list may change a screen's resolution.
+    var width: Int?
+    var height: Int?
+    var isHiDPI: Bool?
     var brightness: Double?       // optional brightness 0.0-1.0
     var arrangementX: Double?     // optional position
     var arrangementY: Double?
