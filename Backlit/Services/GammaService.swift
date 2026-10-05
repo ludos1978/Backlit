@@ -46,6 +46,9 @@ final class GammaService: @unchecked Sendable {
     /// re-sync its sliders — e.g. the combined gamma slider and the per-display
     /// Image Adjustment panel edit the same state.
     nonisolated(unsafe) static let stateDidChange = PassthroughSubject<CGDirectDisplayID, Never>()
+    /// Fires with the display ID when a transfer-table write starts or stops failing
+    /// (see `isTransferUnsupported`).
+    nonisolated(unsafe) static let supportDidChange = PassthroughSubject<CGDirectDisplayID, Never>()
     private var terminateObserver: NSObjectProtocol?
     private let adjustmentsLock = NSLock()
 
@@ -72,6 +75,45 @@ final class GammaService: @unchecked Sendable {
         if let obs = terminateObserver {
             NotificationCenter.default.removeObserver(obs)
         }
+    }
+
+    // MARK: - Transfer Writes
+
+    /// Displays whose last transfer-table write was rejected by CoreGraphics — typically
+    /// AirPlay / Sidecar / DisplayLink outputs, which have no hardware gamma ramp.
+    private var unsupportedDisplays: Set<CGDirectDisplayID> = []
+
+    /// True if the last gamma write to this display failed, i.e. image adjustments
+    /// cannot take effect on it.
+    func isTransferUnsupported(for displayID: CGDirectDisplayID) -> Bool {
+        adjustmentsLock.withLock { unsupportedDisplays.contains(displayID) }
+    }
+
+    private func writeTable(_ displayID: CGDirectDisplayID,
+                            _ r: inout [CGGammaValue], _ g: inout [CGGammaValue], _ b: inout [CGGammaValue]) {
+        let err = CGSetDisplayTransferByTable(displayID, UInt32(r.count), &r, &g, &b)
+        recordWriteResult(err, for: displayID)
+    }
+
+    private func writeFormula(_ displayID: CGDirectDisplayID, _ p: ChannelParams) {
+        let err = CGSetDisplayTransferByFormula(displayID,
+            CGGammaValue(p.rLo), CGGammaValue(p.rHi), CGGammaValue(p.rGam),
+            CGGammaValue(p.gLo), CGGammaValue(p.gHi), CGGammaValue(p.gGam),
+            CGGammaValue(p.bLo), CGGammaValue(p.bHi), CGGammaValue(p.bGam))
+        recordWriteResult(err, for: displayID)
+    }
+
+    private func recordWriteResult(_ err: CGError, for displayID: CGDirectDisplayID) {
+        let failed = err != .success || CGDisplayGammaTableCapacity(displayID) == 0
+        let changed = adjustmentsLock.withLock {
+            failed ? unsupportedDisplays.insert(displayID).inserted
+                   : unsupportedDisplays.remove(displayID) != nil
+        }
+        guard changed else { return }
+        NSLog("[GammaService] Display %u gamma transfer %@ (CGError %d)",
+              displayID, failed ? "not supported" : "working again", err.rawValue)
+        let id = displayID
+        DispatchQueue.main.async { GammaService.supportDidChange.send(id) }
     }
 
     // MARK: - Active Adjustment Tracking
@@ -128,7 +170,7 @@ final class GammaService: @unchecked Sendable {
         let size = 256
         var r = (0..<size).map { CGGammaValue(Double($0) / Double(size - 1) * scale) }
         var g = r; var b = r
-        CGSetDisplayTransferByTable(displayID, UInt32(size), &r, &g, &b)
+        writeTable(displayID, &r, &g, &b)
     }
 
     /// Returns true if there is a currently active (non-paused) gamma adjustment for this display.
@@ -193,10 +235,9 @@ final class GammaService: @unchecked Sendable {
             writeBoostRamp(for: displayID)
             return
         }
-        CGSetDisplayTransferByFormula(displayID,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0,
-            0.0, 1.0, 1.0)
+        writeFormula(displayID, ChannelParams(rLo: 0, rHi: 1, rGam: 1,
+                                              gLo: 0, gHi: 1, gGam: 1,
+                                              bLo: 0, bHi: 1, bGam: 1))
     }
 
     /// Restore all online displays to identity gamma (per-display, avoids global reset).
@@ -236,7 +277,19 @@ final class GammaService: @unchecked Sendable {
         }
     }
 
+    /// Saved adjustments are keyed by the display's UUID: a CGDirectDisplayID is not
+    /// stable for a given screen (it can change with the port or connection order —
+    /// e.g. a projector plugged in again would otherwise lose its adjustment).
     private static func stateKey(for displayID: CGDirectDisplayID) -> String {
+        guard let cfUUID = CGDisplayCreateUUIDFromDisplayID(displayID),
+              let uuid = CFUUIDCreateString(nil, cfUUID.takeRetainedValue()) else {
+            return legacyStateKey(for: displayID)
+        }
+        return "fd.GammaService.savedAdjustment.uuid.\(uuid as String)"
+    }
+
+    /// Pre-UUID key (by CGDirectDisplayID); read once and migrated.
+    private static func legacyStateKey(for displayID: CGDirectDisplayID) -> String {
         "fd.GammaService.savedAdjustment.\(displayID)"
     }
 
@@ -260,7 +313,15 @@ final class GammaService: @unchecked Sendable {
     }
 
     func loadSavedState(for displayID: CGDirectDisplayID) -> GammaAdjustment? {
-        guard let dict = UserDefaults.standard.dictionary(forKey: GammaService.stateKey(for: displayID)) else { return nil }
+        let defaults = UserDefaults.standard
+        let key = GammaService.stateKey(for: displayID)
+        let legacyKey = GammaService.legacyStateKey(for: displayID)
+        if defaults.object(forKey: key) == nil, key != legacyKey,
+           let legacy = defaults.dictionary(forKey: legacyKey) {
+            defaults.set(legacy, forKey: key)
+            defaults.removeObject(forKey: legacyKey)
+        }
+        guard let dict = defaults.dictionary(forKey: key) else { return nil }
         var adj = GammaAdjustment()
         adj.contrast           = dict["contrast"]           as? Double ?? 0
         adj.gammaVal           = dict["gammaVal"]           as? Double ?? 0
@@ -283,6 +344,7 @@ final class GammaService: @unchecked Sendable {
 
     func clearSavedState(for displayID: CGDirectDisplayID) {
         UserDefaults.standard.removeObject(forKey: GammaService.stateKey(for: displayID))
+        UserDefaults.standard.removeObject(forKey: GammaService.legacyStateKey(for: displayID))
         GammaService.stateDidChange.send(displayID)
     }
 
@@ -310,10 +372,7 @@ final class GammaService: @unchecked Sendable {
         p.rHi = min(1.0, p.rHi * brightnessFactor)
         p.gHi = min(1.0, p.gHi * brightnessFactor)
         p.bHi = min(1.0, p.bHi * brightnessFactor)
-        CGSetDisplayTransferByFormula(displayID,
-            CGGammaValue(p.rLo), CGGammaValue(p.rHi), CGGammaValue(p.rGam),
-            CGGammaValue(p.gLo), CGGammaValue(p.gHi), CGGammaValue(p.gGam),
-            CGGammaValue(p.bLo), CGGammaValue(p.bHi), CGGammaValue(p.bGam))
+        writeFormula(displayID, p)
     }
 
     private func channelParams(for adj: GammaAdjustment) -> ChannelParams {
@@ -485,7 +544,6 @@ final class GammaService: @unchecked Sendable {
             blueTable[i]  = tableValue(lo: p.bLo, hi: p.bHi, gam: p.bGam)
         }
 
-        CGSetDisplayTransferByTable(displayID, UInt32(capacity),
-                                    &redTable, &greenTable, &blueTable)
+        writeTable(displayID, &redTable, &greenTable, &blueTable)
     }
 }

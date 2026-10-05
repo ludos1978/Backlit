@@ -23,6 +23,8 @@ struct ImageAdjustmentView: View {
     @State private var bGain: Double = 0
     @State private var isInverted: Bool = false
     @State private var isPaused: Bool = false
+    /// CoreGraphics rejected the last gamma write (AirPlay, Sidecar, DisplayLink …).
+    @State private var gammaUnsupported: Bool = false
 
     // MARK: - Brightness / extra dimming (same row style as the adjustments)
     @ObservedObject private var ddcService = DDCService.shared
@@ -72,6 +74,20 @@ struct ImageAdjustmentView: View {
                 .padding(.vertical, 2)
 
             Group {
+            if gammaUnsupported {
+                HStack(spacing: 5) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.caption2)
+                        .accessibilityHidden(true)
+                    Text("This display rejects gamma adjustments (common for AirPlay, Sidecar and DisplayLink outputs), so these sliders have no effect on it.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 2)
+            }
             // ── Group 1: Global adjustments ────────────────────────────────
             adjustRow(icon: "circle.righthalf.filled",   label: "Contrast", value: $contrast).help("Adjust contrast")
             adjustRow(icon: "sparkle",                   label: "Gamma", value: $gammaVal).help("Adjust gamma")
@@ -171,6 +187,11 @@ struct ImageAdjustmentView: View {
             reloadFromSaved(reapply: SettingsService.shared.isAuthoritative(.imageAdjustment))
             brightness = display.brightness
             extraDim = BrightnessService.shared.extraDimming(for: display.displayID)
+            gammaUnsupported = GammaService.shared.isTransferUnsupported(for: display.displayID)
+        }
+        .onReceive(GammaService.supportDidChange) { changedID in
+            guard changedID == display.displayID else { return }
+            gammaUnsupported = GammaService.shared.isTransferUnsupported(for: display.displayID)
         }
         .onChange(of: display.brightness) { _, newValue in
             if abs(newValue - brightness) >= 1 { brightness = newValue }

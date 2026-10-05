@@ -22,6 +22,11 @@ private func displayReconfigCallback(
         if flags.intersection([.addFlag, .removeFlag]).isEmpty {
             // Mode or main-display change: refresh mode info for existing displays only.
             manager.refreshExistingDisplayModes()
+            // A mode change makes ColorSync reload the display's profile, which resets
+            // the gamma ramp — projectors often switch modes right after connecting.
+            if flags.contains(.setModeFlag) {
+                manager.scheduleImageStateReapply(for: displayID)
+            }
         } else {
             manager.refreshDisplays()
         }
@@ -111,18 +116,14 @@ class DisplayManager: ObservableObject {
                 let settings = SettingsService.shared
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 300_000_000)
-                    if settings.isAuthoritative(.brightness) {
-                        BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
-                        // Restore the last brightness the user had on this display
-                        // (only if it differs from what the hardware already reports).
-                        if let saved = rememberedBrightness, abs(saved - display.brightness) >= 1 {
-                            BrightnessService.shared.setBrightnessSmooth(saved, for: display, isAutoAdjust: true)
-                        }
-                    }
-                    if settings.isAuthoritative(.imageAdjustment) {
-                        GammaService.shared.reapplyIfNeeded(for: display.displayID)
+                    // Restore the last brightness the user had on this display
+                    // (only if it differs from what the hardware already reports).
+                    if settings.isAuthoritative(.brightness),
+                       let saved = rememberedBrightness, abs(saved - display.brightness) >= 1 {
+                        BrightnessService.shared.setBrightnessSmooth(saved, for: display, isAutoAdjust: true)
                     }
                 }
+                scheduleImageStateReapply(for: display.displayID)
             }
         }
 
@@ -131,6 +132,39 @@ class DisplayManager: ObservableObject {
         for display in updatedDisplays where keptIDs.contains(display.displayID) {
             display.bounds = CGDisplayBounds(display.displayID)
             display.isMain = CGDisplayIsMain(display.displayID) != 0
+        }
+    }
+
+    /// Pending delayed gamma re-applies, so a burst of reconfigurations collapses into one.
+    private var imageStateReapplyTasks: [CGDirectDisplayID: Task<Void, Never>] = [:]
+
+    /// Re-applies software brightness + gamma adjustments for a display shortly after a
+    /// connect or mode change, and once more a bit later: ColorSync loads the display's
+    /// profile (and its calibration ramp) asynchronously and can overwrite an early write.
+    /// Skipped when the previous session crashed (see AppDelegate.previousExitWasClean).
+    func scheduleImageStateReapply(for displayID: CGDirectDisplayID) {
+        guard AppDelegate.previousExitWasClean else { return }
+        imageStateReapplyTasks[displayID]?.cancel()
+        imageStateReapplyTasks[displayID] = Task { @MainActor in
+            for delay: UInt64 in [300_000_000, 2_000_000_000] {
+                try? await Task.sleep(nanoseconds: delay)
+                guard !Task.isCancelled else { return }
+                reapplyImageState(for: displayID)
+            }
+            imageStateReapplyTasks[displayID] = nil
+        }
+    }
+
+    /// Re-applies software brightness, then gamma (Brightness feeds GammaService's factor),
+    /// each only while Backlit owns that area (Settings → "Who controls each setting").
+    func reapplyImageState(for displayID: CGDirectDisplayID) {
+        guard let display = displays.first(where: { $0.displayID == displayID }) else { return }
+        let settings = SettingsService.shared
+        if settings.isAuthoritative(.brightness) {
+            BrightnessService.shared.reapplySoftwareBrightnessIfNeeded(for: display)
+        }
+        if settings.isAuthoritative(.imageAdjustment) {
+            GammaService.shared.reapplyIfNeeded(for: displayID)
         }
     }
 

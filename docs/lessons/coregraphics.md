@@ -93,3 +93,9 @@
 - **原因**: 用 display.pixelWidth/pixelHeight（来自 CGDisplayPixelsWide/High）作为原生分辨率传入，但显示器当前可能在非原生分辨率
 - **解法**: 用 display.availableModes.max(by: width*height) 获取最大可用模式作为原生分辨率
 - **教训**: CGDisplayPixelsWide/High 返回的是当前模式的像素尺寸，不是面板物理分辨率
+
+### L-028: Gamma ramp lost on projectors (mode change / display ID / unsupported outputs)
+- **Symptom**: image adjustments (gamma, contrast…) not applied on some projectors
+- **Causes**: (1) a mode change (`setModeFlag`, common right after a projector connects) makes ColorSync reload the profile and reset the gamma ramp, and only *added* displays were re-applied; (2) ColorSync loads the profile asynchronously, so a single write 300 ms after connect can be overwritten; (3) saved adjustments were keyed by `CGDirectDisplayID`, which is not stable per screen (port / connection order); (4) AirPlay / Sidecar / DisplayLink outputs have no gamma ramp at all — `CGSetDisplayTransfer*` fails there
+- **Fix**: `DisplayManager.scheduleImageStateReapply` re-applies at 0.3 s and 2 s after connect *and* after mode changes; gamma state keyed by display UUID (legacy ID key migrated); GammaService checks the `CGError` + `CGDisplayGammaTableCapacity` and the Image Adjustment panel shows a warning when writes fail
+- **Lesson**: never assume a gamma write sticks — re-apply after every reconfiguration, key per-display state by UUID, and check the return value
