@@ -486,11 +486,7 @@ struct SettingsView: View {
                 get: { settings.interceptBrightnessKeys },
                 set: { newValue in
                     settings.interceptBrightnessKeys = newValue
-                    if newValue {
-                        BrightnessKeyService.shared.start()
-                    } else {
-                        BrightnessKeyService.shared.stop()
-                    }
+                    BrightnessKeyService.shared.updateTapState()
                 }
             )) {
                 HStack(spacing: 6) {
@@ -504,6 +500,26 @@ struct SettingsView: View {
             .controlSize(.small)
             .padding(.horizontal, 12)
             .help("Route F1/F2 to the external display under the cursor via DDC, with Backlit's own on-screen indicator (needs Accessibility permission)")
+
+            // Volume-key interception (opt-in)
+            Toggle(isOn: Binding(
+                get: { settings.interceptVolumeKeys },
+                set: { newValue in
+                    settings.interceptVolumeKeys = newValue
+                    BrightnessKeyService.shared.updateTapState()
+                }
+            )) {
+                HStack(spacing: 6) {
+                    MenuItemIcon(systemName: "speaker.wave.2.fill", color: .pink)
+                        .accessibilityHidden(true)
+                    Text("Intercept Volume Keys")
+                        .font(.body)
+                }
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .padding(.horizontal, 12)
+            .help("When the sound output is a monitor (HDMI/DisplayPort audio), route the volume and mute keys to its speakers via DDC (needs Accessibility permission)")
 
             // Auto HiDPI on new displays (opt-in)
             Toggle(isOn: $settings.autoEnableHiDPI) {

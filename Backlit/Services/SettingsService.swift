@@ -128,6 +128,7 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         static let authoritativeAreas     = "fd.authoritativeAreas"
         static let brightnessByUUIDPrefix = "fd.brightness.uuid."
         static let interceptBrightnessKeys = "fd.interceptBrightnessKeys"
+        static let interceptVolumeKeys    = "fd.interceptVolumeKeys"
         static let autoEnableHiDPI        = "fd.autoEnableHiDPI"
         static let colorPickerHistory     = "fd.colorPickerHistory"
         // Per-display keys use prefix + displayID
@@ -195,6 +196,13 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
     /// it changes keyboard behaviour system-wide.
     @Published var interceptBrightnessKeys: Bool = false {
         didSet { defaults.set(interceptBrightnessKeys, forKey: Keys.interceptBrightnessKeys) }
+    }
+
+    /// Opt-in: when the macOS sound output is an external monitor (HDMI/DisplayPort
+    /// audio), route the volume/mute keys to that monitor's speakers via DDC.
+    /// Shares the brightness-key event tap (needs Accessibility permission).
+    @Published var interceptVolumeKeys: Bool = false {
+        didSet { defaults.set(interceptVolumeKeys, forKey: Keys.interceptVolumeKeys) }
     }
 
     /// Opt-in: write a HiDPI override plist for newly connected 2K+ external displays
@@ -280,6 +288,7 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
             authoritativeAreas = Set(raw.compactMap(PreferenceArea.init(rawValue:)))
         }
         interceptBrightnessKeys = defaults.bool(forKey: Keys.interceptBrightnessKeys)
+        interceptVolumeKeys = defaults.bool(forKey: Keys.interceptVolumeKeys)
         autoEnableHiDPI = defaults.bool(forKey: Keys.autoEnableHiDPI)
         colorPickerHistory = defaults.stringArray(forKey: Keys.colorPickerHistory) ?? []
     }

@@ -27,6 +27,11 @@ struct DisplayDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
+            // Monitor speaker volume (DDC; hides itself when unsupported)
+            if !display.isBuiltin {
+                VolumeRow(display: display)
+            }
+
             // HiDPI toggle — before mode list (natural workflow: enable HiDPI → pick resolution)
             HiDPIRowView(display: display)
                 .osControlled(.resolution)

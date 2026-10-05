@@ -65,6 +65,7 @@ Backlit/
 │   │   ├── DisplayStreamService.swift      # Live stream window for a (virtual) display: ScreenCaptureKit SCStream → AVSampleBufferDisplayLayer in a floating aspect-locked NSWindow on a physical screen; needs Screen Recording permission
 │   │   ├── UndoService.swift               # App-wide undo stack for display adjustments (⌘Z in the menu window); controls push restore closures on gesture begin, views re-sync via undoTick
 │   │   ├── UpdateService.swift             # GitHub Releases API 检查新版本，语义化版本比较；改动影响更新检查逻辑
+│   │   ├── VolumeService.swift             # Monitor speaker volume/mute via DDC (VCP 0x62/0x8D), remembered per display (fd.volume.uuid.*), CoreAudio match of HDMI/DP sound output → display for the volume keys
 │   │   ├── XDRBrightnessService.swift      # XDR brightness mode (BrightIntosh-style, clean-room): 1×1 EDR trigger overlay per XDR panel + gamma-table boost via GammaService.setXDRBoost; persists fd.xdr.* keys, polls EDR headroom 1s
 │   │   ├── VirtualDisplayService.swift     # 虚拟显示器创建/销毁：CGVirtualDisplay 私有 API（vendorID 必须非零如 0xEEEE，主线程创建），HiDPI via 镜像模式，CGHelpers.runWithTimeout 超时保护，hiDPILog 文件调试日志，ObjC 类型 Sendable 扩展；HiDPI 配置仅运行时生效不持久化；改动影响虚拟显示器和 HiDPI 一键预设功能
 │   │   └── PresetService.swift             # 预设管理（user presets only; generated Native/HiDPI built-ins removed 2026-09-08）：保存/加载/应用显示器配置预设；使用 DisplayManagerAccessor 读取当前显示器状态；presets.json 存储在 ~/Library/Application Support/Backlit/。Captures the built-in display too (brightness + gamma; its resolution is never changed on apply) plus XDR and accessibility contrast state
@@ -90,6 +91,7 @@ Backlit/
 │       ├── AccessibilityContrastView.swift # System-wide accessibility contrast controls (Increase Contrast toggle + Display Contrast slider) in the top section; depends on AccessibilityService
 │       ├── XDRBrightnessView.swift         # XDR brightness section (tools panel: toggle + level slider) + XDRQuickSliderView (top-section quick slider, 0 = off); depends on XDRBrightnessService
 │       ├── VirtualDisplayView.swift        # 虚拟显示器配置列表 + 创建表单（预设分辨率）+ HiDPI 一键预设；依赖 VirtualDisplayService
+│       ├── VolumeRow.swift                 # Per-display volume slider + mute button (DisplayDetailView, external only; hidden when DDC volume is unsupported); depends on VolumeService
 │       └── SavePresetView.swift            # 保存当前显示器状态为预设；内联表单（名称 + 图标选择器）；调用 PresetService.captureCurrentState + addPreset
 ├── Backlit.xcodeproj/          # Xcode 项目文件（由 xcodegen 生成，不要手动编辑）
 ├── .gitignore                      # Git 忽略规则

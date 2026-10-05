@@ -20,6 +20,8 @@ final class DDCService: ObservableObject, @unchecked Sendable {
     static let brightnessVCP: UInt8 = 0x10
     static let contrastVCP: UInt8   = 0x12
     static let powerVCP: UInt8      = 0xD6
+    static let volumeVCP: UInt8     = 0x62   // audio speaker volume
+    static let muteVCP: UInt8       = 0x8D   // audio mute: 1 = muted, 2 = unmuted
 
     private let ddcQueue = DispatchQueue(label: "io.github.ludos1978.backlit.ddc", qos: .userInitiated)
 

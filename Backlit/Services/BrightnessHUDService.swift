@@ -44,13 +44,24 @@ final class BrightnessHUDService: @unchecked Sendable {
     ///   - brightness: Brightness level 0–100
     ///   - screen: The NSScreen on which the OSD should appear
     func show(brightness: Double, on screen: NSScreen) {
+        showOSD(.brightness, level: brightness, on: screen)
+    }
+
+    /// Shows the native macOS volume (or mute) OSD on the specified display.
+    func show(volume: Double, muted: Bool, on screen: NSScreen) {
+        showOSD(muted ? .mute : .volume, level: muted ? 0 : volume, on: screen)
+    }
+
+    // MARK: - Private
+
+    private func showOSD(_ image: OSDImage, level: Double, on screen: NSScreen) {
         guard let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
             NSLog("[BrightnessHUD] Could not get CGDirectDisplayID for screen")
             return
         }
 
         let totalChiclets: CUnsignedInt = 16
-        let filledChiclets = CUnsignedInt((brightness / 100.0 * Double(totalChiclets)).rounded())
+        let filledChiclets = CUnsignedInt((level / 100.0 * Double(totalChiclets)).rounded())
 
         let conn = NSXPCConnection(machServiceName: "com.apple.OSDUIHelper", options: [])
         conn.remoteObjectInterface = NSXPCInterface(with: OSDUIHelperProtocol.self)
@@ -69,7 +80,7 @@ final class BrightnessHUDService: @unchecked Sendable {
         }
 
         helper.showImage(
-            .brightness,
+            image,
             onDisplayID: displayID,
             priority: 0x1f4,
             msecUntilFade: 1500,

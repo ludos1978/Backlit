@@ -31,12 +31,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Brightness-key interception (F1/F2 → external display under the cursor)
-        // is opt-in: Settings → "Intercept Brightness Keys". The toggle starts/stops
-        // the event tap live; here we only honour the saved choice.
-        if SettingsService.shared.interceptBrightnessKeys {
-            BrightnessKeyService.shared.start()
-        }
+        // Brightness-key interception (F1/F2 → external display under the cursor) and
+        // volume-key interception (→ monitor speakers when they are the sound output)
+        // are opt-in via Settings. The toggles start/stop the event tap live; here we
+        // only honour the saved choice.
+        BrightnessKeyService.shared.updateTapState()
 
         // Restore XDR brightness mode if it was enabled in the previous session.
         if SettingsService.shared.isAuthoritative(.xdr) {

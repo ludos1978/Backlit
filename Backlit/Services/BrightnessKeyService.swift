@@ -18,10 +18,13 @@ private func brightnessKeyEventCallback(
 
 // MARK: - BrightnessKeyService
 
-/// Intercepts macOS brightness keys and routes them to the display under the mouse cursor.
-/// When the cursor is on an external display the key event is consumed and the external
-/// display's brightness is adjusted via BrightnessService. When the cursor is on the
-/// built-in display the event is passed through so macOS adjusts it normally.
+/// Intercepts macOS media keys for external displays (one event tap, two opt-in settings):
+/// - Brightness keys → the display under the mouse cursor. On an external display the event
+///   is consumed and brightness is set via BrightnessService; on the built-in display it is
+///   passed through so macOS adjusts it normally.
+/// - Volume/mute keys → when the macOS sound output is an external monitor (HDMI/DisplayPort
+///   audio), the event is consumed and the monitor's speakers are set via VolumeService.
+///   Any other output is passed through.
 @MainActor
 final class BrightnessKeyService: @unchecked Sendable {
     static let shared = BrightnessKeyService()
@@ -51,10 +54,33 @@ final class BrightnessKeyService: @unchecked Sendable {
     /// NX_KEYTYPE_BRIGHTNESS_DOWN
     private nonisolated(unsafe) static let nxKeytypeBrightnessDown: Int = 3
 
+    /// NX_KEYTYPE_SOUND_UP
+    private nonisolated(unsafe) static let nxKeytypeSoundUp: Int = 0
+    /// NX_KEYTYPE_SOUND_DOWN
+    private nonisolated(unsafe) static let nxKeytypeSoundDown: Int = 1
+    /// NX_KEYTYPE_MUTE
+    private nonisolated(unsafe) static let nxKeytypeMute: Int = 7
+
     /// Each key press moves brightness by 1/16 (≈ 6.25 %), matching macOS native behaviour.
     private nonisolated(unsafe) static let brightnessStep: Double = 100.0 / 16.0
 
     // MARK: - Start / Stop
+
+    /// Starts the tap if brightness- or volume-key interception is enabled, stops it otherwise.
+    func updateTapState() {
+        let settings = SettingsService.shared
+        if settings.interceptBrightnessKeys || settings.interceptVolumeKeys {
+            start()
+            if settings.interceptVolumeKeys {
+                // Probe up front so the first volume key press already knows the monitor.
+                for display in DisplayManagerAccessor.shared.displays where !display.isBuiltin {
+                    VolumeService.shared.probe(display)
+                }
+            }
+        } else {
+            stop()
+        }
+    }
 
     /// Installs the event tap. Requires Accessibility permissions.
     /// Safe to call multiple times — a running tap will not be re-created.
@@ -171,13 +197,27 @@ final class BrightnessKeyService: @unchecked Sendable {
         let keyCode = (data1 >> 16) & 0xFF
         let isKeyDown = (data1 & 0x0100) == 0   // bit 8 clear → key down
 
-        // Only intercept brightness keys.
-        guard keyCode == Self.nxKeytypeBrightnessUp || keyCode == Self.nxKeytypeBrightnessDown else {
-            return Unmanaged.passRetained(event)
-        }
+        let isBrightnessKey = keyCode == Self.nxKeytypeBrightnessUp || keyCode == Self.nxKeytypeBrightnessDown
+        let isVolumeKey = keyCode == Self.nxKeytypeSoundUp || keyCode == Self.nxKeytypeSoundDown ||
+                          keyCode == Self.nxKeytypeMute
+        guard isBrightnessKey || isVolumeKey else { return Unmanaged.passRetained(event) }
 
         // For key-up events always pass through — only consume key-down on external displays.
         guard isKeyDown else { return Unmanaged.passRetained(event) }
+
+        if isVolumeKey {
+            // Option+Shift = quarter steps, like macOS.
+            let fine = event.flags.contains(.maskAlternate) && event.flags.contains(.maskShift)
+            // The tap is on the main run loop, so main-actor state is safe to touch here.
+            let handled = MainActor.assumeIsolated {
+                self.handleVolumeKey(keyCode: keyCode, fine: fine)
+            }
+            return handled ? nil : Unmanaged.passRetained(event)
+        }
+
+        guard MainActor.assumeIsolated({ SettingsService.shared.interceptBrightnessKeys }) else {
+            return Unmanaged.passRetained(event)
+        }
 
         // Determine which display is under the cursor.
         // NSEvent.mouseLocation and NSScreen.screens are safe to call on the main thread.
@@ -217,5 +257,39 @@ final class BrightnessKeyService: @unchecked Sendable {
 
         // Return nil to consume (suppress) the event so macOS doesn't also adjust built-in brightness.
         return nil
+    }
+
+    // MARK: - Volume Keys
+
+    /// Adjusts the monitor that is the current sound output. Returns false (pass the event
+    /// through to macOS) when volume interception is off or the output isn't a DDC monitor.
+    private func handleVolumeKey(keyCode: Int, fine: Bool) -> Bool {
+        guard SettingsService.shared.interceptVolumeKeys else { return false }
+        let volumeService = VolumeService.shared
+        guard let display = volumeService.displayForCurrentAudioOutput(
+            in: DisplayManagerAccessor.shared.displays
+        ) else { return false }
+
+        guard let state = volumeService.states[display.displayID] else {
+            // Not probed yet (e.g. just connected) — probe for next time and let macOS handle this one.
+            volumeService.probe(display)
+            return false
+        }
+
+        let step = 100.0 / (fine ? 64.0 : 16.0)
+        switch keyCode {
+        case Self.nxKeytypeMute:
+            volumeService.toggleMute(for: display)
+        case Self.nxKeytypeSoundUp:
+            volumeService.setVolume(state.isMuted ? max(state.volume, step) : state.volume + step, for: display)
+        default:
+            volumeService.setVolume(state.volume - step, for: display)
+        }
+
+        if let newState = volumeService.states[display.displayID],
+           let screen = NSScreen.screen(for: display.displayID) {
+            BrightnessHUDService.shared.show(volume: newState.volume, muted: newState.isMuted, on: screen)
+        }
+        return true
     }
 }

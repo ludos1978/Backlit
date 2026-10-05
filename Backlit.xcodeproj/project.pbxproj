@@ -22,6 +22,7 @@
 		2C9CA50541CC0D3C7CF2C498 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1510136A54998A716866FFAE /* UpdateService.swift */; };
 		2D7A821F7B699CB9C6827C23 /* CGHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72A1D6628D719E706F94344 /* CGHelpers.swift */; };
 		321C2E10D98DBB6A95D15A5D /* ContentLightnessSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB91274D8817C180B3F20BB /* ContentLightnessSampler.swift */; };
+		36CDBFBC3F365FD158088079 /* VolumeRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B668CE98DDC3AD44A88F0CD /* VolumeRow.swift */; };
 		36DBE87DA84D8565ED230D26 /* ResolutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2066D1FCA3B1FFC597C0CB5 /* ResolutionService.swift */; };
 		3D39BCA33F836F2813314DB0 /* ArrangementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 173C59F15C39B2527931A8A4 /* ArrangementView.swift */; };
 		570BFC5C4D3C49FB37417C11 /* MainDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5BD0DAC186AE0D4315789EE /* MainDisplayView.swift */; };
@@ -45,6 +46,7 @@
 		A72BBA5C0BC174FE3AA9D36C /* NotchOverlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6560324A222AE5131EAFB82C /* NotchOverlayManager.swift */; };
 		B2996327DACF4233BD70BFF0 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49604FEE79BC866A0D452B85 /* MenuBarView.swift */; };
 		B390052D6B5FF9AA9CDB241A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7E0FB09B47CDD4877229CE1 /* Assets.xcassets */; };
+		B397A20FD3EF0532B5C3F0E0 /* VolumeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CA28381180634BC867EB4C /* VolumeService.swift */; };
 		C68CD3F13FB6F4F12B7860FB /* DisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0145C78886067F4B86E1C120 /* DisplayManager.swift */; };
 		C845D489330F0C4E1964E1BE /* DisplayInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720A7B037655FC845A492ABF /* DisplayInfo.swift */; };
 		CFFA63B54CE70382C590B8BF /* FreeDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5CA394AE7209A4B6A03C0C /* FreeDisplayApp.swift */; };
@@ -70,6 +72,7 @@
 		1510136A54998A716866FFAE /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		173C59F15C39B2527931A8A4 /* ArrangementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementView.swift; sourceTree = "<group>"; };
 		1EEB643F45C5EEE393F29AAB /* DisplayStreamRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayStreamRowView.swift; sourceTree = "<group>"; };
+		23CA28381180634BC867EB4C /* VolumeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeService.swift; sourceTree = "<group>"; };
 		240EE584B83C592248B3F54A /* BrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessService.swift; sourceTree = "<group>"; };
 		2961A7F722B50E16191F4FF0 /* MirrorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorService.swift; sourceTree = "<group>"; };
 		2BB3911A95390404E8814D7D /* PresetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetService.swift; sourceTree = "<group>"; };
@@ -82,6 +85,7 @@
 		49604FEE79BC866A0D452B85 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		4A5C51D525AD2D8B51A43C43 /* DisplayDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDetailView.swift; sourceTree = "<group>"; };
 		4AAA79418F788427204CC5B4 /* Backlit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Backlit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4B668CE98DDC3AD44A88F0CD /* VolumeRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeRow.swift; sourceTree = "<group>"; };
 		53CFF7F76EBE7F191F1994FF /* AccessibilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityService.swift; sourceTree = "<group>"; };
 		55DAFD2563AF3095C0382FB3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		575C7C7EEE645194E6147808 /* ImageAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAdjustmentView.swift; sourceTree = "<group>"; };
@@ -153,6 +157,7 @@
 				AA5043ED1526A3B4738798EB /* SavePresetView.swift */,
 				CFA093FE81C9AA28F0D11538 /* SystemColorView.swift */,
 				DC43BEDFE97334362F342E5B /* VirtualDisplayView.swift */,
+				4B668CE98DDC3AD44A88F0CD /* VolumeRow.swift */,
 				6C46133FCF826BB973542E38 /* XDRBrightnessView.swift */,
 			);
 			path = Views;
@@ -235,6 +240,7 @@
 				AEC89C58B3CFF6B8D9B05C9C /* UndoService.swift */,
 				1510136A54998A716866FFAE /* UpdateService.swift */,
 				C72095044B3B7E6073BF4E85 /* VirtualDisplayService.swift */,
+				23CA28381180634BC867EB4C /* VolumeService.swift */,
 				B37358C1023898B607CB9345 /* XDRBrightnessService.swift */,
 			);
 			path = Services;
@@ -368,6 +374,8 @@
 				2C9CA50541CC0D3C7CF2C498 /* UpdateService.swift in Sources */,
 				7F8B81285FE5F0374EC204ED /* VirtualDisplayService.swift in Sources */,
 				6F483B5F447F70956D2B1B72 /* VirtualDisplayView.swift in Sources */,
+				36CDBFBC3F365FD158088079 /* VolumeRow.swift in Sources */,
+				B397A20FD3EF0532B5C3F0E0 /* VolumeService.swift in Sources */,
 				FBE9578D632D752A2C192D83 /* XDRBrightnessService.swift in Sources */,
 				10252D01D0DAC04D09FD8176 /* XDRBrightnessView.swift in Sources */,
 			);
@@ -503,7 +511,7 @@
 				CODE_SIGN_ENTITLEMENTS = Backlit/Backlit.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 29W56PHWJR;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -515,7 +523,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.1;
+				MARKETING_VERSION = 0.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.ludos1978.backlit;
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "Backlit/Backlit-Bridging-Header.h";
@@ -532,7 +540,7 @@
 				CODE_SIGN_ENTITLEMENTS = Backlit/Backlit.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 29W56PHWJR;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -544,7 +552,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.1;
+				MARKETING_VERSION = 0.5.2;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.ludos1978.backlit;
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "Backlit/Backlit-Bridging-Header.h";
