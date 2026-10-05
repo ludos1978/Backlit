@@ -25,7 +25,11 @@
 
 ## 🔵 P2 — 一般优先级
 
-（暂无）
+### B-005: Gamma has no effect on some projectors (cause unconfirmed)
+- **Symptom**: gamma slider (even at -100) does nothing on a projector (saved state for display ID 9, Oct 2026)
+- **Known history**: WindowServer's display config shows many 1920×1080-class externals mirrored with the built-in screen — mirroring is the prime suspect; AirPlay/DisplayLink outputs are the other. No system logs survived to confirm.
+- **Already fixed (9cee755)**: re-apply after mode change / delayed after connect, UUID-keyed state, warning when CGSetDisplayTransfer* fails
+- **Next step**: with the projector attached run `swift scripts/gamma-check.swift` and note mirror state, write result and whether the projector dims. If "write OK" + mirrored but no dimming → apply the gamma to the mirror source / all members of the mirror set.
 
 ---
 
