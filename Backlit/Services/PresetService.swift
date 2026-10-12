@@ -62,8 +62,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     /// nil fields ignore those); disconnected displays are skipped.
     func isModified(_ preset: DisplayPreset) -> Bool {
         guard !preset.isBuiltin else { return false }
-        let now = captureCurrentState(name: preset.name, icon: preset.icon,
-                                      includeArrangement: preset.restoresArrangement == true)
+        let now = captureCurrentState(name: preset.name, icon: preset.icon)
         // A connected display the preset does not cover yet (e.g. presets saved
         // before an external was attached) — updating would add it.
         let covered = Set(preset.displays.map(\.displayUUID))
@@ -73,12 +72,6 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             if let b = entry.brightness, let c = cur.brightness, abs(b - c) > 0.01 { return true }
             if let adj = entry.gammaAdjustment, let c = cur.gammaAdjustment, adj != c { return true }
             if let d = entry.softwareDimming, let c = cur.softwareDimming, abs(d - c) > 0.5 { return true }
-            if preset.restoresArrangement == true,
-               let x = entry.arrangementX, let y = entry.arrangementY,
-               let cx = cur.arrangementX, let cy = cur.arrangementY,
-               Int(x) != Int(cx) || Int(y) != Int(cy) {
-                return true
-            }
         }
         if let enabled = preset.xdrEnabled {
             if enabled != XDRBrightnessService.shared.isEnabled { return true }
@@ -92,13 +85,12 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     }
 
     /// Overwrites a user preset with the current display state, keeping its id,
-    /// name, icon and arrangement opt-in. Undoable with ⌘Z.
+    /// name and icon. Undoable with ⌘Z.
     func updatePreset(id: UUID) {
         guard let index = presets.firstIndex(where: { $0.id == id }),
               !presets[index].isBuiltin else { return }
         let previous = presets[index]
-        var fresh = captureCurrentState(name: previous.name, icon: previous.icon,
-                                        includeArrangement: previous.restoresArrangement == true)
+        var fresh = captureCurrentState(name: previous.name, icon: previous.icon)
         fresh.id = previous.id
         presets[index] = fresh
         savePresets()
@@ -190,29 +182,12 @@ final class PresetService: ObservableObject, @unchecked Sendable {
                 BrightnessService.shared.setExtraDimming(dim, for: displayID)
                 anyActionTaken = true
             }
-
-            // Restore arrangement only for presets that opted in (older presets have
-            // nil → never), never for the built-in display (moving it onto (0,0)
-            // makes it the main display and displaces every external). Skip no-op
-            // moves: every display-configuration transaction dismisses the menu.
-            if preset.restoresArrangement == true, !display.isBuiltin,
-               SettingsService.shared.isAuthoritative(.arrangement),
-               let x = entry.arrangementX, let y = entry.arrangementY,
-               Int(x) != Int(display.bounds.origin.x) || Int(y) != Int(display.bounds.origin.y) {
-                debugLog("[PresetService]   -> setting arrangement x=\(x) y=\(y)")
-                let ok = await ArrangementService.shared.setPosition(
-                    x: Int(x), y: Int(y), for: displayID
-                )
-                debugLog("[PresetService]   -> setPosition result: \(ok)")
-                anyActionTaken = true
-            }
         }
 
         // Displays the preset does not cover (attached after it was saved) still
         // get its generic, non-hardware-specific values — brightness, extra
         // dimming and image adjustment — from a template entry (the built-in's
-        // if stored, else the first). Positions are hardware-specific and stay
-        // untouched on such displays.
+        // if stored, else the first).
         let covered = Set(preset.displays.map(\.displayUUID))
         let template = preset.displays.first(where: { e in displays.first { $0.displayUUID == e.displayUUID }?.isBuiltin == true })
             ?? preset.displays.first
@@ -274,19 +249,15 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     /// Snapshots all current online displays into a new preset.
     /// The built-in display IS captured (brightness + gamma) — without it a
     /// MacBook with no external display would save empty presets.
-    /// Resolution is never captured: presets must not change display modes.
-    /// `includeArrangement` stores display positions for restore on apply — opt-in,
-    /// because replaying positions captured under a different display setup
-    /// scrambles the layout (and moving the built-in display changes the main screen).
-    func captureCurrentState(name: String, icon: String, includeArrangement: Bool = false) -> DisplayPreset {
+    /// Resolution and arrangement are never captured: presets only carry
+    /// brightness-related state and must not change display modes or layout.
+    func captureCurrentState(name: String, icon: String) -> DisplayPreset {
         let displays = DisplayManagerAccessor.shared.displays
         let entries: [DisplayPresetEntry] = displays.compactMap { display in
             guard display.isOnline else { return nil }
             return DisplayPresetEntry(
                 displayUUID: display.displayUUID,
                 brightness: display.brightness / 100.0,
-                arrangementX: includeArrangement && !display.isBuiltin ? display.bounds.origin.x : nil,
-                arrangementY: includeArrangement && !display.isBuiltin ? display.bounds.origin.y : nil,
                 // Neutral (not nil) when no adjustment is saved, so applying the
                 // preset restores the neutral state rather than leaving stale gamma.
                 gammaAdjustment: GammaService.shared.loadSavedState(for: display.displayID) ?? GammaAdjustment(),
@@ -295,7 +266,6 @@ final class PresetService: ObservableObject, @unchecked Sendable {
             )
         }
         var preset = DisplayPreset(name: name, icon: icon, displays: entries)
-        preset.restoresArrangement = includeArrangement
         preset.adaptiveBrightnessEnabled = AdaptiveBrightnessService.shared.isEnabled
         preset.xdrEnabled = XDRBrightnessService.shared.isEnabled
         preset.xdrLevel = XDRBrightnessService.shared.level

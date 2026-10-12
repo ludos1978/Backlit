@@ -18,6 +18,9 @@ release is 0.3.0.
 
 ### Changed
 
+- **Presets never change resolution or layout.** The *Restore display arrangement* option is
+  gone; presets only carry brightness, dimming, gamma/image adjustment, XDR, contrast and
+  adaptive brightness.
 - **Only the Display Modes list changes a resolution.** Presets no longer store or restore
   resolutions (older presets keep the values but they are ignored), the resolution is no
   longer re-applied after wake, and *Auto-enable HiDPI on New Displays* is removed.

@@ -10,7 +10,8 @@ struct DisplayPresetEntry: Codable, Identifiable {
     var height: Int?
     var isHiDPI: Bool?
     var brightness: Double?       // optional brightness 0.0-1.0
-    var arrangementX: Double?     // optional position
+    // Display position stored by older presets — decoded for compatibility, never applied.
+    var arrangementX: Double?
     var arrangementY: Double?
     // Optional (nil in presets saved by older versions → left untouched on apply)
     var gammaAdjustment: GammaAdjustment?  // full image-adjustment snapshot
@@ -28,6 +29,6 @@ struct DisplayPreset: Codable, Identifiable {
     var xdrLevel: Double?          // XDR boost strength 0-1
     var increaseContrast: Bool?    // accessibility "Increase contrast"
     var displayContrast: Double?   // accessibility "Display Contrast" 0-1
-    var restoresArrangement: Bool? // opt-in: apply stored display positions (nil/false = never)
+    var restoresArrangement: Bool? // legacy (older presets) — ignored: presets never change the layout
     var adaptiveBrightnessEnabled: Bool? // adaptive brightness on/off at save time (nil = older preset)
 }
