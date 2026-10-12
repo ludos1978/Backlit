@@ -21,6 +21,9 @@ release is 0.3.0.
 - **Only the Display Modes list changes a resolution.** Presets no longer store or restore
   resolutions (older presets keep the values but they are ignored), the resolution is no
   longer re-applied after wake, and *Auto-enable HiDPI on New Displays* is removed.
+- **Launching Backlit changes nothing.** It no longer restores brightness, extra dimming,
+  gamma/image adjustments, XDR, accessibility contrast or adaptive brightness from the last
+  session; those only change when you use a control or apply a preset.
 
 ### Fixed
 

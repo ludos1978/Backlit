@@ -160,9 +160,11 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
   typed text — and acts solely on the two brightness keys.
 - **Screen capture (on demand):** *Show in Window* streams a display with ScreenCaptureKit
   straight into a local window; frames are never saved or transmitted.
-- **Runs automatically:** at launch/wake the app re-applies *your own* saved settings
-  (gamma, extra dimming, XDR, accessibility contrast) and probes external displays over DDC.
-  It never changes a resolution on its own — only a pick in the Display Modes list does. After a crash or force-quit, persisted display adjustments are NOT
+- **Runs automatically:** at launch the app only reads — it probes external displays over DDC
+  and changes nothing (no brightness, dimming, gamma, XDR, contrast or adaptive brightness
+  until you use a control or apply a preset). After wake or a display reconnect it re-applies
+  only the dimming/gamma you set in the current session. It never changes a resolution on its
+  own — only a pick in the Display Modes list does. After a crash or force-quit, persisted display adjustments are NOT
   re-applied (crash guard), so a bad setting can never lock you out.
 - **Private Apple APIs:** used for built-in brightness (DisplayServices), auto-brightness
   (CoreDisplay), accessibility contrast (UniversalAccess/SkyLight), virtual displays

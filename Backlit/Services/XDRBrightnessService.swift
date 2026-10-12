@@ -85,13 +85,11 @@ final class XDRBrightnessService: ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// Restores the persisted XDR state. Called once at app launch.
-    func restoreSavedState() {
+    /// Restores the persisted XDR boost level (not the on/off state — launch never
+    /// turns XDR on). Called once at app launch.
+    func restoreSavedLevel() {
         if UserDefaults.standard.object(forKey: Keys.level) != nil {
             level = UserDefaults.standard.double(forKey: Keys.level)
-        }
-        if UserDefaults.standard.bool(forKey: Keys.enabled) {
-            isEnabled = true
         }
     }
 

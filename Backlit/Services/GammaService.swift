@@ -342,6 +342,16 @@ final class GammaService: @unchecked Sendable {
         return adj
     }
 
+    /// Forgets every display's saved adjustment (called at launch: Backlit never
+    /// re-applies a previous session's gamma on its own; presets keep their copies).
+    func clearAllSavedStates() {
+        let defaults = UserDefaults.standard
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix("fd.GammaService.savedAdjustment.") {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     func clearSavedState(for displayID: CGDirectDisplayID) {
         UserDefaults.standard.removeObject(forKey: GammaService.stateKey(for: displayID))
         UserDefaults.standard.removeObject(forKey: GammaService.legacyStateKey(for: displayID))

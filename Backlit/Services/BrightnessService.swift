@@ -150,6 +150,15 @@ final class BrightnessService: @unchecked Sendable {
         UserDefaults.standard.set(factor, forKey: softBrightnessKey(for: displayID))
     }
 
+    /// Forgets the software dimming of the previous session (called at launch: the
+    /// gamma ramp starts neutral and Backlit doesn't re-dim on its own).
+    func clearPersistedSoftwareBrightness() {
+        let defaults = UserDefaults.standard
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("fd.softBrightness_") {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     private func loadSoftwareBrightness(for displayID: CGDirectDisplayID) -> Double? {
         let key = softBrightnessKey(for: displayID)
         guard UserDefaults.standard.object(forKey: key) != nil else { return nil }
@@ -305,6 +314,11 @@ final class BrightnessService: @unchecked Sendable {
                         self.ddcAvailable[displayID] = false
                     }
                     self.ddcAvailableLock.unlock()
+                    // Without DDC the slider drives software dimming — with none applied
+                    // the display is at full brightness, so show that instead of a stale value.
+                    if self.currentSoftwareBrightness(for: displayID) == nil {
+                        Task { @MainActor in display.brightness = 100 }
+                    }
                 }
             }
         }

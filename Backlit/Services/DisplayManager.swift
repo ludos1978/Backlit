@@ -95,28 +95,12 @@ class DisplayManager: ObservableObject {
 
         // Only load details / refresh brightness for newly appeared displays
         for display in addedDisplays {
-            // The launch restore must use the brightness remembered from BEFORE this
-            // refresh — the refresh itself records whatever the hardware reports now.
-            let rememberedBrightness = SettingsService.shared.savedBrightness(uuid: display.displayUUID)
             Task { await BrightnessService.shared.refreshBrightness(for: display) }
             Task { await display.loadDetails() }
-            // Restore saved gamma/software-brightness adjustments for the reconnected display.
-            // Brief delay lets WindowServer settle before we write transfer tables.
-            // Skipped when the previous session crashed (see AppDelegate.previousExitWasClean).
-            // Only for areas Backlit owns (Settings → "Who controls each setting").
-            if AppDelegate.previousExitWasClean {
-                let settings = SettingsService.shared
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 300_000_000)
-                    // Restore the last brightness the user had on this display
-                    // (only if it differs from what the hardware already reports).
-                    if settings.isAuthoritative(.brightness),
-                       let saved = rememberedBrightness, abs(saved - display.brightness) >= 1 {
-                        BrightnessService.shared.setBrightnessSmooth(saved, for: display, isAutoAdjust: true)
-                    }
-                }
-                scheduleImageStateReapply(for: display.displayID)
-            }
+            // Re-apply software dimming/gamma the user set during THIS session (e.g. a
+            // projector reconnecting). Launch clears the previous session's state, so
+            // the initial scan writes nothing.
+            scheduleImageStateReapply(for: display.displayID)
         }
 
         // For displays that were already present, only update bounds/main flag (no DDC probe).

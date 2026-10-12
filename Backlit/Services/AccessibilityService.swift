@@ -68,16 +68,6 @@ final class AccessibilityService: ObservableObject, @unchecked Sendable {
 
     private init() {
         reload()
-        // Restore our display-contrast value from the previous session.
-        // Property observers do NOT fire inside init, so apply explicitly.
-        let saved = UserDefaults.standard.double(forKey: Keys.displayContrast)
-        if saved > 0 {
-            displayContrast = saved
-            // Apply only while Backlit owns accessibility contrast.
-            if SettingsService.shared.isAuthoritative(.accessibilityContrast) {
-                _ = _CGSSetDisplayContrast?(Float(min(max(saved, 0), 1)))
-            }
-        }
         // Follow changes made in System Settings while the app runs.
         observer = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,

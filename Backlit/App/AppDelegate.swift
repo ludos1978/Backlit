@@ -37,19 +37,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // only honour the saved choice.
         BrightnessKeyService.shared.updateTapState()
 
-        // Restore XDR brightness mode if it was enabled in the previous session.
-        if SettingsService.shared.isAuthoritative(.xdr) {
-            XDRBrightnessService.shared.restoreSavedState()
-        }
+        // Launch is passive: starting Backlit never changes brightness, dimming, gamma,
+        // XDR or contrast — only an explicit user action does (a slider, a toggle, a
+        // preset). Drop output state persisted by the previous session so the controls
+        // show what is actually on screen. XDR, adaptive brightness and accessibility
+        // contrast simply aren't re-enabled; only their non-output settings load.
+        GammaService.shared.clearAllSavedStates()
+        BrightnessService.shared.clearPersistedSoftwareBrightness()
+        XDRBrightnessService.shared.restoreSavedLevel()
 
-        // Warm up adaptive brightness so an enabled setting starts at launch (it is
-        // a lazy singleton; starting it on first UI access would be a surprise).
-        if SettingsService.shared.isAuthoritative(.brightness) {
-            _ = AdaptiveBrightnessService.shared
-        }
-
-        // Warm up the accessibility bridge so saved display contrast is restored
-        // and System Settings changes are observed before the menu is first opened.
+        // Observe System Settings contrast changes before the menu is first opened.
         _ = AccessibilityService.shared
 
         // Build the display manager now — it registers the reconfiguration

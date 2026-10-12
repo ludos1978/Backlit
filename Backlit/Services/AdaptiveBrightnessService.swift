@@ -158,7 +158,8 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
 
     private init() {
         load()
-        if d.bool(forKey: K.enabled) { isEnabled = true }
+        // Never auto-start at launch: adaptive brightness only runs after the user
+        // switches it on in this session (or a preset does).
     }
 
     private func load() {
