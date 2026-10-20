@@ -4,7 +4,7 @@
 
 ## What this project is
 
-A free, open-source alternative to BetterDisplay. A macOS menu bar app for managing displays: DDC brightness/contrast control, resolution/HiDPI management, display arrangement, color management, virtual displays.
+A free, open-source alternative to BetterDisplay. A macOS menu bar app for managing displays: DDC brightness/contrast control, resolution/HiDPI management, color management, virtual displays, monitor speaker volume.
 Tech stack: Swift 6 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics, zero third-party dependencies.
 
 ## Quick navigation (load on demand)
@@ -22,6 +22,15 @@ Tech stack: Swift 6 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics, zero third-
 - **Current phase**: Phase 22 complete. Feature trimming (removed rotation/streaming/PiP/mirroring/config protection, etc.) + auto-brightness rewrite + HiDPI plist override implementation.
 - **Do not touch**: `docs/roadmap/` — do not change its structure (planner output), only update `[x]` progress markers
 - **Recent changes**: Phase 21 feature trimming (15+ files deleted), Phase 22 auto-brightness rewrite (CoreDisplay dlsym), HiDPI switched from mirroring approach to plist override, arrangement center-alignment fix, HiDPI presets
+
+## Scope rules (set by the maintainer — never break)
+
+- **Resolution:** only the user's direct pick in the Display Modes list (and its ⌘Z undo) or the HiDPI switch may change a physical display's mode. No presets, wake/connect handling, probes or automation.
+- **Layout:** where displays sit relative to each other is not Backlit's job — never move displays (no `CGConfigureDisplayOrigin`, no mirroring).
+- **Exception:** virtual displays may be created and their own features (resolution, HiDPI) set.
+- **Presets:** brightness-related state only (brightness, dimming, gamma/image adjustment, XDR, contrast, adaptive brightness).
+- **Launch is passive:** starting Backlit changes no brightness-related output; only an explicit user action (control, toggle, preset) does.
+- **Commit every finished change** (atomic commits); pushing is a separate, explicit step.
 
 ## Autonomous decision rules
 
@@ -104,7 +113,7 @@ Tech stack: Swift 6 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics, zero third-
 
 ```bash
 # 1. Build check
-cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5
+./build.sh   # clean Debug build (ad-hoc signing fallback)
 
 # 2. Linkage check (when interfaces/models changed)
 grep -r "DisplayInfo\|DisplayManager\|DDCService" Backlit/ --include="*.swift" | grep -v "^Binary"

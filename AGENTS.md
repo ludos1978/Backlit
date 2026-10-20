@@ -2,7 +2,7 @@
 
 > This file defines the harness rules for AI agents working on this project.
 > AI agents MUST read this file before making any changes.
-> For deeper context, read CLAUDE.md first.
+> For deeper context, read CLAUDE.md first — especially its "Scope rules".
 
 ## Project Overview
 
@@ -85,16 +85,16 @@ State the reason before modifying the following files:
 
 ```bash
 # Build check (Debug) — run after every change
-cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -20
+./build.sh   # clean Debug build (ad-hoc signing fallback)
 
 # Linkage check (when interfaces/models changed)
 grep -r "DisplayInfo\|DisplayManager\|DDCService" Backlit/ --include="*.swift" | grep -v "^Binary"
 
 # Regenerate xcodeproj (required when project.yml changed)
-cd ~/Desktop/Backlit && xcodegen generate
+xcodegen generate
 
-# Release build + package DMG
-cd ~/Desktop/Backlit && ./build.sh
+# Release: bump version, build, sign, write build/Builds/Backlit-X.Y.Z.{dmg,zip}, commit
+./scripts/build-dmg.sh [patch|minor|major] [--install]
 ```
 
 ### Test Coverage
