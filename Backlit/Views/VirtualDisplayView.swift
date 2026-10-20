@@ -206,7 +206,6 @@ struct CreateVirtualDisplayForm: View {
     @State private var name: String = "Virtual Display"
     @State private var selectedPreset: Int = 0
     @State private var hiDPI: Bool = true
-    @State private var autoCreate: Bool = true
 
     private let presets: [(label: String, width: Int, height: Int)] = [
         ("1920×1080 (FHD)", 1920, 1080),
@@ -260,21 +259,6 @@ struct CreateVirtualDisplayForm: View {
                     .foregroundColor(.secondary)
             }
 
-            // Auto-create toggle
-            HStack {
-                Text("Auto")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .frame(width: 44, alignment: .leading)
-                Toggle("", isOn: $autoCreate)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                    .controlSize(.mini)
-                Text("Create automatically at launch")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
             // Confirm button
             Button(action: confirm) {
                 HStack(spacing: 6) {
@@ -302,8 +286,7 @@ struct CreateVirtualDisplayForm: View {
             width: preset.width,
             height: preset.height,
             refreshRate: 60,
-            hiDPI: hiDPI,
-            autoCreate: autoCreate
+            hiDPI: hiDPI
         )
         onConfirm(config)
     }

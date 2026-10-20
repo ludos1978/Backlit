@@ -7,7 +7,7 @@
 | Topic | File | Entries |
 |------|------|------|
 | IOKit / DDC / Rotation / Ambient Light / Display Matching / Apple Silicon | [iokit.md](iokit.md) | L-003, L-004, L-005 + general entries |
-| CoreGraphics / HiDPI / CGVirtualDisplay / Gamma | [coregraphics.md](coregraphics.md) | L-006, L-007, L-020 ~ L-028 + general entries |
+| CoreGraphics / HiDPI / CGVirtualDisplay / Gamma | [coregraphics.md](coregraphics.md) | L-006, L-007, L-020 ~ L-029 + general entries |
 | SwiftUI / MenuBarExtra / UI Animation / DDC Cache / Performance | [swiftui.md](swiftui.md) | general entries |
 | Cross-Service Coordination / Concurrency / Resource Management | [services.md](services.md) | L-008 ~ L-019 |
 | Xcode Build / Phase Wrap-up | [build.md](build.md) | general entries |

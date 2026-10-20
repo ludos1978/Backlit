@@ -99,3 +99,9 @@
 - **Causes**: (1) a mode change (`setModeFlag`, common right after a projector connects) makes ColorSync reload the profile and reset the gamma ramp, and only *added* displays were re-applied; (2) ColorSync loads the profile asynchronously, so a single write 300 ms after connect can be overwritten; (3) saved adjustments were keyed by `CGDirectDisplayID`, which is not stable per screen (port / connection order); (4) AirPlay / Sidecar / DisplayLink outputs have no gamma ramp at all — `CGSetDisplayTransfer*` fails there
 - **Fix**: `DisplayManager.scheduleImageStateReapply` re-applies at 0.3 s and 2 s after connect *and* after mode changes; gamma state keyed by display UUID (legacy ID key migrated); GammaService checks the `CGError` + `CGDisplayGammaTableCapacity` and the Image Adjustment panel shows a warning when writes fail
 - **Lesson**: never assume a gamma write sticks — re-apply after every reconfiguration, key per-display state by UUID, and check the return value
+
+### L-029: Never auto-create virtual displays (launch / first menu open)
+- **Symptom**: "starting Backlit changes the resolution"
+- **Cause**: saved virtual displays with `autoCreate: true` were re-created when VirtualDisplayService first loaded (the first menu open after launch). Adding a display makes macOS re-fit the physical screens; it can apply a remembered mirror set (built-in mirroring the 1920×1080 virtual display at 1920×1080) or pick new modes
+- **Fix**: auto-create removed; `autoCreate` is decoded but ignored, virtual displays are only created by an explicit click
+- **Lesson**: anything that adds or removes a display is a resolution/layout change — only on direct user action

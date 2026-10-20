@@ -30,10 +30,13 @@ final class VirtualDisplayService: ObservableObject, @unchecked Sendable {
         var height: Int
         var refreshRate: Double
         var hiDPI: Bool
+        /// Legacy (decoded from older configs, always false for new ones) and ignored:
+        /// a virtual display is only created by an explicit click — adding a display
+        /// makes macOS re-fit (and possibly mirror / re-mode) the physical screens.
         var autoCreate: Bool
 
         init(id: UUID = UUID(), name: String, width: Int, height: Int,
-             refreshRate: Double = 60.0, hiDPI: Bool = true, autoCreate: Bool = true) {
+             refreshRate: Double = 60.0, hiDPI: Bool = true, autoCreate: Bool = false) {
             self.id = id
             self.name = name
             self.width = width
@@ -201,47 +204,6 @@ final class VirtualDisplayService: ObservableObject, @unchecked Sendable {
               let decoded = try? JSONDecoder().decode([VirtualDisplayConfig].self, from: data)
         else { return }
         configs = decoded
-
-        // Re-create virtual displays marked autoCreate after WindowServer stabilises.
-        let autoCreateConfigs = configs.filter { $0.autoCreate }
-        if !autoCreateConfigs.isEmpty {
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 800_000_000)
-                for config in autoCreateConfigs {
-                    // After a crash, a virtual display from the previous session may
-                    // still be registered with WindowServer. Skip creation if an online
-                    // virtual display with matching dimensions already exists.
-                    guard !virtualDisplayAlreadyExists(width: config.width, height: config.height) else {
-                        #if DEBUG
-                        print("[VirtualDisplayService] autoCreate skipped — virtual display \(config.width)×\(config.height) already online")
-                        #endif
-                        continue
-                    }
-                    _ = await create(config: config)
-                }
-            }
-        }
-    }
-
-    /// Returns true if any currently-online display matches the given pixel dimensions and
-    /// has no associated IOKit service port (indicating it is a virtual/software display).
-    /// Used by autoCreate to avoid duplicating a display that survived an app crash.
-    private func virtualDisplayAlreadyExists(width: Int, height: Int) -> Bool {
-        var displayCount: UInt32 = 0
-        CGGetOnlineDisplayList(0, nil, &displayCount)
-        guard displayCount > 0 else { return false }
-        var displayIDs = [CGDirectDisplayID](repeating: 0, count: Int(displayCount))
-        CGGetOnlineDisplayList(displayCount, &displayIDs, &displayCount)
-        for id in displayIDs {
-            // A software/virtual display has no IOService entry (servicePort == 0 / MACH_PORT_NULL).
-            // Physical displays always have a non-null service port.
-            let servicePort = CGDisplayIOServicePort(id)
-            guard servicePort == 0 || servicePort == MACH_PORT_NULL else { continue }
-            let w = Int(CGDisplayPixelsWide(id))
-            let h = Int(CGDisplayPixelsHigh(id))
-            if w == width && h == height { return true }
-        }
-        return false
     }
 
     private func saveConfigs() {

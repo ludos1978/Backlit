@@ -7,6 +7,17 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Fixed
+
+- **Starting Backlit no longer changes the resolution.** Saved virtual displays were re-created
+  automatically on the first menu open after launch, and macOS re-fitted (or mirrored) the
+  physical screens around the new display. Virtual displays are now only created when you click
+  them; the *Auto* (create at launch) option is removed.
+
+---
+
 ## v0.6.1 (2026-10-20)
 
 ### Changed
