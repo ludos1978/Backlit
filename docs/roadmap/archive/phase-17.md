@@ -1,28 +1,28 @@
-# Phase 17: 核心功能专项修复 — DDC/HiDPI/刘海
+# Phase 17: Core Feature Fixes - DDC/HiDPI/Notch
 
-> 目标：修复三个影响核心体验的技术性问题：Apple Silicon DDC 亮度控制不可用、外接 2K 显示器 HiDPI 虚拟显示创建失败、以及刘海遮罩 NSWindow 崩溃
+> Goal: fix three technical issues affecting the core experience: Apple Silicon DDC brightness control unavailable, HiDPI virtual display creation failing on external 2K displays, and the notch overlay NSWindow crash
 
-## 前置说明
+## Prerequisites
 
-本 Phase 涉及私有 API bridging header 和两个底层服务的重写，任务间有依赖顺序：
-**Task 1（bridging header）必须先于 Task 2、3**；Task 4（刘海崩溃）独立，可与 Task 1 并行启动；Task 5（集成测试）最后进行。
+This Phase involves a private API bridging header and the rewrite of two low-level services, so tasks have a dependency order:
+**Task 1 (bridging header) must precede Tasks 2 and 3**; Task 4 (notch crash) is independent and can start in parallel with Task 1; Task 5 (integration test) comes last.
 
 ---
 
-## 任务列表
+## Task List
 
-- [x] **Task 1**: 创建 Objective-C Bridging Header（DDC + 虚拟显示器私有 API 共同前置）
-  - 实现提示：
-    1. 在项目根目录创建 `Backlit/Backlit-Bridging-Header.h`，声明以下内容：
+- [x] **Task 1**: Create the Objective-C Bridging Header (shared prerequisite for DDC + virtual display private APIs)
+  - Implementation hints:
+    1. Create `Backlit/Backlit-Bridging-Header.h` in the project root, declaring the following:
 
        ```objc
-       // ── CGVirtualDisplay 私有类（macOS 14+ 虚拟显示器）──────────────────────
+       // ── CGVirtualDisplay private classes (macOS 14+ virtual displays) ──────────────────────
        #import <Foundation/Foundation.h>
        #import <CoreGraphics/CoreGraphics.h>
 
        @interface CGVirtualDisplayDescriptor : NSObject
-       @property (nonatomic) uint32_t sizeInMillimeters;   // 对角线尺寸（毫米）
-       @property (nonatomic) CGSize   maxPixelSize;        // 最大像素分辨率
+       @property (nonatomic) uint32_t sizeInMillimeters;   // Diagonal size (millimeters)
+       @property (nonatomic) CGSize   maxPixelSize;        // Maximum pixel resolution
        @property (nonatomic) CGColorSpaceRef colorSpace;
        @property (nonatomic) NSPoint  whitePoint;
        @property (nonatomic) NSPoint  redPrimary;
@@ -47,7 +47,7 @@
        @property (nonatomic, readonly) CGDirectDisplayID displayID;
        @end
 
-       // ── CGSDisplayMode（高级分辨率切换）──────────────────────────────────────
+       // ── CGSDisplayMode (advanced resolution switching) ──────────────────────────────────────
        typedef struct {
            uint32_t modeID;
            uint32_t width;
@@ -60,10 +60,10 @@
        extern CGError CGSConfigureDisplayMode(CGSConnectionID connection, CGDirectDisplayID display, uint32_t modeID);
        extern CGSConnectionID CGSMainConnectionID(void);
 
-       // ── CoreDisplay（可选，供未来参考）────────────────────────────────────────
+       // ── CoreDisplay (optional, for future reference) ────────────────────────────────────────
        // extern CFDictionaryRef CoreDisplay_DisplayCreateInfoDictionary(CGDirectDisplayID display);
 
-       // ── IOAVService（Apple Silicon DDC）──────────────────────────────────────
+       // ── IOAVService (Apple Silicon DDC) ──────────────────────────────────────
        typedef void * IOAVServiceRef;
        extern IOAVServiceRef IOAVServiceCreate(CFAllocatorRef allocator);
        extern IOAVServiceRef IOAVServiceCreateWithService(CFAllocatorRef allocator, io_service_t service);
@@ -79,29 +79,29 @@
                                            uint32_t inputBufferSize);
        ```
 
-    2. 打开 `project.yml`，在 `targets.Backlit.settings.base` 下添加：
+    2. Open `project.yml` and add under `targets.Backlit.settings.base`:
        ```yaml
        SWIFT_OBJC_BRIDGING_HEADER: Backlit/Backlit-Bridging-Header.h
        ```
-    3. 运行 `cd ~/Desktop/Backlit && xcodegen generate`
-    4. 运行验证链确认编译通过（bridging header 空用也不应报错）
-  - 验证：`xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5` 显示 `BUILD SUCCEEDED`
+    3. Run `cd ~/Desktop/Backlit && xcodegen generate`
+    4. Run the verification chain to confirm it builds (an unused bridging header should not cause errors)
+  - Verify: `xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5` shows `BUILD SUCCEEDED`
 
 ---
 
-- [x] **Task 2**: 重写 DDCService 支持 Apple Silicon（IOAVService 路径）
-  - 背景：现有 `IOFBCopyI2CInterfaceForBus` + `IOI2CSendRequest` 是 Intel 时代 API，在 Apple Silicon 上完全无法工作。需要新增 ARM64 路径，保留 Intel 路径作为兜底（Hackintosh/VM 用户）。
-  - 实现提示：
-    1. **新增 ARM64 DDC 写方法**（`DDCService.swift`）：
+- [x] **Task 2**: Rewrite DDCService to support Apple Silicon (IOAVService path)
+  - Background: the existing `IOFBCopyI2CInterfaceForBus` + `IOI2CSendRequest` are Intel-era APIs and do not work at all on Apple Silicon. An ARM64 path needs to be added, keeping the Intel path as a fallback (Hackintosh/VM users).
+  - Implementation hints:
+    1. **Add the ARM64 DDC write method** (`DDCService.swift`):
        ```swift
-       // 在 DDCService 顶部，ARM64 专用路径
+       // At the top of DDCService, ARM64-only path
        #if arch(arm64)
        private func findAVService(for displayID: CGDirectDisplayID) -> IOAVServiceRef? {
-           // 1. 通过 CGDisplayIOServicePort 获取显示器对应的 IOService
+           // 1. Get the IOService for the display via CGDisplayIOServicePort
            let port = CGDisplayIOServicePort(displayID)
            guard port != IO_OBJECT_NULL else { return nil }
 
-           // 2. 向上遍历 IORegistry 父节点，找到 DCPAVServiceProxy
+           // 2. Walk up the IORegistry parent nodes to find DCPAVServiceProxy
            var iterator: io_iterator_t = 0
            let matchDict = IOServiceMatching("DCPAVServiceProxy")
            IOServiceGetMatchingServices(kIOMainPortDefault, matchDict, &iterator)
@@ -111,7 +111,7 @@
            while service != IO_OBJECT_NULL {
                defer { IOObjectRelease(service); service = IOIteratorNext(iterator) }
                let avService = IOAVServiceCreateWithService(kCFAllocatorDefault, service)
-               // 用一个无害的读测试确认是否是正确的 AVService
+               // Use a harmless read test to confirm it is the right AVService
                var testBuf = [UInt8](repeating: 0, count: 12)
                let ret = IOAVServiceReadI2C(avService, 0x37, 0x51, &testBuf, 12)
                if ret == kIOReturnSuccess { return avService }
@@ -119,34 +119,34 @@
            return nil
        }
 
-       /// ARM64 DDC write: 向外接显示器写 VCP 值（如亮度 VCP=0x10）
+       /// ARM64 DDC write: Write a VCP value to the external display (e.g. brightness VCP=0x10)
        private func arm64Write(displayID: CGDirectDisplayID, command: UInt8, value: UInt16) -> Bool {
            guard let avService = findAVService(for: displayID) else { return false }
-           // DDC/CI 写包格式（注意：dataAddress=0x51 作为参数传入，不放进 buffer）
+           // DDC/CI write packet format (note: dataAddress=0x51 is passed as a parameter, not placed in the buffer)
            // buffer: [0x84, 0x03, vcpCode, valueHigh, valueLow, checksum]
            let valueHigh = UInt8((value >> 8) & 0xFF)
            let valueLow  = UInt8(value & 0xFF)
            var checksum  = UInt8(0x50 ^ 0x03 ^ command ^ valueHigh ^ valueLow)
-           // 0x50 = 0x51 XOR'd with 0x01 (reply flag) — 参考 DDC/CI spec
+           // 0x50 = 0x51 XOR'd with 0x01 (reply flag) — see the DDC/CI spec
            var buf: [UInt8] = [0x84, 0x03, command, valueHigh, valueLow, checksum]
            let ret = IOAVServiceWriteI2C(avService, 0x37, 0x51, &buf, UInt32(buf.count))
            return ret == kIOReturnSuccess
        }
 
-       /// ARM64 DDC read: 读取 VCP 当前值
+       /// ARM64 DDC read: Read the current VCP value
        private func arm64Read(displayID: CGDirectDisplayID, command: UInt8) -> (current: UInt16, max: UInt16)? {
            guard let avService = findAVService(for: displayID) else { return nil }
-           // 先发送 VCP 请求包（与 write 类似，opcode=0x01）
+           // First send the VCP request packet (similar to write, opcode=0x01)
            var requestChecksum = UInt8(0x51 ^ 0x82 ^ 0x01 ^ command)
            var requestBuf: [UInt8] = [0x82, 0x01, command, requestChecksum]
            IOAVServiceWriteI2C(avService, 0x37, 0x51, &requestBuf, UInt32(requestBuf.count))
-           // 等待 DDC 处理
+           // Wait for DDC processing
            Thread.sleep(forTimeInterval: 0.04)
-           // 读取响应
+           // Read the response
            var replyBuf = [UInt8](repeating: 0, count: 12)
            let ret = IOAVServiceReadI2C(avService, 0x37, 0x51, &replyBuf, 12)
            guard ret == kIOReturnSuccess else { return nil }
-           // replyBuf 格式：[len, 0x02, vcpCode, 0x00, maxHigh, maxLow, curHigh, curLow, ...]
+           // replyBuf format:[len, 0x02, vcpCode, 0x00, maxHigh, maxLow, curHigh, curLow, ...]
            let maxVal  = UInt16(replyBuf[4]) << 8 | UInt16(replyBuf[5])
            let curVal  = UInt16(replyBuf[6]) << 8 | UInt16(replyBuf[7])
            return (curVal, maxVal)
@@ -154,54 +154,54 @@
        #endif
        ```
 
-    2. **修改 `write(displayID:command:value:)` 分发逻辑**：
+    2. **Modify the `write(displayID:command:value:)` dispatch logic**:
        ```swift
        func write(displayID: CGDirectDisplayID, command: UInt8, value: UInt16) -> Bool {
            #if arch(arm64)
            if arm64Write(displayID: displayID, command: command, value: value) {
                return true
            }
-           // arm64 失败时可选降级到软件路径
+           // On arm64 failure, optionally fall back to the software path
            return false
            #else
            return intelWrite(displayID: displayID, command: command, value: value)
            #endif
        }
        ```
-       将现有 Intel 路径的方法重命名为 `intelWrite` / `intelRead`（函数签名不变，只改名）。
+       Rename the existing Intel-path methods to `intelWrite` / `intelRead` (function signatures unchanged, rename only).
 
-    3. **在 `BrightnessService.swift` 添加软件亮度降级**：
-       - 新增 `var isDDCAvailable: [CGDirectDisplayID: Bool] = [:]` 缓存
-       - `setBrightness(for:value:)` 中：先尝试 DDC 写；若失败且是外接显示器，调用 `applyGammaFallback(displayID:brightness:)` 使用 `CGSetDisplayTransferByTable` 模拟亮度
-       - `applyGammaFallback` 实现：构建从 0 到 `brightness`（0.0-1.0）的线性 ramp 写入 gamma table，视觉上等效于调低亮度（黑色电平不动，白色电平降低）
-       - 记录 `isDDCAvailable[displayID] = false` 后续直接走软件路径，不再尝试 DDC
+    3. **Add a software brightness fallback in `BrightnessService.swift`**:
+       - Add a `var isDDCAvailable: [CGDirectDisplayID: Bool] = [:]` cache
+       - In `setBrightness(for:value:)`: try a DDC write first; if it fails and the display is external, call `applyGammaFallback(displayID:brightness:)` to simulate brightness using `CGSetDisplayTransferByTable`
+       - `applyGammaFallback` implementation: build a linear ramp from 0 to `brightness` (0.0-1.0) and write it to the gamma table, visually equivalent to lowering brightness (black level unchanged, white level reduced)
+       - Record `isDDCAvailable[displayID] = false` so later calls go straight to the software path without trying DDC
 
-    4. **在 `BrightnessSliderView.swift` 添加模式指示**（可选但推荐）：
-       - 在滑块标题旁添加小标签：DDC 可用时显示 "DDC" (蓝色)，软件模式显示 "Software" (灰色)
-       - 实现：从 `BrightnessService.shared.isDDCAvailable[display.id]` 读取状态
+    4. **Add a mode indicator in `BrightnessSliderView.swift`** (optional but recommended):
+       - Add a small label next to the slider title: show "DDC" (blue) when DDC is available, "Software" (gray) in software mode
+       - Implementation: read the state from `BrightnessService.shared.isDDCAvailable[display.id]`
 
-  - 文件：`Backlit/Services/DDCService.swift`（新增 `#if arch(arm64)` 块，现有 Intel 代码重命名）
-  - 文件：`Backlit/Services/BrightnessService.swift`（新增软件降级逻辑）
-  - 文件：`Backlit/Views/BrightnessSliderView.swift`（可选：模式指示标签）
-  - 参考：MonitorControl `Arm64DDC.swift`、`m1ddc` 项目、alinpanaitiu.com/blog/journey-to-ddc-on-m1-macs/
-  - 验证：外接显示器亮度滑块拖动 → 显示器亮度实际变化（DDC 成功）；DDC 不支持的显示器 → 自动降级到软件调光，滑块仍可用，标签显示 "Software"
+  - File: `Backlit/Services/DDCService.swift` (add an `#if arch(arm64)` block, rename the existing Intel code)
+  - File: `Backlit/Services/BrightnessService.swift` (add software fallback logic)
+  - File: `Backlit/Views/BrightnessSliderView.swift` (optional: mode indicator label)
+  - Reference: MonitorControl `Arm64DDC.swift`, the `m1ddc` project, alinpanaitiu.com/blog/journey-to-ddc-on-m1-macs/
+  - Verify: drag the external display brightness slider -> the display's brightness actually changes (DDC succeeds); a display that does not support DDC -> automatically falls back to software dimming, the slider remains usable, and the label shows "Software"
 
 ---
 
-- [x] **Task 3**: 实现真实虚拟显示器创建（CGVirtualDisplay API）
-  - 背景：`VirtualDisplayService.swift` 的 `create(config:)` 和 `destroy(id:)` 当前只有占位返回 `false`，导致 HiDPI 虚拟显示功能完全不可用。需用 bridging header 暴露的 `CGVirtualDisplay` 私有类完成实现。
-  - 实现提示：
-    1. **在 `VirtualDisplayService.swift` 实现 `create(config:)`**：
+- [x] **Task 3**: Implement real virtual display creation (CGVirtualDisplay API)
+  - Background: `create(config:)` and `destroy(id:)` in `VirtualDisplayService.swift` currently only have placeholders returning `false`, making the HiDPI virtual display feature completely unusable. The implementation must use the `CGVirtualDisplay` private classes exposed by the bridging header.
+  - Implementation hints:
+    1. **Implement `create(config:)` in `VirtualDisplayService.swift`**:
        ```swift
-       // 保存强引用，释放 = 虚拟显示器消失
+       // Keep strong references; releasing = the virtual display disappears
        private var activeDisplayObjects: [CGDirectDisplayID: CGVirtualDisplay] = [:]
 
        func create(config: VirtualDisplayConfig) -> CGDirectDisplayID? {
            let descriptor = CGVirtualDisplayDescriptor()
-           descriptor.sizeInMillimeters = 527  // 24英寸对角线约 527mm（可按 config 调整）
+           descriptor.sizeInMillimeters = 527  // 24-inch diagonal is about 527mm (adjustable per config)
            descriptor.maxPixelSize = CGSize(width: CGFloat(config.width), height: CGFloat(config.height))
            descriptor.colorSpace   = CGColorSpace(name: CGColorSpace.sRGB)!
-           // sRGB 色域基准值
+           // sRGB gamut reference values
            descriptor.whitePoint   = NSPoint(x: 0.3127, y: 0.3290)
            descriptor.redPrimary   = NSPoint(x: 0.6400, y: 0.3300)
            descriptor.greenPrimary = NSPoint(x: 0.3000, y: 0.6000)
@@ -209,10 +209,10 @@
 
            let settings = CGVirtualDisplaySettings()
            settings.hiDPI = config.hiDPI
-           // 添加主模式（实际像素尺寸）
+           // Add the main mode (actual pixel size)
            settings.addMode(CGSize(width: CGFloat(config.width), height: CGFloat(config.height)),
                             refreshRate: Double(config.refreshRate))
-           // 若 hiDPI，同时添加逻辑分辨率模式（物理的一半）
+           // If hiDPI, also add the logical resolution mode (half of physical)
            if config.hiDPI {
                settings.addMode(CGSize(width: CGFloat(config.width / 2),
                                        height: CGFloat(config.height / 2)),
@@ -223,143 +223,143 @@
            guard virtualDisplay.applySettings(settings) else { return nil }
            let displayID = virtualDisplay.displayID
            guard displayID != kCGNullDirectDisplay else { return nil }
-           activeDisplayObjects[displayID] = virtualDisplay  // 保持强引用
+           activeDisplayObjects[displayID] = virtualDisplay  // Keep the strong reference
            return displayID
        }
 
        func destroy(id: CGDirectDisplayID) {
-           activeDisplayObjects.removeValue(forKey: id)  // 释放 → 虚拟显示消失
+           activeDisplayObjects.removeValue(forKey: id)  // Release -> the virtual display disappears
        }
        ```
 
-    2. **实现 `enableHiDPIVirtual(for:physicalWidth:physicalHeight:)`**：
+    2. **Implement `enableHiDPIVirtual(for:physicalWidth:physicalHeight:)`**:
        ```swift
-       /// 为物理外接显示器创建 2x 虚拟显示器并镜像，实现 HiDPI 缩放
+       /// Create a 2x virtual display for the physical external display and mirror it, to achieve HiDPI scaling
        func enableHiDPIVirtual(for displayID: CGDirectDisplayID,
                                 physicalWidth: Int,
                                 physicalHeight: Int) -> CGDirectDisplayID? {
            let config = VirtualDisplayConfig(
                name: "HiDPI Virtual",
-               width: physicalWidth * 2,   // 2x 物理分辨率，如 2K→4K
+               width: physicalWidth * 2,   // 2x the physical resolution, e.g. 2K->4K
                height: physicalHeight * 2,
                refreshRate: 60,
                hiDPI: true
            )
            guard let virtualID = create(config: config) else { return nil }
-           // 将物理显示器镜像到虚拟显示器（物理作为 mirror source，虚拟作为 mirror target）
+           // Mirror the physical display to the virtual display (physical as mirror source, virtual as mirror target)
            MirrorService.shared.startMirror(source: displayID, target: virtualID)
            return virtualID
        }
        ```
 
-    3. **实现 `disableHiDPIVirtual(for:)`**：
+    3. **Implement `disableHiDPIVirtual(for:)`**:
        ```swift
        func disableHiDPIVirtual(for physicalDisplayID: CGDirectDisplayID) {
-           // 找到与此物理显示器关联的虚拟显示器
+           // Find the virtual display associated with this physical display
            guard let virtualID = hiDPIVirtualMap[physicalDisplayID] else { return }
            MirrorService.shared.stopMirror(for: virtualID)
            destroy(id: virtualID)
            hiDPIVirtualMap.removeValue(forKey: physicalDisplayID)
        }
-       // 需要在 VirtualDisplayService 新增: private var hiDPIVirtualMap: [CGDirectDisplayID: CGDirectDisplayID] = [:]
-       // enableHiDPIVirtual 返回 virtualID 后记录: hiDPIVirtualMap[displayID] = virtualID
+       // Need to add to VirtualDisplayService: private var hiDPIVirtualMap: [CGDirectDisplayID: CGDirectDisplayID] = [:]
+       // After enableHiDPIVirtual returns virtualID, record: hiDPIVirtualMap[displayID] = virtualID
        ```
 
-    4. **更新 `HiDPIService.swift`**：
-       - `enableHiDPI(for:)` 改为先尝试虚拟显示器路径（`VirtualDisplayService.shared.enableHiDPIVirtual`）
-       - 若失败（如权限不足），再退回到 plist override 路径
-       - 在 UI 中区分两种路径：虚拟显示器路径立即生效，plist 路径需要重连显示器
+    4. **Update `HiDPIService.swift`**:
+       - Change `enableHiDPI(for:)` to try the virtual display path first (`VirtualDisplayService.shared.enableHiDPIVirtual`)
+       - If it fails (e.g. insufficient permissions), fall back to the plist override path
+       - Distinguish the two paths in the UI: the virtual display path takes effect immediately, the plist path requires reconnecting the display
 
-  - 文件：`Backlit/Services/VirtualDisplayService.swift`（主要实现，替换占位 false）
-  - 文件：`Backlit/Services/HiDPIService.swift`（切换 primary/fallback 路径）
-  - 注意：`CGVirtualDisplay` 对象必须保持强引用（存到 `activeDisplayObjects` 字典），一旦 ARC 释放，虚拟显示器立即消失
-  - 注意：`CGVirtualDisplayDescriptor.colorSpace` 是 `CGColorSpaceRef`（Core Foundation），在 Swift 里用 `CGColorSpace(name:)` 创建后直接赋值，不需要手动 retain
-  - 参考：BetterDummy 项目 bridging header、KhaosT/CGVirtualDisplay 示例
-  - 验证：HiDPI 开关打开 → 系统显示器列表出现新的"HiDPI Virtual"显示器 → 分辨率列表出现 `1920×1080 (HiDPI)` 等缩放模式 → 关闭开关 → 虚拟显示器消失
+  - File: `Backlit/Services/VirtualDisplayService.swift` (main implementation, replacing the placeholder false)
+  - File: `Backlit/Services/HiDPIService.swift` (switch the primary/fallback paths)
+  - Note: `CGVirtualDisplay` objects must be kept strongly referenced (stored in the `activeDisplayObjects` dictionary); once ARC releases them, the virtual display disappears immediately
+  - Note: `CGVirtualDisplayDescriptor.colorSpace` is a `CGColorSpaceRef` (Core Foundation); in Swift, create it with `CGColorSpace(name:)` and assign it directly, no manual retain needed
+  - Reference: BetterDummy project bridging header, KhaosT/CGVirtualDisplay example
+  - Verify: turn on the HiDPI toggle -> a new "HiDPI Virtual" display appears in the system display list -> scaled modes such as `1920×1080 (HiDPI)` appear in the resolution list -> turn off the toggle -> the virtual display disappears
 
 ---
 
-- [x] **Task 4**: 修复刘海遮罩窗口崩溃（NSWindow 生命周期）
-  - 背景：`NotchOverlayManager` 创建的 `NSWindow` 缺少 `isReleasedWhenClosed = false`，导致关闭时 Swift 持有悬空指针；`@State isHidingNotch` 与 manager 状态不同步；新窗口在旧窗口未关闭前创建引发顺序问题；`onChange` 使用了已废弃的单参数形式。
-  - 实现提示：
-    1. **`NotchOverlayManager.swift`** — 窗口创建修复：
+- [x] **Task 4**: Fix the notch overlay window crash (NSWindow lifecycle)
+  - Background: the `NSWindow` created by `NotchOverlayManager` lacks `isReleasedWhenClosed = false`, so Swift holds a dangling pointer on close; `@State isHidingNotch` is out of sync with the manager state; the new window is created before the old one is closed, causing ordering problems; `onChange` uses the deprecated single-parameter form.
+  - Implementation hints:
+    1. **`NotchOverlayManager.swift`** - window creation fix:
        ```swift
-       // 在 showOverlay(for:) 方法中，window 初始化后立即添加：
-       window.isReleasedWhenClosed = false  // ← 关键：防止 close() 后指针悬空
+       // In the showOverlay(for:) method, add right after the window is initialized:
+       window.isReleasedWhenClosed = false  // <- Key: prevents a dangling pointer after close()
        ```
 
-    2. **`NotchOverlayManager.swift`** — 关闭顺序修复：
+    2. **`NotchOverlayManager.swift`** - close order fix:
        ```swift
        func showOverlay(for screen: NSScreen) {
-           // 先关闭旧窗口，再创建新窗口
+           // Close the old window first, then create the new one
            if let existing = overlayWindows[screen.displayID] {
                existing.close()
                overlayWindows.removeValue(forKey: screen.displayID)
            }
-           // ... 然后再创建新 window
+           // ... then create the new window
        }
        ```
 
-    3. **`NotchOverlayManager.swift`** — 新增查询方法：
+    3. **`NotchOverlayManager.swift`** - add a query method:
        ```swift
        public func isShowingOverlay(for screen: NSScreen) -> Bool {
            return overlayWindows[screen.displayID] != nil
        }
        ```
 
-    4. **`NotchView.swift`** — 状态同步修复：
+    4. **`NotchView.swift`** - state sync fix:
        ```swift
-       // 在 body 或 .onAppear 中从 manager 同步初始状态：
+       // Sync the initial state from the manager in body or .onAppear:
        .onAppear {
            isHidingNotch = NotchOverlayManager.shared.isShowingOverlay(for: screen)
        }
        ```
 
-    5. **`NotchView.swift`** — onChange 废弃 API 修复：
+    5. **`NotchView.swift`** - onChange deprecated API fix:
        ```swift
-       // 旧（废弃单参数形式）：
+       // Old (deprecated single-parameter form):
        // .onChange(of: isHidingNotch) { newValue in ... }
-       // 改为双参数形式：
+       // Change to the two-parameter form:
        .onChange(of: isHidingNotch) { _, newValue in
-           // 处理逻辑不变
+           // Handler logic unchanged
        }
        ```
 
-  - 文件：`Backlit/Services/NotchOverlayManager.swift`
-  - 文件：`Backlit/Views/NotchView.swift`（若存在；否则在包含刘海 Toggle 的 View 文件中修改）
-  - 验证：刘海开关反复 ON/OFF 十次 → 不崩溃；关闭菜单再重新打开 → 刘海开关状态与实际遮罩状态一致；Console.app 中无 EXC_BAD_ACCESS 或 objc over-release 日志
+  - File: `Backlit/Services/NotchOverlayManager.swift`
+  - File: `Backlit/Views/NotchView.swift` (if it exists; otherwise modify the View file containing the notch Toggle)
+  - Verify: toggle the notch switch ON/OFF ten times -> no crash; close and reopen the menu -> the notch switch state matches the actual overlay state; no EXC_BAD_ACCESS or objc over-release logs in Console.app
 
 ---
 
-- [x] **Task 5**: 集成测试与 UI 更新
-  - 实现提示：
-    1. **DDC 验证**：外接 HKC H2435Q 接入 → 打开 Backlit → 拖动亮度滑块 → 观察显示器物理亮度是否变化（可用眼睛判断或查看 IntegratedControlView 的 DDC 读值是否有回显）
-    2. **HiDPI 验证**：外接 2K 显示器 → 打开 HiDPI 开关 → 系统偏好设置"显示器"中查看是否出现新的虚拟显示器 → 分辨率列表中是否出现 `1920×1080 (Retina)` → 选择该分辨率 → 文字是否明显更清晰
-    3. **刘海验证**：内建 MacBook 屏幕 → 刘海开关 ON → 遮罩出现 → OFF → 遮罩消失 → 重复 10 次 → 不崩溃；关闭菜单再打开 → 状态一致
-    4. **更新 `DisplayDetailView.swift` / `MenuBarView.swift`**（按需）：
-       - 若 DDC 软件降级，在亮度控件区显示软件模式提示
-       - 若 HiDPI 虚拟显示器激活，显示"HiDPI 已启用（虚拟显示器）"状态
-    5. **更新 `docs/BLOCKING.md`**：
-       - 将 B-002（DDC Apple Silicon 不可用）标记为已解决，移至"已解决区"
-       - 将 B-003（HiDPI 虚拟显示器创建失败）标记为已解决，移至"已解决区"
-  - 文件：`Backlit/Views/DisplayDetailView.swift`（按需小改）
-  - 文件：`Backlit/Views/MenuBarView.swift`（按需小改）
-  - 文件：`docs/BLOCKING.md`（移动已解决项）
-  - 验证：见上三条手动测试；编译无警告无错误
+- [x] **Task 5**: Integration Testing and UI Updates
+  - Implementation hints:
+    1. **DDC verification**: connect the external HKC H2435Q -> open Backlit -> drag the brightness slider -> observe whether the display's physical brightness changes (judge by eye or check whether the DDC read value in IntegratedControlView echoes back)
+    2. **HiDPI verification**: external 2K display -> turn on the HiDPI toggle -> check whether a new virtual display appears in System Preferences "Displays" -> check whether `1920×1080 (Retina)` appears in the resolution list -> select that resolution -> check whether text is noticeably sharper
+    3. **Notch verification**: built-in MacBook screen -> notch switch ON -> overlay appears -> OFF -> overlay disappears -> repeat 10 times -> no crash; close and reopen the menu -> state is consistent
+    4. **Update `DisplayDetailView.swift` / `MenuBarView.swift`** (as needed):
+       - If DDC falls back to software, show a software mode hint in the brightness control area
+       - If the HiDPI virtual display is active, show the status "HiDPI enabled (virtual display)"
+    5. **Update `docs/BLOCKING.md`**:
+       - Mark B-002 (DDC unavailable on Apple Silicon) as resolved and move it to the "Resolved" section
+       - Mark B-003 (HiDPI virtual display creation failure) as resolved and move it to the "Resolved" section
+  - File: `Backlit/Views/DisplayDetailView.swift` (minor changes as needed)
+  - File: `Backlit/Views/MenuBarView.swift` (minor changes as needed)
+  - File: `docs/BLOCKING.md` (move resolved items)
+  - Verify: see the three manual tests above; builds with no warnings or errors
 
 ---
 
-## Phase 验收
+## Phase Acceptance
 
 ```bash
-# 1. 编译检查
+# 1. Build check
 cd ~/Desktop/Backlit && xcodebuild -scheme Backlit -configuration Debug build 2>&1 | tail -5
 
-# 2. 手动测试清单：
-# [ ] DDC: 外接显示器亮度滑块 → 屏幕亮度实际变化（或软件模式标签正确显示）
-# [ ] HiDPI: HiDPI 开关 ON → 虚拟显示器出现 → 1920x1080@2x 可选 → OFF → 虚拟显示器消失
-# [ ] 刘海: 刘海开关 ON/OFF × 10 次 → 不崩溃 → 状态与遮罩一致
-# [ ] 菜单重开: 所有上述开关状态在关闭重开菜单后保持正确
+# 2. Manual test checklist:
+# [ ] DDC: external display brightness slider -> screen brightness actually changes (or the software mode label shows correctly)
+# [ ] HiDPI: HiDPI toggle ON -> virtual display appears -> 1920x1080@2x selectable -> OFF -> virtual display disappears
+# [ ] Notch: notch switch ON/OFF × 10 times -> no crash -> state matches the overlay
+# [ ] Menu reopen: all of the above toggle states remain correct after closing and reopening the menu
 ```
 
-**Phase 验收标准**：编译通过 + 以上四条手动测试全部满足
+**Phase acceptance criteria**: builds successfully + all four manual tests above are satisfied

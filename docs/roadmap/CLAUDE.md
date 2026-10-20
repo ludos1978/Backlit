@@ -1,90 +1,90 @@
 # Roadmap — Backlit
 
-> 创建: 2026-03-02 | 目标: 完整替代 BetterDisplay 的免费 macOS 显示器管理菜单栏应用
+> Created: 2026-03-02 | Goal: a free macOS menu bar display management app that fully replaces BetterDisplay
 
-## 背景与动机
+## Background and Motivation
 
-BetterDisplay 是 macOS 上功能最全面的显示器管理工具，但价格昂贵。本项目旨在构建一个功能对等的免费开源替代品，涵盖 DDC 控制、HiDPI 管理、屏幕串流/画中画、虚拟显示器等全部核心功能。
+BetterDisplay is the most full-featured display management tool on macOS, but it is expensive. This project aims to build a free, open-source alternative with equivalent features, covering all core functionality such as DDC control, HiDPI management, screen streaming/Picture-in-Picture, and virtual displays.
 
-## 需求摘要
+## Requirements Summary
 
-### 功能域 1: 显示器基础管理
-- 多显示器检测与列表展示（含内建 + 外接）
-- 亮度滑块控制（DDC 协议控制外接，系统 API 控制内建）
-- 分辨率切换（含 HiDPI 模式列表，原生 + 缩放模式）
-- 设为主显示屏
-- 屏幕旋转（90°/180°/270°）
-- 排列显示器（可视化拖拽）
+### Feature Area 1: Basic Display Management
+- Multi-display detection and list view (built-in + external)
+- Brightness slider control (DDC protocol for external displays, system API for the built-in display)
+- Resolution switching (including the HiDPI mode list, native + scaled modes)
+- Set as main display
+- Screen rotation (90°/180°/270°)
+- Display arrangement (visual drag and drop)
 
-### 功能域 2: DDC/CI 完整控制
-- 亮度、对比度、音量读取与设置
-- 输入源切换
-- 从设备读取并更新所有 VCP 参数
+### Feature Area 2: Full DDC/CI Control
+- Read and set brightness, contrast, and volume
+- Input source switching
+- Read all VCP parameters from the device and update them
 
-### 功能域 3: 色彩与图像
-- 色彩模式切换（8-bit/10-bit、SDR/HDR、帧缓存类型）
-- ICC 颜色描述文件切换
-- 图像调整（对比度、伽马、增益、色温、RGB 通道独立调节）
-- 反转色彩
+### Feature Area 3: Color and Image
+- Color mode switching (8-bit/10-bit, SDR/HDR, framebuffer type)
+- ICC color profile switching
+- Image adjustment (contrast, gamma, gain, color temperature, independent RGB channel adjustment)
+- Invert colors
 
-### 功能域 4: 屏幕镜像与串流
-- 屏幕镜像（选择源→目标）
-- 屏幕串流（含翻转/旋转/缩放/欠扫描/透明度/裁剪/视频滤镜）
-- 画中画（浮动窗口，含层级、锁定、点击穿透、阴影等选项）
+### Feature Area 4: Screen Mirroring and Streaming
+- Screen mirroring (select source → target)
+- Screen streaming (including flip/rotate/scale/underscan/opacity/crop/video filters)
+- Picture-in-Picture (floating window, with options such as level, lock, click-through, shadow)
 
-### 功能域 5: 高级功能
-- 虚拟显示器/Dummy Display 创建与管理
-- 配置保护（防止系统重置分辨率/刷新率/色彩等设置）
-- 自动亮度
-- 显示刘海管理
-- 连接时防止进入睡眠
+### Feature Area 5: Advanced Features
+- Virtual display / Dummy Display creation and management
+- Config protection (prevent the system from resetting resolution/refresh rate/color settings)
+- Auto brightness
+- Display notch management
+- Prevent sleep while connected
 
-## 技术方案概要
+## Technical Approach Overview
 
-- **技术栈**: Swift 6.2 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics + ScreenCaptureKit + ColorSync
-- **架构模式**: macOS 菜单栏应用（MenuBarExtra），MVVM 架构，xcodegen 管理项目
-- **最低系统**: macOS 14.0（CGVirtualDisplay 需要 macOS 14+）
-- **关键约束**: 需要辅助功能权限（DDC）、屏幕录制权限（串流）、App Sandbox 关闭
+- **Tech stack**: Swift 6.2 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics + ScreenCaptureKit + ColorSync
+- **Architecture**: macOS menu bar app (MenuBarExtra), MVVM architecture, project managed with xcodegen
+- **Minimum system**: macOS 14.0 (CGVirtualDisplay requires macOS 14+)
+- **Key constraints**: requires Accessibility permission (DDC), Screen Recording permission (streaming), App Sandbox disabled
 
-### 核心设计决策
+### Core Design Decisions
 
-| 决策 | 选择 | 原因 |
+| Decision | Choice | Reason |
 |------|------|------|
-| UI 框架 | SwiftUI MenuBarExtra | macOS 13+ 原生支持，轻量不占 Dock |
-| 项目管理 | xcodegen + project.yml | CLI 友好，避免手动管理 .xcodeproj |
-| DDC 通信 | IOKit I2C 直接通信 | 不依赖第三方库，参考 MonitorControl 开源实现 |
-| 屏幕捕获 | ScreenCaptureKit | Apple 官方 API，macOS 12.3+，替代弃用的 CGDisplayStream |
-| 虚拟显示 | CGVirtualDisplay | macOS 14+ 官方 API，比旧的 IOKit 方式更稳定 |
-| 色彩管理 | ColorSync + CoreGraphics | 系统原生 ICC 管理 |
-| 架构模式 | MVVM | SwiftUI 最佳实践，View-ViewModel-Service 分层 |
+| UI framework | SwiftUI MenuBarExtra | Native support on macOS 13+, lightweight, no Dock icon |
+| Project management | xcodegen + project.yml | CLI friendly, avoids managing .xcodeproj by hand |
+| DDC communication | Direct IOKit I2C communication | No third-party library dependency, based on the open-source MonitorControl implementation |
+| Screen capture | ScreenCaptureKit | Official Apple API, macOS 12.3+, replaces the deprecated CGDisplayStream |
+| Virtual display | CGVirtualDisplay | Official API on macOS 14+, more stable than the old IOKit approach |
+| Color management | ColorSync + CoreGraphics | Native system ICC management |
+| Architecture | MVVM | SwiftUI best practice, View-ViewModel-Service layering |
 
-## 阶段概览
+## Phase Overview
 
-| Phase | 名称 | 状态 | 详情 |
+| Phase | Name | Status | Details |
 |-------|------|------|------|
-| 0-17 | 已归档 | ✅ | [archive/](archive/) |
-| 18 | 稳定性加固 | ✅ | [phase-18.md](phase-18.md) |
-| 19 | 显示器预设系统 | ✅ | [phase-19.md](phase-19.md) |
-| 20 | 发布准备 | ✅ | [phase-20.md](phase-20.md) |
-| 21 | 功能精简 | ✅ | [phase-21.md](phase-21.md) |
-| 22 | 自动亮度重写 | ✅ | [phase-22.md](phase-22.md) |
+| 0-17 | Archived | ✅ | [archive/](archive/) |
+| 18 | Stability hardening | ✅ | [phase-18.md](phase-18.md) |
+| 19 | Display preset system | ✅ | [phase-19.md](phase-19.md) |
+| 20 | Release preparation | ✅ | [phase-20.md](phase-20.md) |
+| 21 | Feature trimming | ✅ | [phase-21.md](phase-21.md) |
+| 22 | Auto brightness rewrite | ✅ | [phase-22.md](phase-22.md) |
 
-## 决策记录
+## Decision Log
 
-| 日期 | 决策 | 备选方案 | 理由 |
+| Date | Decision | Alternatives | Rationale |
 |------|------|---------|------|
-| 2026-03-02 | 使用 xcodegen 而非手动 Xcode 项目 | SPM executable, 手动 xcodeproj | CLI 友好，可 git 管理，自动生成 xcodeproj |
-| 2026-03-02 | MenuBarExtra 而非 NSStatusItem | NSStatusItem + NSPopover | SwiftUI 原生，代码更简洁，macOS 13+ 支持 |
-| 2026-03-02 | 最低 macOS 14 | macOS 12/13 | CGVirtualDisplay 需要 14+，用户当前 macOS 15 |
-| 2026-03-02 | 无第三方依赖 | MonitorControl/Lunar 库 | 完全自主可控，学习底层 API |
-| 2026-03-04 | Phase 18-20 规划 | 继续 bug 修复 | 功能已完整，聚焦稳定性→预设系统→发布分发 |
+| 2026-03-02 | Use xcodegen instead of a hand-made Xcode project | SPM executable, manual xcodeproj | CLI friendly, git-manageable, auto-generates xcodeproj |
+| 2026-03-02 | MenuBarExtra instead of NSStatusItem | NSStatusItem + NSPopover | Native SwiftUI, simpler code, supported on macOS 13+ |
+| 2026-03-02 | Minimum macOS 14 | macOS 12/13 | CGVirtualDisplay requires 14+, the user is currently on macOS 15 |
+| 2026-03-02 | No third-party dependencies | MonitorControl/Lunar libraries | Fully self-controlled, learn the low-level APIs |
+| 2026-03-04 | Plan Phase 18-20 | Keep fixing bugs | Features are complete; focus on stability → preset system → release and distribution |
 
-## 需求对接记录
+## Requirements Confirmation Log
 
-| 日期 | 确认项 | 内容 |
+| Date | Item | Content |
 |------|--------|------|
-| 2026-03-02 | 功能范围 | 用户确认：全部功能都要，包括串流/PiP/虚拟显示器 |
-| 2026-03-02 | 项目位置 | ~/Desktop/Backlit |
-| 2026-03-02 | 开发环境 | Xcode 已安装，xcodegen 2.44.1 已安装 |
-| 2026-03-02 | 用户硬件 | MacBook 内建显示屏 + HKC H2435Q 2K 外接显示器 |
-| 2026-03-04 | HiDPI 调试经验 | CGVirtualDisplay vendorID 非零、主线程创建、HiDPI 配置纯运行时等约束已记入 lessons |
+| 2026-03-02 | Feature scope | User confirmed: all features are wanted, including streaming/PiP/virtual displays |
+| 2026-03-02 | Project location | ~/Desktop/Backlit |
+| 2026-03-02 | Dev environment | Xcode installed, xcodegen 2.44.1 installed |
+| 2026-03-02 | User hardware | MacBook built-in display + HKC H2435Q 2K external display |
+| 2026-03-04 | HiDPI debugging notes | Constraints such as CGVirtualDisplay needing a non-zero vendorID, main-thread creation, and HiDPI config being purely runtime have been recorded in lessons |

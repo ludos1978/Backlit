@@ -1,12 +1,12 @@
-# Phase 8: 屏幕镜像 ✅
+# Phase 8: Screen Mirroring ✅
 
-> 核心价值：将一个显示器的内容镜像到另一个显示器
+> Core value: mirror the content of one display to another display
 
-## 任务列表
+## Task List
 
-- [x] 实现硬件镜像 (`Backlit/Services/MirrorService.swift`)
-  - 实现提示：
-    macOS 原生支持硬件级屏幕镜像，通过 CoreGraphics API：
+- [x] Implement hardware mirroring (`Backlit/Services/MirrorService.swift`)
+  - Implementation hint:
+    macOS natively supports hardware-level screen mirroring through CoreGraphics APIs:
     ```swift
     func enableMirror(source: CGDirectDisplayID, target: CGDirectDisplayID) -> Bool {
         var config: CGDisplayConfigRef?
@@ -22,25 +22,25 @@
         return CGCompleteDisplayConfiguration(config, .permanently) == .success
     }
     ```
-    检查是否正在镜像：`CGDisplayMirrorsDisplay(displayID)` 返回源显示器 ID，
-    如果返回 `kCGNullDirectDisplay` 则未镜像。
-    注意：硬件镜像要求两个显示器分辨率兼容。
-  - 验证：启用镜像后两个显示器显示相同内容
+    Check whether mirroring is active: `CGDisplayMirrorsDisplay(displayID)` returns the source display ID,
+    and if it returns `kCGNullDirectDisplay` it is not mirrored.
+    Note: hardware mirroring requires the two displays to have compatible resolutions.
+  - Verify: after enabling mirroring both displays show the same content
 
-- [x] 实现屏幕镜像 UI (`Backlit/Views/MirrorView.swift`)
-  - 实现提示：
-    可展开的"屏幕镜像"section，仿照 BetterDisplay 截图：
-    标题下方文字："将此显示器内容镜像到："
-    列表显示可用目标显示器（如 "H2435Q"），每行左侧显示器图标。
-    底部"停止镜像"按钮（置灰/可用状态切换）。
-    选择目标后立即开始镜像。
-  - 验证：选择目标显示器后镜像生效，点击停止后恢复
+- [x] Implement the screen mirroring UI (`Backlit/Views/MirrorView.swift`)
+  - Implementation hint:
+    An expandable "Screen Mirroring" section, modeled on the BetterDisplay screenshot:
+    text below the title: "Mirror this display's content to:"
+    The list shows available target displays (e.g. "H2435Q"), each row with a display icon on the left.
+    A "Stop Mirroring" button at the bottom (toggling between grayed out / enabled).
+    Mirroring starts immediately after choosing a target.
+  - Verify: mirroring takes effect after choosing the target display, and returns to normal after clicking stop
 
-## Phase 验收
+## Phase Acceptance
 
-- 内建→外接镜像工作
-- 外接→内建镜像工作
-- 停止镜像恢复正常
-- UI 与 BetterDisplay 截图一致
+- Built-in → external mirroring works
+- External → built-in mirroring works
+- Stopping mirroring restores normal state
+- UI matches the BetterDisplay screenshot
 
-**完成后**: 建议运行 project-optimize 反思
+**After completion**: running project-optimize for reflection is recommended

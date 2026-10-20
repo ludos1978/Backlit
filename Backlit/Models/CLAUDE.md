@@ -1,45 +1,45 @@
-# Models — 数据模型层
+# Models — Data Model Layer
 
-> 纯数据结构，ObservableObject。
+> Pure data structures, ObservableObject.
 
-## 文件
+## Files
 
-| 文件 | 用途 |
+| File | Purpose |
 |------|------|
-| DisplayInfo.swift | 单个显示器的状态模型（高风险） |
-| DisplayMode.swift | 显示模式值类型（分辨率 + 刷新率 + HiDPI） |
+| DisplayInfo.swift | State model for a single display (high risk) |
+| DisplayMode.swift | Display mode value type (resolution + refresh rate + HiDPI) |
 
 ---
 
-## DisplayInfo.swift — 高风险
+## DisplayInfo.swift — High risk
 
-核心显示器模型，多个 `@Published` 属性。**所有 View 和 Service 均依赖此类。**
+Core display model with multiple `@Published` properties. **All Views and Services depend on this class.**
 
-### 改动协议
+### Change protocol
 
-1. 增删 `@Published` 属性 → `grep -r "DisplayInfo" Backlit/ --include="*.swift"` 找所有引用
-2. 同步更新所有引用点（编译通过 ≠ 逻辑正确）
-3. `loadDetails()` 是异步方法，在 `DisplayManager.refreshDisplays()` 中对新显示器调用
+1. Adding/removing `@Published` properties → `grep -r "DisplayInfo" Backlit/ --include="*.swift"` to find all references
+2. Update all references in sync (compiling ≠ logically correct)
+3. `loadDetails()` is an async method, called for new displays in `DisplayManager.refreshDisplays()`
 
-### 关键属性说明
+### Key property notes
 
-- `displayID: CGDirectDisplayID` — 硬件标识，热插拔后可能变（不可用作持久 key）
-- `isBuiltin` — 用 `CGDisplayIsBuiltin()` 判断
-- `bounds` — 来自 `CGDisplayBounds()`，热插拔/排列变更后需刷新
-- `name` — 来自 `NSScreen.localizedName`（比 IOKit vendorID 更可靠）
-- `rotation` 属性已在 Phase 21 移除（随 RotationService/RotationView 一起删除）
+- `displayID: CGDirectDisplayID` — hardware identifier, may change after hot-plug (do not use as a persistent key)
+- `isBuiltin` — determined with `CGDisplayIsBuiltin()`
+- `bounds` — from `CGDisplayBounds()`, must be refreshed after hot-plug/arrangement changes
+- `name` — from `NSScreen.localizedName` (more reliable than IOKit vendorID)
+- The `rotation` property was removed in Phase 21 (deleted along with RotationService/RotationView)
 
 ---
 
 ## DisplayMode.swift
 
-单个显示模式的值类型（分辨率 + 刷新率 + HiDPI 标志）。
+Value type for a single display mode (resolution + refresh rate + HiDPI flag).
 
-- `currentMode(for:)` 静态方法获取当前模式
-- `availableModes(for:)` 获取可用模式列表（包含 HiDPI 变体）
-- 改动影响 ResolutionService 和 DisplayModeListView
+- `currentMode(for:)` static method gets the current mode
+- `availableModes(for:)` gets the list of available modes (including HiDPI variants)
+- Changes affect ResolutionService and DisplayModeListView
 
-### HiDPI 注意
+### HiDPI notes
 
-- HiDPI 模式通过 `kIOScalingModeKey` 标志区分，不是简单的 2× 分辨率
-- 虚拟显示器的 HiDPI 模式由 VirtualDisplayService 动态注入，不来自 DisplayMode
+- HiDPI modes are distinguished by the `kIOScalingModeKey` flag, not simply 2× resolution
+- HiDPI modes of virtual displays are injected dynamically by VirtualDisplayService, not from DisplayMode

@@ -1,10 +1,10 @@
 # Module Relationships — Backlit
 
-> 模块关系图、Services 内部依赖、数据流。快速参考见 [CLAUDE.md](CLAUDE.md)，文件树见 [file-tree.md](file-tree.md)。
+> Module relationship diagram, Services internal dependencies, data flow. Quick reference: [CLAUDE.md](CLAUDE.md), file tree: [file-tree.md](file-tree.md).
 
 ---
 
-## 模块关系图 / Module Relationship Diagram
+## Module Relationship Diagram / Module Relationship Diagram
 
 ```
 App (BacklitApp)
@@ -12,7 +12,7 @@ App (BacklitApp)
         └── @Published [DisplayInfo]
               └── MenuBarView (@EnvironmentObject DisplayManager)
                     ├── DisplayRowView
-                    │     └── DisplayDetailView  ← 12 Sections（三组分组）
+                    │     └── DisplayDetailView  ← 12 Sections (three groups)
                     │           ├── BrightnessSliderView     → BrightnessService → DDCService
                     │           ├── DisplayModeListView      → ResolutionService
                     │           ├── ColorProfileView         → ColorProfileService
@@ -27,48 +27,48 @@ App (BacklitApp)
 
 ---
 
-## Services 层内部依赖 / Services Internal Dependencies
+## Services Internal Dependencies / Services Internal Dependencies
 
 ```
-BrightnessService ──────────→ DDCService (外接屏 DDC 亮度读写)
-AutoBrightnessService ──────→ BrightnessService (映射 lux→亮度后调用)
-DisplayManager ─────────────→ BrightnessService (刷新时异步初始化亮度)
-               ─────────────→ arrangeExternalAboveBuiltin() (热插拔后自动定位外接屏)
+BrightnessService ──────────→ DDCService (external display DDC brightness read/write)
+AutoBrightnessService ──────→ BrightnessService (called after mapping lux→brightness)
+DisplayManager ─────────────→ BrightnessService (async brightness init on refresh)
+               ─────────────→ arrangeExternalAboveBuiltin() (auto-position external display after hot-plug)
 
-CGHelpers (共享工具) ────────→ 被以下 Service 使用（WindowServer IPC 超时保护）:
-  ResolutionService (applyModeSync CG 事务)
-  VirtualDisplayService (CGVirtualDisplay apply 事务)
+CGHelpers (shared utility) ────────→ used by the following Services (WindowServer IPC timeout protection):
+  ResolutionService (applyModeSync CG transaction)
+  VirtualDisplayService (CGVirtualDisplay apply transaction)
 
-GammaService (gamma 所有者) ─→ 唯一写入 CGSetDisplayTransferByFormula/Table 的 Service
-  BrightnessService ─────────→ GammaService (软件亮度通过 GammaService 写入，不直接写 CG)
-  ❌ View 层不得直接调 CGSetDisplayTransferByFormula/Table
-  ❌ 不得使用 CGDisplayRestoreColorSyncSettings()（全局），改用 GammaService.resetSingleDisplay(displayID)
+GammaService (gamma owner) ─→ the only Service that writes CGSetDisplayTransferByFormula/Table
+  BrightnessService ─────────→ GammaService (software brightness is written via GammaService, not directly to CG)
+  ❌ The View layer must not call CGSetDisplayTransferByFormula/Table
+  ❌ Do not use CGDisplayRestoreColorSyncSettings() (global); use GammaService.resetSingleDisplay(displayID)
 
-ResolutionService ──────────→ VirtualDisplayService.virtualDisplayID(for:) (镜像检测 fallback)
+ResolutionService ──────────→ VirtualDisplayService.virtualDisplayID(for:) (mirror detection fallback)
 ```
 
 ---
 
-## 数据流 / Data Flow
+## Data Flow / Data Flow
 
 ```
-单向数据流（响应式）：
+Unidirectional data flow (reactive):
   CGDisplayAPI / IOKit → Services → DisplayInfo (@Published) → Views (reactive SwiftUI)
   User interaction    → Views   → Services → Hardware
 
-睡眠/唤醒数据流：
+Sleep/wake data flow:
   NSWorkspace.didWakeNotification → AppDelegate
     → GammaService.reapplyIfNeeded()
     → BrightnessService.reapplySoftwareBrightnessIfNeeded()
 
-热插拔数据流：
+Hot-plug data flow:
   CGDisplayRegisterReconfigurationCallback → DisplayManager.displayReconfigCallback
     → refreshDisplays()
     → arrangeExternalAboveBuiltin()
-    → @Published displays 更新 → 全局 View 重渲染
+    → @Published displays updated → all Views re-render
 
-虚拟显示器数据流（运行时，不持久化）：
+Virtual display data flow (runtime, not persisted):
   VirtualDisplayView → VirtualDisplayService.enableHiDPIVirtual()
-    → CGVirtualDisplay(descriptor:) [主线程，vendorID=0xEEEE]
-    → HiDPI 模式可用（重启后消失）
+    → CGVirtualDisplay(descriptor:) [main thread, vendorID=0xEEEE]
+    → HiDPI mode available (disappears after restart)
 ```
