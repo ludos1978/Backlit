@@ -3,15 +3,16 @@
 # signs it and writes build/Builds/Backlit-<version>.dmg + .zip (+ .sha256 for
 # the Homebrew cask).
 #
-# Usage: scripts/build-dmg.sh [patch|minor|major|X.Y.Z|--no-bump] [--install] [--no-commit]
+# Usage: scripts/build-dmg.sh [patch|minor|major|X.Y.Z|--no-bump] [--install] [--no-commit] [--no-push]
 #   patch (default)  0.5.2 → 0.5.3      minor  0.5.2 → 0.6.0      major  0.5.2 → 1.0.0
 #   --no-bump        rebuild the current version
 #   --install        replace /Applications/Backlit.app with the new build and launch it
-#   --no-commit      leave the version bump uncommitted
+#   --no-commit      leave the version bump uncommitted (implies --no-push)
+#   --no-push        commit the version bump but do not push it
 #
 # The version bump edits project.yml (MARKETING_VERSION, CURRENT_PROJECT_VERSION + 1),
 # renames a "## Unreleased" CHANGELOG section to the new version and commits
-# "Version X.Y.Z". Intermediate build data is wiped first; build/Builds is kept.
+# "Version X.Y.Z" (then pushes). Intermediate build data is wiped first; build/Builds is kept.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -22,14 +23,15 @@ BUILD_DIR="$(pwd)/build"
 DERIVED_DIR="$BUILD_DIR/DerivedData"
 OUT_DIR="$BUILD_DIR/Builds"
 
-BUMP="patch"; INSTALL=0; COMMIT=1
+BUMP="patch"; INSTALL=0; COMMIT=1; PUSH=1
 for arg in "$@"; do
   case "$arg" in
     patch|minor|major|--no-bump) BUMP="$arg" ;;
     [0-9]*.[0-9]*.[0-9]*)        BUMP="$arg" ;;
     --install)                   INSTALL=1 ;;
     --no-commit)                 COMMIT=0 ;;
-    -h|--help) sed -n 2,14p "$0"; exit 0 ;;
+    --no-push)                   PUSH=0 ;;
+    -h|--help) sed -n 2,15p "$0"; exit 0 ;;
     *) echo "Unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -115,6 +117,9 @@ if [ "$VERSION" != "$CURRENT" ] && [ "$COMMIT" = 1 ]; then
   git commit -q -m "Version $VERSION"
   trap - ERR
   echo "=== Committed \"Version $VERSION\" ==="
+  if [ "$PUSH" = 1 ]; then
+    git push -q origin HEAD && echo "=== Pushed ===" || echo "WARNING: git push failed" >&2
+  fi
 fi
 
 # ── Install ──────────────────────────────────────────────────────────────────

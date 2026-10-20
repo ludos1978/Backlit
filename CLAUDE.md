@@ -30,7 +30,7 @@ Tech stack: Swift 6 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics, zero third-
 - **Exception:** virtual displays may be created and their own features (resolution, HiDPI) set.
 - **Presets:** brightness-related state only (brightness, dimming, gamma/image adjustment, XDR, contrast, adaptive brightness).
 - **Launch is passive:** starting Backlit changes no brightness-related output; only an explicit user action (control, toggle, preset) does.
-- **Commit every finished change** (atomic commits); pushing is a separate, explicit step.
+- **Commit and push every finished change** (atomic commits, `git push` right after). Publishing a GitHub release stays an explicit step.
 
 ## Autonomous decision rules
 
