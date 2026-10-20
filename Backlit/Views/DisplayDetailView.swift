@@ -102,10 +102,6 @@ struct DisplayDetailView: View {
 
             Divider().opacity(0.3).padding(.vertical, 2)
 
-            // Set as main display
-            MainDisplayView(display: display)
-                .osControlled(.arrangement)
-
             // Live view of this display in a floating window on another screen
             DisplayStreamRowView(display: display)
 

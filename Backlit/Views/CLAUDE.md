@@ -16,13 +16,11 @@
 | DisplayDetailView.swift | 显示器展开面板（12 个 Section） |
 | BrightnessSliderView.swift | 亮度/对比度滑条 |
 | DisplayModeListView.swift | 分辨率模式列表（收藏置顶） |
-| ArrangementView.swift | 显示器排列（含内外屏缩略图区分） |
 | ColorProfileView.swift | ICC Profile 选择 |
 | SystemColorView.swift | 系统颜色配置 |
 | ImageAdjustmentView.swift | 图像调整（gamma/对比度） |
 | VirtualDisplayView.swift | HiDPI 虚拟显示器 |
 | NotchView.swift | 刘海遮罩 |
-| MainDisplayView.swift | 主显示器设置 |
 | AutoBrightnessView.swift | 环境光自动亮度 |
 
 ## 关键模式

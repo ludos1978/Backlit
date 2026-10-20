@@ -249,7 +249,7 @@ final class PresetService: ObservableObject, @unchecked Sendable {
     /// Snapshots all current online displays into a new preset.
     /// The built-in display IS captured (brightness + gamma) — without it a
     /// MacBook with no external display would save empty presets.
-    /// Resolution and arrangement are never captured: presets only carry
+    /// Resolution and display layout are never captured: presets only carry
     /// brightness-related state and must not change display modes or layout.
     func captureCurrentState(name: String, icon: String) -> DisplayPreset {
         let displays = DisplayManagerAccessor.shared.displays

@@ -128,7 +128,6 @@ struct MenuBarView: View {
     @ObservedObject private var virtualDisplayService = VirtualDisplayService.shared
     @State private var expandedDisplayIDs: Set<CGDirectDisplayID> = []
     @ObservedObject private var xdrService = XDRBrightnessService.shared
-    @State private var showArrangement: Bool = false
     @State private var showVirtualDisplays: Bool = false
     @State private var showAutoBrightness: Bool = false
     @State private var showXDRBrightness: Bool = false
@@ -216,23 +215,6 @@ struct MenuBarView: View {
                 FoldableSectionHeader(title: "Options", isExpanded: $showOptions)
 
                 if showOptions {
-                    // Arrange displays (Phase 4) — only with more than one display
-                    if visibleDisplays.count > 1 {
-                        ExpandableRow(
-                            icon: "rectangle.3.offgrid",
-                            iconColor: .blue,
-                            label: "Arrange Displays",
-                            isExpanded: $showArrangement
-                        )
-
-                        if showArrangement {
-                            ArrangementView()
-                                .environmentObject(displayManager)
-                                .osControlled(.arrangement)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
-                    }
-
                     // Virtual displays tool entry (Phase 10)
                     ExpandableRow(
                         icon: "display.2",

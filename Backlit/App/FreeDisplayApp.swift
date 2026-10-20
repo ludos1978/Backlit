@@ -7,7 +7,7 @@ struct BacklitApp: App {
     // All launch-time work lives in AppDelegate.applicationDidFinishLaunching:
     // with `.menuBarExtraStyle(.window)` this content view is only built when
     // the menu is FIRST OPENED, so nothing that must run at launch (wake
-    // handling, display arrangement, service warm-up) may be attached here.
+    // handling, service warm-up) may be attached here.
     var body: some Scene {
         MenuBarExtra {
             MenuBarView()

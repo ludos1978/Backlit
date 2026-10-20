@@ -175,14 +175,6 @@ class DisplayManager: ObservableObject {
         // No-op: cannot enable/disable displays via public API
         return false
     }
-
-    /// Makes the target display the main display by repositioning it to origin (0, 0).
-    func setAsMainDisplay(_ display: DisplayInfo) {
-        Task { @MainActor in
-            let ok = await ArrangementService.shared.setAsMainDisplay(display.displayID, among: self.displays)
-            if ok { self.refreshDisplays() }
-        }
-    }
 }
 
 // MARK: - Display Manager Accessor

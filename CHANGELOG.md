@@ -7,6 +7,15 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Changed
+
+- **Display layout is no longer Backlit's job.** *Arrange Displays* and *Set as Main Display*
+  are removed (with the "Arrangement" ownership switch); Backlit never moves displays.
+
+---
+
 ## v0.6.0 (2026-10-20)
 
 ### Added

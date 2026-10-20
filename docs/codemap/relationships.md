@@ -17,10 +17,8 @@ App (BacklitApp)
                     │           ├── DisplayModeListView      → ResolutionService
                     │           ├── ColorProfileView         → ColorProfileService
                     │           ├── ImageAdjustmentView      → GammaService
-                    │           ├── MainDisplayView          → ArrangementService
                     │           ├── NotchView                → NotchOverlayManager
                     │           └── HiDPIVirtualRowView      → VirtualDisplayService
-                    ├── ArrangementView          → ArrangementService
                     ├── VirtualDisplayView       → VirtualDisplayService
                     ├── AutoBrightnessView       → AutoBrightnessService → BrightnessService
                     ├── SystemColorMenuEntry     → SystemColorView → SettingsService
@@ -35,11 +33,9 @@ App (BacklitApp)
 BrightnessService ──────────→ DDCService (外接屏 DDC 亮度读写)
 AutoBrightnessService ──────→ BrightnessService (映射 lux→亮度后调用)
 DisplayManager ─────────────→ BrightnessService (刷新时异步初始化亮度)
-               ─────────────→ ArrangementService (setAsMainDisplay)
                ─────────────→ arrangeExternalAboveBuiltin() (热插拔后自动定位外接屏)
 
 CGHelpers (共享工具) ────────→ 被以下 Service 使用（WindowServer IPC 超时保护）:
-  ArrangementService (setPosition/setAsMainDisplay CG 事务)
   ResolutionService (applyModeSync CG 事务)
   VirtualDisplayService (CGVirtualDisplay apply 事务)
 

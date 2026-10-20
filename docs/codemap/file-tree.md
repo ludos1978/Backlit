@@ -43,14 +43,13 @@ Backlit/
 │   ├── Models/                     # 数据模型层（纯数据，无副作用）
 │   │   ├── DisplayInfo.swift       # ⚠️ 核心显示器模型，12+ @Published 属性；所有 View/Service 均依赖此类，属性增删需全局 grep 同步
 │   │   ├── DisplayMode.swift       # 单个显示模式（分辨率+刷新率+HiDPI 标志）的值类型；枚举逻辑改动影响分辨率切换和模式列表展示
-│   │   └── DisplayPreset.swift     # 显示器配置预设模型：DisplayPreset（预设）+ DisplayPresetEntry（单显示器快照）；Codable，由 PresetService 持久化。Entry carries an optional GammaAdjustment snapshot + optional softwareDimming (extra dimming %); preset carries optional XDR (enabled/level) + accessibility contrast state + restoresArrangement opt-in (nil = older preset: state left untouched, positions never applied)
+│   │   └── DisplayPreset.swift     # 显示器配置预设模型：DisplayPreset（预设）+ DisplayPresetEntry（单显示器快照）；Codable，由 PresetService 持久化。Entry carries an optional GammaAdjustment snapshot + optional softwareDimming (extra dimming %); preset carries optional XDR (enabled/level) + accessibility contrast state (legacy resolution/position fields are decoded but never applied)
 │   ├── Services/                   # 业务逻辑层，与系统框架直接交互
-│   │   ├── ArrangementService.swift        # 通过 CGDisplayConfiguration 读写显示器位置，支持设为主显示器；setPosition/setAsMainDisplay 已异步化，CG 事务在 CGHelpers.runWithTimeout 内执行；改动影响拖拽排列和主显示器切换
 │   │   ├── AdaptiveBrightnessService.swift # Adaptive brightness engine: per-display learned curve (content lightness × ambient light), modes content/ambient/both/follow-built-in, min/max/sensitivity/speed, learning from manual changes, ignore list with per-app brightness; drives BrightnessService
 │   │   ├── AmbientLightService.swift       # Ambient light sensor (lux) via IOHIDEventSystemClient SPI (Apple Silicon), BezelServices fallback; smoothed; wake-safe
 │   │   ├── ContentLightnessSampler.swift   # Per-display ScreenCaptureKit stream at 1/16 scale → CIE L* lightness (mean/RMS), stabilized; frames analysed in memory only
 │   │   ├── BrightnessService.swift         # 统一亮度接口：内建屏用 IODisplayGetFloatParameter，外接屏用 DDC VCP 0x10；改动影响所有亮度读写路径
-│   │   ├── CGHelpers.swift                 # 共享 CG 阻塞调用工具：CGHelpers.runWithTimeout(seconds:fallback:operation:) 在后台线程以超时保护运行 WindowServer IPC 阻塞操作；被 ArrangementService、ResolutionService、VirtualDisplayService 使用
+│   │   ├── CGHelpers.swift                 # 共享 CG 阻塞调用工具：CGHelpers.runWithTimeout(seconds:fallback:operation:) 在后台线程以超时保护运行 WindowServer IPC 阻塞操作；被 ResolutionService、VirtualDisplayService 使用
 │   │   ├── ColorProfileService.swift       # ICC Profile 枚举（扫描 3 个系统目录）和切换（ColorSync API）；改动影响色彩描述文件列表和切换
 │   │   ├── DDCService.swift                # ⚠️ IOKit I2C DDC/CI 通信核心：IOFramebuffer 查找、VCP 读写、5 秒 TTL 缓存、3 次重试；几乎所有外接显示器功能的底层依赖，改动需极谨慎
 │   │   ├── DisplayManager.swift            # ⚠️ 显示器枚举（CGGetOnlineDisplayList）+ CGDisplay 热插拔回调（auto-arrange feature removed 2026-09-07 — the app never moves displays on its own）；@Published displays 被全局注入，改动影响整个显示器列表数据流
@@ -72,14 +71,12 @@ Backlit/
 │   │   └── NSScreenExtension.swift         # NSScreen 扩展：按 CGDirectDisplayID 查找 NSScreen，获取 displayID；被 NotchView、NotchOverlayManager 依赖
 │   ├── Backlit-Bridging-Header.h       # 私有 API 声明：CGVirtualDisplay（macOS 14+）和 IOAVService（Apple Silicon DDC）；属性名已对照 Chromium 源码验证（maxPixelsWide/maxPixelsHigh 非 maxPixelSize）
 │   └── Views/                      # SwiftUI 视图层
-│       ├── ArrangementView.swift           # 多显示器拖拽排列画布（内外屏缩略图区分）+ 设为主显示器按钮；依赖 ArrangementService
 │       ├── AdaptiveBrightnessView.swift    # Adaptive Brightness options (mode, live lux/lightness, sensitivity/min/max, response, sampling, learning, per-display, ignore list, reset)
 │       ├── BrightnessSliderView.swift      # All-displays controls: CombinedBrightnessView, CombinedGammaView, ExtraDimmingRow (the per-display brightness/dim rows now live inside ImageAdjustmentView)。Also CombinedGammaView (all-displays gamma) and ExtraDimmingRow ("Dim Below Minimum": software dimming below the hardware floor via BrightnessService.setExtraDimming; per-display + all-displays)
 │       ├── ColorProfileView.swift          # ICC Profile 列表（推荐/全部分组）和切换；依赖 ColorProfileService
 │       ├── DisplayDetailView.swift         # ⚠️ 每显示器展开面板，可折叠 Section 的容器（三组分组）；新增/删除 Section 都要改此文件，且需同步 MenuBarView
 │       ├── DisplayModeListView.swift       # 分辨率模式列表（HiDPI/原生/其他分组）、收藏置顶星标、点击切换；依赖 ResolutionService
 │       ├── ImageAdjustmentView.swift       # Image adjustment fold: brightness + Dim Below Min rows (BrightnessService) followed by contrast/gamma/gain/temp/levels/per-channel/quantization/invert (GammaService), all in the same AdjustRow style
-│       ├── MainDisplayView.swift           # "设为主显示屏"行，当前已是主屏时显示状态标签；依赖 ArrangementService
 │       ├── MenuBarView.swift               # ⚠️ 菜单栏主视图：显示器列表 + 展开/折叠 + 工具区 + 设置区 + PresetListView；是所有功能的入口容器，改动影响全局布局
 │       ├── NotchView.swift                 # 刘海信息显示 + 遮罩开关（仅有刘海的内建屏显示）；依赖 NotchOverlayManager
 │       ├── SystemColorView.swift           # 系统取色器（NSColorSampler）+ HEX/RGB/HSB 显示 + 历史记录；依赖 SettingsService 持久化颜色历史

@@ -11,7 +11,7 @@ import SwiftUI
 /// - macOS-controlled: the app only shows the current value; its controls are
 ///   read-only and clicking one opens the matching macOS System Settings panel.
 enum PreferenceArea: String, CaseIterable, Identifiable {
-    case brightness, imageAdjustment, xdr, accessibilityContrast, resolution, arrangement, colorProfile
+    case brightness, imageAdjustment, xdr, accessibilityContrast, resolution, colorProfile
 
     var id: String { rawValue }
 
@@ -22,7 +22,6 @@ enum PreferenceArea: String, CaseIterable, Identifiable {
         case .xdr:                   return "XDR Brightness"
         case .accessibilityContrast: return "Accessibility Contrast"
         case .resolution:            return "Resolution & HiDPI"
-        case .arrangement:           return "Arrangement & Main Display"
         case .colorProfile:          return "Color Profile"
         }
     }
@@ -34,7 +33,6 @@ enum PreferenceArea: String, CaseIterable, Identifiable {
         case .xdr:                   return "sun.max.circle.fill"
         case .accessibilityContrast: return "circle.righthalf.filled"
         case .resolution:            return "rectangle.on.rectangle"
-        case .arrangement:           return "rectangle.3.offgrid"
         case .colorProfile:          return "paintpalette.fill"
         }
     }
@@ -46,7 +44,6 @@ enum PreferenceArea: String, CaseIterable, Identifiable {
         case .xdr:                   return .yellow
         case .accessibilityContrast: return .gray
         case .resolution:            return .blue
-        case .arrangement:           return .blue
         case .colorProfile:          return .purple
         }
     }

@@ -50,9 +50,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         _ = AccessibilityService.shared
 
         // Build the display manager now — it registers the reconfiguration
-        // callback and performs the initial display scan. The app never
-        // rearranges displays on its own; layout changes only happen through
-        // explicit user actions (arrangement canvas, Set as Main, presets).
+        // callback and performs the initial display scan. Display layout (where
+        // displays sit relative to each other) is not Backlit's job — it never
+        // moves displays.
         _ = DisplayManager.shared
 
         // Track built-in brightness changes made outside the app (keys, Control

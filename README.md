@@ -17,7 +17,6 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 | Keyboard Brightness Keys for External Displays | ✅ | Intercepts brightness keys when cursor is on external display, shows native macOS OSD |
 | Auto Brightness Sync | ✅ | Syncs external display brightness with built-in display changes |
 | HiDPI Virtual Displays | ✅ | Creates HiDPI dummy displays via CGVirtualDisplay private API |
-| Display Arrangement | ✅ | Position displays (external above built-in, etc.) |
 | Resolution & HiDPI Switching | ✅ | Browse and switch all available display modes including HiDPI |
 | ICC Color Profile Management | ✅ | Switch color profiles per display via ColorSync |
 | Image Adjustment (Gamma/Temperature) | ✅ | Software contrast, color temperature, RGB channels, invert |
@@ -126,10 +125,10 @@ No internet connection required (the optional update check is off by default).
 
 Settings → *Who controls each setting* has a switch per area (Brightness & Dimming,
 Image Adjustment, XDR Brightness, Accessibility Contrast, Resolution & HiDPI,
-Arrangement & Main Display, Color Profile):
+Color Profile):
 
-- **On — Backlit controls it:** the app owns the values, applies its saved state at
-  launch and after wake, and you change them in the menu.
+- **On — Backlit controls it:** you change the values in the menu, and Backlit re-applies
+  what you set in this session after wake and display reconnects (never at launch).
 - **Off — macOS controls it:** Backlit only *shows* the current value; the controls
   are read-only and clicking one opens the matching macOS System Settings panel. Nothing
   in that area is applied automatically.
@@ -181,7 +180,7 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
 
 - **Swift 6** + **SwiftUI** (MenuBarExtra)
 - **IOKit** — DDC/CI I2C for hardware brightness/contrast
-- **CoreGraphics** — Display enumeration, resolution, arrangement
+- **CoreGraphics** — Display enumeration, resolution
 - **ColorSync** — ICC color profile management
 - **CGVirtualDisplay** — Virtual display creation (private API, macOS 14+)
 - **CoreDisplay** — Built-in display brightness reading (private API, via dlopen)

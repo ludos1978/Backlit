@@ -26,7 +26,6 @@
 | GammaService.swift | Gamma table 唯一写入者 |
 | AutoBrightnessService.swift | 跟随内建屏亮度同步外接显示器（CoreDisplay API） |
 | ResolutionService.swift | 分辨率/HiDPI 模式切换 |
-| ArrangementService.swift | 显示器排列 |
 | HiDPIService.swift | HiDPI 检测与管理 |
 | VirtualDisplayService.swift | CGVirtualDisplay 创建/销毁 |
 | ColorProfileService.swift | ColorSync ICC Profile |
