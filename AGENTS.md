@@ -93,8 +93,11 @@ grep -r "DisplayInfo\|DisplayManager\|DDCService" Backlit/ --include="*.swift" |
 # Regenerate xcodeproj (required when project.yml changed)
 xcodegen generate
 
-# Release: bump version, build, sign, write build/Builds/Backlit-X.Y.Z.{dmg,zip}, commit
-./scripts/build-dmg.sh [patch|minor|major] [--install]
+# Release: bump version, build, sign, write build/Builds/Backlit-X.Y.Z.{dmg,zip}, commit + push
+./scripts/build-dmg.sh [patch|minor|major|X.Y.Z|--no-bump] [--install] [--no-commit] [--no-push]
+
+# Publish the current version as a GitHub release (explicit step only)
+./scripts/release.sh
 ```
 
 ### Test Coverage

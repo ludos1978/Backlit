@@ -40,7 +40,8 @@ and provide high-level APIs for Views/ViewModels.
 - **Sleep/wake reapply order**: BrightnessService → GammaService (Brightness is the data provider for Gamma)
   - AppDelegate listens for `NSWorkspace.didWakeNotification` → calls reapply
 - **C callbacks**: use `Unmanaged.passRetained(self)` + matching `release()`, ❌ do not use passUnretained
-- **VirtualDisplayService**: HiDPI config is runtime-only (❌ do not store autoCreate in UserDefaults),
+- **VirtualDisplayService**: virtual displays are only created by an explicit click — ❌ no auto-create at launch/menu open
+  (`autoCreate` is legacy, decoded but ignored; see L-029),
   `CGVirtualDisplay(descriptor:)` init must be on the main thread
 
 ## Testing notes

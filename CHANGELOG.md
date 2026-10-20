@@ -7,6 +7,15 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Changed
+
+- **Build script pushes.** `scripts/build-dmg.sh` now pushes its "Version X.Y.Z" commit
+  (`--no-push` to skip).
+
+---
+
 ## v0.6.2 (2026-10-20)
 
 ### Fixed
