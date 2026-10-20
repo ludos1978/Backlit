@@ -46,7 +46,7 @@
 | 新增一个显示器属性（如 HDR 状态） | `Models/DisplayInfo.swift` → grep 所有引用 → 相关 View/Service |
 | 新增一个 DDC VCP 功能（如音量控制） | `Services/DDCService.swift`（添加 VCP 常量）→ 新建 Service → 新建 View → `Views/DisplayDetailView.swift`（添加 Section）→ `docs/codemap/CLAUDE.md` |
 | 新增菜单栏工具入口（非显示器相关） | `Views/MenuBarView.swift`（工具区添加入口）→ 新建 View/Service → `docs/codemap/CLAUDE.md` |
-| 修改分辨率切换逻辑 | `Services/ResolutionService.swift`、`Models/DisplayMode.swift`，测试影响 `Views/ResolutionSliderView.swift` 和 `Views/DisplayModeListView.swift` |
+| 修改分辨率切换逻辑 | `Services/ResolutionService.swift`、`Models/DisplayMode.swift`，测试影响 `Views/DisplayModeListView.swift` |
 | 修改亮度读写 | `Services/BrightnessService.swift`，外接屏同步检查 `Services/DDCService.swift` |
 | 修改图像调整效果 | `Services/GammaService.swift`（公式/Table 计算）、`Views/ImageAdjustmentView.swift`（UI 滑块映射） |
 | 添加新的持久化设置项 | `Services/SettingsService.swift`（Keys + @Published 属性 + loadAll/persist）→ 相关 View |

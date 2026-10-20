@@ -14,7 +14,6 @@ App (BacklitApp)
                     ├── DisplayRowView
                     │     └── DisplayDetailView  ← 12 Sections（三组分组）
                     │           ├── BrightnessSliderView     → BrightnessService → DDCService
-                    │           ├── ResolutionSliderView     → ResolutionService
                     │           ├── DisplayModeListView      → ResolutionService
                     │           ├── ColorProfileView         → ColorProfileService
                     │           ├── ImageAdjustmentView      → GammaService
@@ -41,7 +40,6 @@ DisplayManager ─────────────→ BrightnessService (刷
 
 CGHelpers (共享工具) ────────→ 被以下 Service 使用（WindowServer IPC 超时保护）:
   ArrangementService (setPosition/setAsMainDisplay CG 事务)
-  MirrorService (enableMirror/disableMirror CG 事务)
   ResolutionService (applyModeSync CG 事务)
   VirtualDisplayService (CGVirtualDisplay apply 事务)
 
@@ -76,6 +74,5 @@ ResolutionService ──────────→ VirtualDisplayService.virtua
 虚拟显示器数据流（运行时，不持久化）：
   VirtualDisplayView → VirtualDisplayService.enableHiDPIVirtual()
     → CGVirtualDisplay(descriptor:) [主线程，vendorID=0xEEEE]
-    → MirrorService.enableMirror() [后台，CGHelpers.runWithTimeout]
     → HiDPI 模式可用（重启后消失）
 ```

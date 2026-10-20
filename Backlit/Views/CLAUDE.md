@@ -15,7 +15,6 @@
 | MenuBarView.swift | 菜单栏主视图 + 所有 Section 入口 |
 | DisplayDetailView.swift | 显示器展开面板（12 个 Section） |
 | BrightnessSliderView.swift | 亮度/对比度滑条 |
-| ResolutionSliderView.swift | 分辨率滑条 |
 | DisplayModeListView.swift | 分辨率模式列表（收藏置顶） |
 | ArrangementView.swift | 显示器排列（含内外屏缩略图区分） |
 | ColorProfileView.swift | ICC Profile 选择 |

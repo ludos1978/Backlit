@@ -50,14 +50,13 @@ Backlit/
 │   │   ├── AmbientLightService.swift       # Ambient light sensor (lux) via IOHIDEventSystemClient SPI (Apple Silicon), BezelServices fallback; smoothed; wake-safe
 │   │   ├── ContentLightnessSampler.swift   # Per-display ScreenCaptureKit stream at 1/16 scale → CIE L* lightness (mean/RMS), stabilized; frames analysed in memory only
 │   │   ├── BrightnessService.swift         # 统一亮度接口：内建屏用 IODisplayGetFloatParameter，外接屏用 DDC VCP 0x10；改动影响所有亮度读写路径
-│   │   ├── CGHelpers.swift                 # 共享 CG 阻塞调用工具：CGHelpers.runWithTimeout(seconds:fallback:operation:) 在后台线程以超时保护运行 WindowServer IPC 阻塞操作；被 ArrangementService、MirrorService、ResolutionService、VirtualDisplayService 使用
+│   │   ├── CGHelpers.swift                 # 共享 CG 阻塞调用工具：CGHelpers.runWithTimeout(seconds:fallback:operation:) 在后台线程以超时保护运行 WindowServer IPC 阻塞操作；被 ArrangementService、ResolutionService、VirtualDisplayService 使用
 │   │   ├── ColorProfileService.swift       # ICC Profile 枚举（扫描 3 个系统目录）和切换（ColorSync API）；改动影响色彩描述文件列表和切换
 │   │   ├── DDCService.swift                # ⚠️ IOKit I2C DDC/CI 通信核心：IOFramebuffer 查找、VCP 读写、5 秒 TTL 缓存、3 次重试；几乎所有外接显示器功能的底层依赖，改动需极谨慎
 │   │   ├── DisplayManager.swift            # ⚠️ 显示器枚举（CGGetOnlineDisplayList）+ CGDisplay 热插拔回调（auto-arrange feature removed 2026-09-07 — the app never moves displays on its own）；@Published displays 被全局注入，改动影响整个显示器列表数据流
 │   │   ├── GammaService.swift              # 软件 Gamma 调整：CGSetDisplayTransferByFormula/Table，支持对比度/增益/色温/量化/反色；所有 gamma/软件亮度写入的唯一入口；改动影响图像调整效果
 │   │   ├── HiDPIService.swift              # 写 /Library/Displays/...plist 注入 HiDPI 缩放模式，需管理员权限；改动影响 HiDPI override 生成逻辑
 │   │   ├── LaunchService.swift             # SMAppService 管理开机自启动（macOS 13+）；改动仅影响 Launch at Login 功能
-│   │   ├── MirrorService.swift             # CGDisplayConfiguration 硬件级屏幕镜像的启用/停止；enableMirror/disableMirror 已异步化，CG 事务在 CGHelpers.runWithTimeout 内执行；改动影响镜像功能
 │   │   ├── NotchOverlayManager.swift       # 在内建屏刘海区域创建黑色遮罩 NSWindow（screenSaver 级别）；改动影响刘海遮罩的视觉效果和层级
 │   │   ├── ResolutionService.swift         # 通过 CGConfigureDisplayWithDisplayMode 切换显示模式；applyModeSync 已异步化，整个 CG 事务在 CGHelpers.runWithTimeout 内执行；resolvedTargetDisplayID() 在镜像检测时回退到 VirtualDisplayService；改动影响分辨率切换成功率
 │   │   ├── SettingsService.swift           # UserDefaults + JSON 文件持久化全局和每显示器设置；PreferenceArea ownership model (authoritativeAreas: Backlit-controlled vs macOS-controlled per area, gates launch/wake re-apply) + per-display brightness by UUID；改动需注意 key 命名（必须 fd. 前缀）和向后兼容。Opt-in (default OFF) switches: interceptBrightnessKeys (event tap), interceptVolumeKeys (volume keys → monitor speakers)
@@ -83,7 +82,6 @@ Backlit/
 │       ├── MainDisplayView.swift           # "设为主显示屏"行，当前已是主屏时显示状态标签；依赖 ArrangementService
 │       ├── MenuBarView.swift               # ⚠️ 菜单栏主视图：显示器列表 + 展开/折叠 + 工具区 + 设置区 + PresetListView；是所有功能的入口容器，改动影响全局布局
 │       ├── NotchView.swift                 # 刘海信息显示 + 遮罩开关（仅有刘海的内建屏显示）；依赖 NotchOverlayManager
-│       ├── ResolutionSliderView.swift      # 分辨率横向拖动滑块（松手生效）；依赖 ResolutionService，读取 DisplayInfo.availableModes
 │       ├── SystemColorView.swift           # 系统取色器（NSColorSampler）+ HEX/RGB/HSB 显示 + 历史记录；依赖 SettingsService 持久化颜色历史
 │       ├── DisplayStreamRowView.swift      # "Show in Window" row in each display panel (physical or virtual) → DisplayStreamService
 │       ├── OSControlledModifier.swift      # .osControlled(area): read-only + click opens the macOS settings panel while the area is macOS-controlled
