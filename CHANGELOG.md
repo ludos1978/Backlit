@@ -7,7 +7,7 @@ release is 0.3.0.
 
 ---
 
-## Unreleased
+## v0.7.0 (2026-11-16)
 
 ### Added
 
