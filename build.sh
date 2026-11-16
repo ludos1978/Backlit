@@ -55,8 +55,15 @@ fi
 # 3. Clean build.
 mkdir -p build
 echo "building: $CONFIG (clean) …"
-if xcodebuild -scheme Backlit -configuration "$CONFIG" -derivedDataPath build \
-        clean build "${SIGN_ARGS[@]}" > build/xcodebuild.log 2>&1; then
+build_app() {
+    xcodebuild -scheme Backlit -configuration "$CONFIG" -derivedDataPath build \
+        clean build ${SIGN_ARGS[@]+"${SIGN_ARGS[@]}"} > build/xcodebuild.log 2>&1
+}
+# The installed certificate may belong to another team than project.yml's —
+# then retry ad-hoc instead of failing.
+if build_app || { [ ${#SIGN_ARGS[@]} -eq 0 ] && grep -q "signing certificate" build/xcodebuild.log \
+        && echo "signing: certificate does not match the project team — retrying ad-hoc" \
+        && SIGN_ARGS=(CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=) && build_app; }; then
     APP="build/Build/Products/$CONFIG/Backlit.app"
     echo "ok: $APP"
 else
