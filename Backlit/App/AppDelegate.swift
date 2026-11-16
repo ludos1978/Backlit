@@ -46,6 +46,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         BrightnessService.shared.clearPersistedSoftwareBrightness()
         XDRBrightnessService.shared.restoreSavedLevel()
 
+        // Displays Backlit disabled are re-enabled on quit; if the previous session
+        // crashed while one was off, turn it back on now (only those, nothing else).
+        DisplayDisableService.shared.restoreAfterUncleanExit()
+
         // Observe System Settings contrast changes before the menu is first opened.
         _ = AccessibilityService.shared
 
@@ -94,6 +98,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.notificationCenter.removeObserver(obs)
         }
         BrightnessKeyService.shared.stop()
+        DisplayDisableService.shared.enableAll()
         // GammaService already handles CGDisplayRestoreColorSyncSettings via willTerminateNotification observer.
         VirtualDisplayService.shared.destroyAll()
     }

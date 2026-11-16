@@ -126,6 +126,7 @@ struct MenuBarView: View {
     @ObservedObject private var updateService = UpdateService.shared
     @ObservedObject private var settings = SettingsService.shared
     @ObservedObject private var virtualDisplayService = VirtualDisplayService.shared
+    @ObservedObject private var disableService = DisplayDisableService.shared
     @State private var expandedDisplayIDs: Set<CGDirectDisplayID> = []
     @ObservedObject private var xdrService = XDRBrightnessService.shared
     @State private var showVirtualDisplays: Bool = false
@@ -146,7 +147,9 @@ struct MenuBarView: View {
     private let maxContentHeight: CGFloat = 640
 
     private var visibleDisplays: [DisplayInfo] {
-        displayManager.displays.filter { !virtualDisplayService.isVirtualDisplay($0.displayID) }
+        displayManager.displays.filter {
+            !virtualDisplayService.isVirtualDisplay($0.displayID) && !disableService.isDisabled($0.displayID)
+        }
     }
 
     var body: some View {
@@ -204,6 +207,11 @@ struct MenuBarView: View {
                                 DisplayDetailView(display: display)
                             }
                         }
+                    }
+
+                    // Displays switched off with the row toggle (no controls while off)
+                    ForEach(disableService.disabledList, id: \.id) { item in
+                        DisabledDisplayRow(displayID: item.id, name: item.name)
                     }
                 }
 
@@ -547,6 +555,7 @@ struct SettingsView: View {
 struct DisplayRowView: View {
     @ObservedObject var display: DisplayInfo
     @EnvironmentObject var displayManager: DisplayManager
+    @ObservedObject private var disableService = DisplayDisableService.shared
     @State private var isHovered: Bool = false
 
     let isExpanded: Bool
@@ -589,6 +598,21 @@ struct DisplayRowView: View {
             .contentShape(Rectangle())
             .onTapGesture { onToggleExpand() }
             .help("Expand the display control panel")
+
+            if disableService.isAvailable {
+                Toggle("", isOn: Binding(
+                    get: { true },
+                    set: { on in if !on { disableService.disable(display) } }
+                ))
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .controlSize(.mini)
+                .disabled(!disableService.canDisable(display))
+                .help(disableService.canDisable(display)
+                      ? "Turn this display off (macOS moves its windows to the other screens)"
+                      : "The last enabled display can't be turned off")
+                .accessibilityLabel("Display enabled")
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -623,5 +647,44 @@ struct DisplayRowView: View {
         .accessibilityLabel("Display: \(display.name)\(display.isMain ? ", main display" : "")\(isExpanded ? ", expanded" : ", collapsed")")
         .accessibilityHint("Click to expand the control panel")
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+// MARK: - DisabledDisplayRow
+
+/// A display turned off with DisplayDisableService: name plus a switch to turn it back on.
+struct DisabledDisplayRow: View {
+    let displayID: CGDirectDisplayID
+    let name: String
+    @State private var isHovered: Bool = false
+
+    var body: some View {
+        HStack {
+            Spacer().frame(width: 16)
+            MenuItemIcon(systemName: "display", color: .secondary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .foregroundColor(.secondary)
+                Text("Off")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Toggle("", isOn: Binding(
+                get: { false },
+                set: { on in if on { DisplayDisableService.shared.enable(displayID) } }
+            ))
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .controlSize(.mini)
+            .help("Turn this display back on")
+            .accessibilityLabel("Display \(name) disabled")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.primary.opacity(isHovered ? 0.06 : 0))
+        .onHover { isHovered = $0 }
     }
 }

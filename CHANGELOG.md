@@ -9,6 +9,13 @@ release is 0.3.0.
 
 ## Unreleased
 
+### Added
+
+- **Turn individual displays off.** Each screen in *Individual Screens* has a switch that
+  disconnects it in software (like BlackOut): macOS moves its windows to the other screens.
+  The last enabled display can't be turned off; switched-off displays come back when you flip
+  the switch, quit Backlit, log out or restart — and at the next launch if Backlit crashed.
+
 ### Changed
 
 - **Build script pushes.** `scripts/build-dmg.sh` now pushes its "Version X.Y.Z" commit

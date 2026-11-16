@@ -22,6 +22,7 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 | Image Adjustment (Gamma/Temperature) | ✅ | Software contrast, color temperature, RGB channels, invert |
 | Display Presets | ✅ | Save & restore brightness, dimming, gamma/image adjustment, XDR and contrast with one click (never resolution) |
 | Virtual Display (Dummy) | ✅ | Create headless virtual displays |
+| Turn Displays Off | ✅ | Per-display switch that disconnects a screen in software (like BlackOut); the last one always stays on, all come back on quit |
 | Notch Management | ✅ | Hide the MacBook notch with a black overlay |
 | Launch at Login | ✅ | Via SMAppService |
 
@@ -167,7 +168,8 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
   re-applied (crash guard), so a bad setting can never lock you out.
 - **Private Apple APIs:** used for built-in brightness (DisplayServices), auto-brightness
   (CoreDisplay), accessibility contrast (UniversalAccess/SkyLight), virtual displays
-  (CGVirtualDisplay) and DDC on Apple Silicon (IOAVService). All local; none can reach
+  (CGVirtualDisplay), turning displays off (CGSConfigureDisplayEnabled, session-only, undone on
+  quit and after a crash) and DDC on Apple Silicon (IOAVService). All local; none can reach
   beyond its stated purpose. The accessibility-contrast settings are system-wide and persist
   after quitting.
 - **Sandbox & signing:** unsandboxed (required for IOKit/DDC), hardened runtime with no

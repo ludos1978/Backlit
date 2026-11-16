@@ -11,7 +11,8 @@ private func displayReconfigCallback(
     guard let ptr = userInfo else { return }
     let manager = Unmanaged<DisplayManager>.fromOpaque(ptr).takeUnretainedValue()
 
-    let relevant: CGDisplayChangeSummaryFlags = [.addFlag, .removeFlag, .setMainFlag, .setModeFlag]
+    let relevant: CGDisplayChangeSummaryFlags = [.addFlag, .removeFlag, .enabledFlag, .disabledFlag,
+                                                 .setMainFlag, .setModeFlag]
     guard !flags.intersection(relevant).isEmpty else { return }
 
     // Skip the begin-configuration notification; only act when the change is complete.
@@ -19,7 +20,7 @@ private func displayReconfigCallback(
     guard !flags.contains(.beginConfigurationFlag) else { return }
 
     Task { @MainActor in
-        if flags.intersection([.addFlag, .removeFlag]).isEmpty {
+        if flags.intersection([.addFlag, .removeFlag, .enabledFlag, .disabledFlag]).isEmpty {
             // Mode or main-display change: refresh mode info for existing displays only.
             manager.refreshExistingDisplayModes()
             // A mode change makes ColorSync reload the display's profile, which resets
@@ -91,6 +92,7 @@ class DisplayManager: ObservableObject {
 
         displays = updatedDisplays
         DisplayManagerAccessor.shared.displays = updatedDisplays
+        DisplayDisableService.shared.pruneDisconnected()
 
 
         // Only load details / refresh brightness for newly appeared displays
@@ -108,6 +110,7 @@ class DisplayManager: ObservableObject {
         for display in updatedDisplays where keptIDs.contains(display.displayID) {
             display.bounds = CGDisplayBounds(display.displayID)
             display.isMain = CGDisplayIsMain(display.displayID) != 0
+            display.isEnabled = CGDisplayIsActive(display.displayID) != 0
         }
     }
 
@@ -164,16 +167,6 @@ class DisplayManager: ObservableObject {
                 display.currentDisplayMode = newMode
             }
         }
-    }
-
-    /// Toggle a display on/off.
-    /// NOTE: macOS has no public API for enabling/disabling individual displays
-    /// (CGConfigureDisplayEnabled is private). This function always returns false
-    /// to signal to callers that the operation is not supported.
-    @discardableResult
-    func toggleDisplay(_ display: DisplayInfo) -> Bool {
-        // No-op: cannot enable/disable displays via public API
-        return false
     }
 }
 

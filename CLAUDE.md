@@ -28,6 +28,7 @@ Tech stack: Swift 6 + SwiftUI (MenuBarExtra) + IOKit + CoreGraphics, zero third-
 - **Resolution:** only the user's direct pick in the Display Modes list (and its ⌘Z undo) or the HiDPI switch may change a physical display's mode. No presets, wake/connect handling, probes or automation.
 - **Layout:** where displays sit relative to each other is not Backlit's job — never move displays (no `CGConfigureDisplayOrigin`, no mirroring).
 - **Exception:** virtual displays may be created and their own features (resolution, HiDPI) set.
+- **Exception:** the user may switch a physical display off/on with its row toggle (`DisplayDisableService`, private `CGSConfigureDisplayEnabled`, approved by the maintainer). macOS re-fits the layout itself; Backlit never moves displays. Always keep one display on and re-enable everything on quit / after a crash.
 - **Presets:** brightness-related state only (brightness, dimming, gamma/image adjustment, XDR, contrast, adaptive brightness).
 - **Launch is passive:** starting Backlit changes no brightness-related output; only an explicit user action (control, toggle, preset) does.
 - **Commit and push every finished change** (atomic commits, `git push` right after). Publishing a GitHub release stays an explicit step.

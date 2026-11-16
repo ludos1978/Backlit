@@ -22,6 +22,7 @@ and provide high-level APIs for Views/ViewModels.
 |------|------|
 | DDCService.swift | Low-level IOKit I2C / IOAVService DDC communication |
 | DisplayManager.swift | Display enumeration, refresh, cross-Service coordination |
+| DisplayDisableService.swift | Turn physical displays off/on (private CGSConfigureDisplayEnabled) |
 | BrightnessService.swift | Software brightness (writes through GammaService) |
 | GammaService.swift | Sole writer of the gamma table |
 | AutoBrightnessService.swift | Syncs external display brightness to the built-in display (CoreDisplay API) |
