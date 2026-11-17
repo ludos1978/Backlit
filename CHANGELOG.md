@@ -7,6 +7,16 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Fixed
+
+- **A switched-off display disappeared from the menu and couldn't be turned back on.** A disabled
+  display is also reported as disconnected, and the unplug check forgot it immediately. It now
+  stays listed as *Off* with a switch to turn it back on (quitting Backlit also turns it back on).
+
+---
+
 ## v0.7.0 (2026-11-16)
 
 ### Added

@@ -12,7 +12,9 @@ import CoreGraphics
 /// - the change is made for the login session only (logout / restart restores it);
 /// - every display Backlit disabled is re-enabled on quit, and at the next launch
 ///   if Backlit crashed while one was off (`fd.disabledDisplays`);
-/// - a disabled display that is unplugged is forgotten.
+/// - a disabled display that comes back on by other means (replugged, another app,
+///   logout) is forgotten. A disabled display is also *offline* to CoreGraphics, so
+///   "offline" can't be used to detect an unplug — that would lose the only way back.
 @MainActor
 final class DisplayDisableService: ObservableObject, @unchecked Sendable {
     static let shared = DisplayDisableService()
@@ -82,9 +84,9 @@ final class DisplayDisableService: ObservableObject, @unchecked Sendable {
         UserDefaults.standard.removeObject(forKey: Self.disabledKey)
     }
 
-    /// Drops disabled displays that are no longer connected.
-    func pruneDisconnected() {
-        for id in disabled.keys where CGDisplayIsOnline(id) == 0 {
+    /// Drops disabled displays that are active again (turned back on outside Backlit).
+    func pruneReenabled() {
+        for id in disabled.keys where CGDisplayIsActive(id) != 0 {
             disabled[id] = nil
         }
     }

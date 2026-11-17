@@ -105,3 +105,9 @@
 - **Cause**: saved virtual displays with `autoCreate: true` were re-created when VirtualDisplayService first loaded (the first menu open after launch). Adding a display makes macOS re-fit the physical screens; it can apply a remembered mirror set (built-in mirroring the 1920×1080 virtual display at 1920×1080) or pick new modes
 - **Fix**: auto-create removed; `autoCreate` is decoded but ignored, virtual displays are only created by an explicit click
 - **Lesson**: anything that adds or removes a display is a resolution/layout change — only on direct user action
+
+### L-030: A disabled display is offline — don't use "offline" to detect unplug
+- **Symptom**: after turning a display off with the row switch it vanished from the menu; no way to turn it back on
+- **Cause**: `CGSConfigureDisplayEnabled(false)` takes the display out of `CGGetOnlineDisplayList` and makes `CGDisplayIsOnline` return 0. `DisplayDisableService.pruneDisconnected()` treated that as an unplug and dropped the record right away
+- **Fix**: only forget a disabled display once it is active again (`pruneReenabled`, `CGDisplayIsActive != 0`); an unplugged one stays listed until its switch is flipped (enable fails, record dropped)
+- **Lesson**: the disabled-display record is the only way back — never prune it on a signal the disable itself produces

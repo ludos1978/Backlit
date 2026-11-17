@@ -92,7 +92,7 @@ class DisplayManager: ObservableObject {
 
         displays = updatedDisplays
         DisplayManagerAccessor.shared.displays = updatedDisplays
-        DisplayDisableService.shared.pruneDisconnected()
+        DisplayDisableService.shared.pruneReenabled()
 
 
         // Only load details / refresh brightness for newly appeared displays
