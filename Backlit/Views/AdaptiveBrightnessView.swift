@@ -89,7 +89,7 @@ struct AdaptiveBrightnessView: View {
                 if service.mode.usesContent {
                     HStack(spacing: 8) {
                         Text("Sampling").font(.body).frame(width: 104, alignment: .leading)
-                        Picker("", selection: $service.captureFPS) { ForEach([2, 4, 8], id: \.self) { Text("\($0) fps").tag($0) } }
+                        Picker("", selection: $service.captureFPS) { ForEach(AdaptiveBrightnessService.fpsOptions, id: \.self) { Text("\($0) fps").tag($0) } }
                             .labelsHidden().controlSize(.small).frame(width: 90)
                         Picker("", selection: $service.metric) { ForEach(LightnessMetric.allCases) { Text($0.title).tag($0) } }
                             .labelsHidden().controlSize(.small)

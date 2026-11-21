@@ -403,9 +403,14 @@ final class BrightnessService: @unchecked Sendable {
     func setBrightnessSmooth(
         _ targetBrightness: Double,
         for display: DisplayInfo,
-        isAutoAdjust: Bool = false
+        isAutoAdjust: Bool = false,
+        duration: TimeInterval = 0.20
     ) {
         let clamped = max(0.0, min(100.0, targetBrightness))
+        // ~25 steps/s for IOKit and gamma; DDC is slow (~40-50 ms per command), so
+        // at most one write per 40 ms.
+        let fastSteps = max(8, Int(duration * 40))
+        let ddcSteps = max(2, min(Int(duration / 0.04), 5 * Int((duration / 0.2).rounded(.up))))
         let displayID = display.displayID
         let fromBrightness = display.brightness
 
@@ -417,8 +422,8 @@ final class BrightnessService: @unchecked Sendable {
         let anim = animator(for: displayID)
 
         if display.isBuiltin {
-            // Built-in: use IOKit — 8 steps over 200ms
-            anim.animate(from: fromBrightness, to: clamped, steps: 8, duration: 0.20) { [weak self, weak display] value, _ in
+            // Built-in: IOKit
+            anim.animate(from: fromBrightness, to: clamped, steps: fastSteps, duration: duration) { [weak self, weak display] value, _ in
                 guard let self, let display else { return }
                 display.brightness = value
                 self.lastBuiltinWrite = Date()
@@ -429,19 +434,18 @@ final class BrightnessService: @unchecked Sendable {
             let currentStatus: Bool? = ddcAvailableLock.withLock { ddcAvailable[displayID] }
 
             if currentStatus == false {
-                // Software (gamma) path: 8 steps over 200ms
-                anim.animate(from: fromBrightness, to: clamped, steps: 8, duration: 0.20) { [weak display] value, _ in
+                // Software (gamma) path
+                anim.animate(from: fromBrightness, to: clamped, steps: fastSteps, duration: duration) { [weak display] value, _ in
                     display?.brightness = value
                     BrightnessService.shared.setSoftwareBrightness(value, for: displayID)
                 }
             } else {
-                // DDC path: 5 steps over 200ms.
-                // DDC I2C is slow (~40-50ms per command), so 5 steps at 40ms intervals
-                // keeps the bus from overloading while giving smooth visible steps.
+                // DDC path: at most one step per 40 ms (5 steps per 200 ms) keeps the
+                // slow I2C bus from overloading while giving smooth visible steps.
                 let knownMax: UInt16 = ddcAvailableLock.withLock {
                     ddcMaxBrightness[displayID] ?? 100
                 }
-                anim.animate(from: fromBrightness, to: clamped, steps: 5, duration: 0.20) { [weak self, weak display] value, isLast in
+                anim.animate(from: fromBrightness, to: clamped, steps: ddcSteps, duration: duration) { [weak self, weak display] value, isLast in
                     guard let self else { return }
                     display?.brightness = value
                     let ddcValue = UInt16((value / 100.0) * Double(knownMax))

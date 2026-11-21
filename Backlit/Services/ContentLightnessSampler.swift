@@ -10,10 +10,15 @@ enum LightnessMetric: String, CaseIterable, Codable, Identifiable {
     var title: String { self == .mean ? "Average" : "RMS (bright-weighted)" }
 }
 
-/// Samples one display's content at 1/16 resolution a few times per second and
-/// reports its perceptual lightness (0 = black … 1 = white), stabilized so that
-/// cursor blinks and transient redraws do not move the brightness.
-/// Frames are analysed in memory and discarded — nothing is stored or sent.
+/// Samples one display's content and reports its perceptual lightness
+/// (0 = black … 1 = white), stabilized so that cursor blinks and transient redraws
+/// do not move the brightness. Frames are analysed in memory and discarded —
+/// nothing is stored or sent.
+///
+/// Cost is independent of the display's resolution: WindowServer captures at the
+/// nominal (point) resolution and the GPU scales to a fixed ~64×36 frame, so a 4K/5K
+/// HiDPI panel costs the same as a 1080p one. SCStream only delivers frames when the
+/// content changed, so a static screen costs ~nothing.
 @MainActor
 final class ContentLightnessSampler: @unchecked Sendable {
     let displayID: CGDirectDisplayID
@@ -28,6 +33,8 @@ final class ContentLightnessSampler: @unchecked Sendable {
     private let sampleQueue = DispatchQueue(label: "io.github.ludos1978.backlit.lightness", qos: .utility)
     private var raw: Double = 0.5
     private var pendingFrames = 0
+
+    private static let sampleWidth = 64
 
     init(displayID: CGDirectDisplayID, metric: LightnessMetric) {
         self.displayID = displayID
@@ -45,8 +52,12 @@ final class ContentLightnessSampler: @unchecked Sendable {
         let own = content.windows.filter { $0.owningApplication?.bundleIdentifier == Bundle.main.bundleIdentifier }
         let filter = SCContentFilter(display: scDisplay, excludingWindows: own)
         let config = SCStreamConfiguration()
-        config.width = max(32, CGDisplayPixelsWide(displayID) / 16)
-        config.height = max(20, CGDisplayPixelsHigh(displayID) / 16)
+        // A mean over the whole screen needs very few pixels: 64 px wide, display aspect.
+        let bounds = CGDisplayBounds(displayID)
+        let aspect = bounds.width > 0 ? bounds.height / bounds.width : 9.0 / 16.0
+        config.width = Self.sampleWidth
+        config.height = max(16, Int((Double(Self.sampleWidth) * aspect).rounded()))
+        config.captureResolution = .nominal      // points, not the 2× backing store
         config.pixelFormat = kCVPixelFormatType_32BGRA
         config.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(max(1, fps)))
         config.showsCursor = false
@@ -69,13 +80,15 @@ final class ContentLightnessSampler: @unchecked Sendable {
         Task { try? await stream.stopCapture() }
     }
 
-    /// Stabilizer: commit a new lightness only after it has moved by more than
-    /// 3 % and stayed there for two consecutive frames.
+    /// Stabilizer: a big jump (> 15 %, e.g. switching between a dark and a light
+    /// window) commits at once; a smaller move (> 3 %) must be confirmed by the
+    /// next frame, which filters cursor blinks and transient redraws.
     private func ingest(_ value: Double) {
         raw = value
-        if abs(raw - lightness) > 0.03 {
+        let change = abs(raw - lightness)
+        if change > 0.03 {
             pendingFrames += 1
-            if pendingFrames >= 2 {
+            if change > 0.15 || pendingFrames >= 2 {
                 pendingFrames = 0
                 lightness = raw
                 onChange?(lightness)
@@ -92,10 +105,21 @@ private final class Output: NSObject, SCStreamOutput, SCStreamDelegate, @uncheck
     private let metric: LightnessMetric
     private let onSample: (Double) -> Void
 
-    /// sRGB byte → linear light.
-    private static let linear: [Double] = (0..<256).map { i in
-        let c = Double(i) / 255.0
-        return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+    /// sRGB byte → linear light, pre-weighted per channel (Rec. 709 luminance).
+    private static func weighted(_ w: Float) -> [Float] {
+        (0..<256).map { i in
+            let c = Float(i) / 255
+            return w * (c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4))
+        }
+    }
+    private static let lutB = weighted(0.0722), lutG = weighted(0.7152), lutR = weighted(0.2126)
+
+    /// Relative luminance (quantized to 1/1023) → CIE L* normalized to 0…1.
+    private static let lStarSteps = 1023
+    private static let lutLStar: [Float] = (0...lStarSteps).map { i in
+        let y = Float(i) / Float(lStarSteps)
+        let f = y > 0.008856 ? cbrt(y) : 7.787 * y + 16 / 116
+        return max(0, min(1, (116 * f - 16) / 100))
     }
 
     init(metric: LightnessMetric, onSample: @escaping (Double) -> Void) {
@@ -119,21 +143,27 @@ private final class Output: NSObject, SCStreamOutput, SCStreamDelegate, @uncheck
         let stride = CVPixelBufferGetBytesPerRow(pixelBuffer)
         guard width > 0, height > 0 else { return }
 
-        var sum = 0.0
-        let lut = Self.linear
-        for y in 0..<height {
-            let row = base.advanced(by: y * stride).assumingMemoryBound(to: UInt8.self)
-            for x in 0..<width {
-                let p = x * 4                      // BGRA
-                let lin = 0.0722 * lut[Int(row[p])] + 0.7152 * lut[Int(row[p + 1])] + 0.2126 * lut[Int(row[p + 2])]
-                // CIE L* from relative luminance, normalized to 0…1
-                let f = lin > 0.008856 ? cbrt(lin) : 7.787 * lin + 16.0 / 116.0
-                let lStar = max(0.0, min(1.0, (116.0 * f - 16.0) / 100.0))
-                sum += metric == .rms ? lStar * lStar : lStar
+        var sum: Float = 0
+        let rms = metric == .rms
+        let steps = Float(Self.lStarSteps)
+        Self.lutB.withUnsafeBufferPointer { lb in
+        Self.lutG.withUnsafeBufferPointer { lg in
+        Self.lutR.withUnsafeBufferPointer { lr in
+        Self.lutLStar.withUnsafeBufferPointer { ll in
+            for y in 0..<height {
+                let row = base.advanced(by: y * stride).assumingMemoryBound(to: UInt8.self)
+                var rowSum: Float = 0
+                for x in 0..<width {
+                    let p = x &* 4                 // BGRA
+                    let lin = lb[Int(row[p])] + lg[Int(row[p &+ 1])] + lr[Int(row[p &+ 2])]
+                    let lStar = ll[Int(min(lin, 1) * steps + 0.5)]
+                    rowSum += rms ? lStar * lStar : lStar
+                }
+                sum += rowSum
             }
-        }
-        let n = Double(width * height)
-        let value = metric == .rms ? sqrt(sum / n) : sum / n
+        }}}}
+        let n = Float(width * height)
+        let value = Double(rms ? (sum / n).squareRoot() : sum / n)
         onSample(value)
     }
 

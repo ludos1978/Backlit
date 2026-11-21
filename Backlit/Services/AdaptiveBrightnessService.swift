@@ -22,9 +22,9 @@ enum ResponseSpeed: String, CaseIterable, Codable, Identifiable {
     case slow, normal, fast
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
-    /// Maximum brightness change (percentage points) per 1 s tick.
-    var maxStep: Double {
-        switch self { case .slow: return 4; case .normal: return 12; case .fast: return 100 }
+    /// Duration of the brightness transition to a new target.
+    var transition: TimeInterval {
+        switch self { case .slow: return 1.5; case .normal: return 0.4; case .fast: return 0.12 }
     }
 }
 
@@ -124,7 +124,8 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
     @Published var maxBrightness: Double = 100 { didSet { d.set(maxBrightness, forKey: K.maxB) } }
     @Published var speed: ResponseSpeed = .normal { didSet { d.set(speed.rawValue, forKey: K.speed) } }
     @Published var learningEnabled: Bool = true { didSet { d.set(learningEnabled, forKey: K.learning) } }
-    @Published var captureFPS: Int = 4 { didSet { d.set(captureFPS, forKey: K.fps); if isEnabled { rebuildSamplers() } } }
+    static let fpsOptions = [2, 5, 10]
+    @Published var captureFPS: Int = 5 { didSet { d.set(captureFPS, forKey: K.fps); if isEnabled { rebuildSamplers() } } }
     @Published var metric: LightnessMetric = .rms { didSet { d.set(metric.rawValue, forKey: K.metric); if isEnabled { rebuildSamplers() } } }
     /// Bundle identifiers of apps that pause adaptive brightness while frontmost.
     @Published var ignoredApps: [String] = [] { didSet { d.set(ignoredApps, forKey: K.ignored) } }
@@ -175,7 +176,10 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
         if d.object(forKey: K.maxB) != nil { maxBrightness = d.double(forKey: K.maxB) }
         speed = ResponseSpeed(rawValue: d.string(forKey: K.speed) ?? "") ?? .normal
         if d.object(forKey: K.learning) != nil { learningEnabled = d.bool(forKey: K.learning) }
-        if d.object(forKey: K.fps) != nil { captureFPS = d.integer(forKey: K.fps) }
+        // Older versions offered 2/4/8 fps; anything not offered any more falls back to 5.
+        if d.object(forKey: K.fps) != nil, Self.fpsOptions.contains(d.integer(forKey: K.fps)) {
+            captureFPS = d.integer(forKey: K.fps)
+        }
         metric = LightnessMetric(rawValue: d.string(forKey: K.metric) ?? "") ?? .rms
         ignoredApps = d.stringArray(forKey: K.ignored) ?? []
         appBrightness = (d.dictionary(forKey: K.appBrightness) as? [String: Double]) ?? [:]
@@ -235,7 +239,15 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
         for display in enabledDisplays() {
             let sampler = ContentLightnessSampler(displayID: display.displayID, metric: metric)
             let uuid = display.displayUUID
-            sampler.onChange = { [weak self] value in self?.lightness[uuid] = value }
+            let id = display.displayID
+            // Event-driven: a committed content change is applied at once, not on the next tick.
+            sampler.onChange = { [weak self] value in
+                guard let self else { return }
+                self.lightness[uuid] = value
+                if let d = self.enabledDisplays().first(where: { $0.displayID == id }) {
+                    self.evaluate(d, now: Date())
+                }
+            }
             samplers[display.displayID] = sampler
             Task { @MainActor in
                 do { try await sampler.start(fps: self.captureFPS) }
@@ -324,71 +336,73 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
 
     // MARK: Tick
 
+    /// 1 s heartbeat: ambient light, follow-built-in and manual-change detection.
+    /// Screen-content changes don't wait for it (see rebuildSamplers).
     private func tick() {
         guard isEnabled, SettingsService.shared.isAuthoritative(.brightness) else { return }
         refreshSystemAutoBrightnessHint()
         let now = Date()
-        let u = AdaptiveCurve.ambientCoordinate(lux: mode.usesAmbient ? lux : nil)
-        let builtin = DisplayManagerAccessor.shared.displays.first(where: { $0.isBuiltin })
-
         let enabled = enabledDisplays()
         debugLog("[Adaptive] tick: \(enabled.count) display(s) enabled, lux=\(String(describing: lux))")
-        for display in enabled {
-            let id = display.displayID
-            let uuid = display.displayUUID
-            let l = mode.usesContent ? (lightness[uuid] ?? samplers[id]?.lightness ?? 0.5) : 0.5
+        for display in enabled { evaluate(display, now: now) }
+    }
 
-            // 1. Manual change detection → learn, then hold for a few seconds.
-            var manual: Double?
-            if let t = BrightnessService.shared.lastManualAdjust(for: id), t > (lastLearnedManualAt[id] ?? .distantPast) {
-                if now.timeIntervalSince(t) < 1.0 { continue }   // still being adjusted — do not fight it
-                manual = display.brightness
-                lastLearnedManualAt[id] = t
-            } else if display.isBuiltin, let hw = BrightnessService.shared.hardwareBacklight(for: id),
-                      let applied = lastApplied[id],
-                      now.timeIntervalSince(lastWriteAt[id] ?? .distantPast) > 1.0,
-                      abs(hw * 100 - applied) > 4 {
-                // Keys / Control Center changed the built-in backlight behind our back.
-                manual = hw * 100
-                display.brightness = hw * 100
-                lastLearnedManualAt[id] = now
-            }
-            if let manual {
-                lastApplied[id] = manual
-                holdUntil[id] = now.addingTimeInterval(5)
-                if let front = frontmostBundleID, ignoredApps.contains(front) {
-                    appBrightness[front] = manual            // per-app preference, not the curve
-                } else if learningEnabled, mode != .followBuiltin {
-                    var c = curve(for: uuid)
-                    c.learn(l: l, u: u, brightness: max(0, min(1, (manual / 100) / sensitivity)))
-                    save(c, for: uuid)
-                }
-                continue
-            }
-            if isPausedForApp || now < (holdUntil[id] ?? .distantPast) { continue }
+    /// Computes the target for one display and moves its brightness there.
+    private func evaluate(_ display: DisplayInfo, now: Date) {
+        guard isEnabled, SettingsService.shared.isAuthoritative(.brightness) else { return }
+        let u = AdaptiveCurve.ambientCoordinate(lux: mode.usesAmbient ? lux : nil)
+        let builtin = DisplayManagerAccessor.shared.displays.first(where: { $0.isBuiltin })
+        let id = display.displayID
+        let uuid = display.displayUUID
+        let l = mode.usesContent ? (lightness[uuid] ?? samplers[id]?.lightness ?? 0.5) : 0.5
 
-            // 2. Target.
-            var t: Double
-            if mode == .followBuiltin {
-                guard !display.isBuiltin, let b = builtin else { continue }
-                t = b.brightness * sensitivity
-            } else {
-                t = curve(for: uuid).value(l: l, u: u) * 100 * sensitivity
-            }
-            t = max(minBrightness, min(maxBrightness, t))
-            target[uuid] = t
-
-            // 3. Rate-limited move.
-            let current = lastApplied[id] ?? display.brightness
-            let delta = t - current
-            debugLog("[Adaptive] \(display.name): mode=\(mode.rawValue) L=\(String(format: "%.2f", l)) u=\(String(format: "%.2f", u)) target=\(Int(t)) current=\(Int(current)) ddc=\(String(describing: BrightnessService.shared.isDDCAvailable(for: id)))")
-            guard abs(delta) >= 2 else { continue }
-            let step = max(-speed.maxStep, min(speed.maxStep, delta))
-            let next = current + step
-            lastApplied[id] = next
-            lastWriteAt[id] = now
-            debugLog("[Adaptive] \(display.name): write \(Int(next))")
-            BrightnessService.shared.setBrightnessSmooth(next, for: display, isAutoAdjust: true)
+        // 1. Manual change detection → learn, then hold for a few seconds.
+        var manual: Double?
+        if let t = BrightnessService.shared.lastManualAdjust(for: id), t > (lastLearnedManualAt[id] ?? .distantPast) {
+            if now.timeIntervalSince(t) < 1.0 { return }   // still being adjusted — do not fight it
+            manual = display.brightness
+            lastLearnedManualAt[id] = t
+        } else if display.isBuiltin, let hw = BrightnessService.shared.hardwareBacklight(for: id),
+                  let applied = lastApplied[id],
+                  now.timeIntervalSince(lastWriteAt[id] ?? .distantPast) > 1.0,
+                  abs(hw * 100 - applied) > 4 {
+            // Keys / Control Center changed the built-in backlight behind our back.
+            manual = hw * 100
+            display.brightness = hw * 100
+            lastLearnedManualAt[id] = now
         }
+        if let manual {
+            lastApplied[id] = manual
+            holdUntil[id] = now.addingTimeInterval(5)
+            if let front = frontmostBundleID, ignoredApps.contains(front) {
+                appBrightness[front] = manual            // per-app preference, not the curve
+            } else if learningEnabled, mode != .followBuiltin {
+                var c = curve(for: uuid)
+                c.learn(l: l, u: u, brightness: max(0, min(1, (manual / 100) / sensitivity)))
+                save(c, for: uuid)
+            }
+            return
+        }
+        if isPausedForApp || now < (holdUntil[id] ?? .distantPast) { return }
+
+        // 2. Target.
+        var t: Double
+        if mode == .followBuiltin {
+            guard !display.isBuiltin, let b = builtin else { return }
+            t = b.brightness * sensitivity
+        } else {
+            t = curve(for: uuid).value(l: l, u: u) * 100 * sensitivity
+        }
+        t = max(minBrightness, min(maxBrightness, t))
+        target[uuid] = t
+
+        // 3. Move there in one transition (duration set by Response speed). A new
+        // target cancels a running transition, so the brightness never lags behind.
+        let current = lastApplied[id] ?? display.brightness
+        debugLog("[Adaptive] \(display.name): mode=\(mode.rawValue) L=\(String(format: "%.2f", l)) u=\(String(format: "%.2f", u)) target=\(Int(t)) current=\(Int(current)) ddc=\(String(describing: BrightnessService.shared.isDDCAvailable(for: id)))")
+        guard abs(t - current) >= 2 else { return }
+        lastApplied[id] = t
+        lastWriteAt[id] = now
+        BrightnessService.shared.setBrightnessSmooth(t, for: display, isAutoAdjust: true, duration: speed.transition)
     }
 }
