@@ -81,6 +81,7 @@ Backlit/
 │       ├── ImageAdjustmentView.swift       # Image adjustment fold: brightness + Dim Below Min rows (BrightnessService) followed by contrast/gamma/gain/temp/levels/per-channel/quantization/invert (GammaService), all SliderSettingRow (via AdjustRow)
 │       ├── MenuBarView.swift               # ⚠️ Main menu bar view: display list + expand/collapse + tools area + settings area + PresetListView; the entry container for all features, changes affect the global layout
 │       ├── NotchView.swift                 # Notch info display + mask toggle (shown only for built-in displays with a notch); depends on NotchOverlayManager
+│       ├── SettingRows.swift               # Shared option rows on one grid (18 pt icon · 104 pt label · control): SettingRowLabel, SliderSettingRow, PickerSettingRow, ToggleSettingRow, HintRow, SettingGroupHeader
 │       ├── SystemColorView.swift           # System color picker (NSColorSampler) + HEX/RGB/HSB display + history; depends on SettingsService for persisting color history
 │       ├── DisplayStreamRowView.swift      # "Show in Window" row in each display panel (physical or virtual) → DisplayStreamService
 │       ├── OSControlledModifier.swift      # .osControlled(area): read-only + click opens the macOS settings panel while the area is macOS-controlled

@@ -7,6 +7,22 @@ release is 0.3.0.
 
 ---
 
+## v0.8.1 (2026-11-21)
+
+### Changed
+
+- **Adaptive brightness reacts in ~0.2–0.5 s instead of 1–8 s.** A screen-content change is
+  applied immediately instead of on the next 1 s tick; *Response* is now a transition time
+  (0.12 / 0.4 / 1.5 s) instead of a per-second step limit; a big lightness jump commits at once.
+- **Adaptive brightness is much lighter on 4K/5K screens.** The screen is sampled as a fixed
+  64-pixel-wide frame at nominal resolution (cost no longer grows with the panel), and the
+  analysis uses lookup tables (≈40× less CPU per frame). Sampling is 2 / 5 / 10 fps, default 5.
+- **Unified option rows.** Adaptive Brightness, Image Adjustment and Keep Awake use the same
+  row layout (icon · label · control), and the Adaptive Brightness panel is grouped into
+  *Brightness*, *Behaviour*, *Displays* and *Ignored Apps*.
+
+---
+
 ## v0.8.0 (2026-11-21)
 
 ### Added

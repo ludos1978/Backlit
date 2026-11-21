@@ -22,6 +22,7 @@
 | VirtualDisplayView.swift | HiDPI virtual display |
 | NotchView.swift | Notch mask |
 | KeepAwakeView.swift | Keep Awake mode picker (Options) |
+| SettingRows.swift | Shared option rows (slider / picker / toggle / hint / group header) |
 | AutoBrightnessView.swift | Ambient light auto-brightness |
 
 ## Key patterns
@@ -30,6 +31,7 @@
 - `@ObservedObject` for shared singletons (❌ don't wrap .shared in @StateObject)
 - Row components needing hover/loading state → extract into a standalone `struct` (❌ don't use @ViewBuilder functions)
 - Component naming: reusable rows are `XxxRow` or `XxxRowView`
+- Option panels: build rows from `SettingRows.swift` (`SliderSettingRow`, `PickerSettingRow`, `ToggleSettingRow`, `HintRow`, `SettingGroupHeader`) so icons, labels and controls line up — ❌ no hand-made `HStack` + `frame(width: 104)` rows
 - Unified hover effect: `.background(isHovered ? Color.primary.opacity(0.07) : .clear)`
 
 ## Change checklist
