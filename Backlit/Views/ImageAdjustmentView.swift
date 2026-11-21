@@ -45,18 +45,7 @@ struct ImageAdjustmentView: View {
                 .help(brightnessHelp)
             if !display.isBuiltin, let warning = ddcService.mappingWarning {
                 // DDC monitor-mapping warning (multi-display setups)
-                HStack(spacing: 5) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                        .font(.caption2)
-                        .accessibilityHidden(true)
-                    Text(warning)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 2)
+                HintRow(text: warning, systemImage: "exclamationmark.triangle.fill", color: .orange)
             }
             if BrightnessService.shared.supportsExtraDimming(display) {
                 AdjustRow(icon: "moon.zzz.fill", label: "Dim Below Min", value: $extraDim, accent: .indigo,
@@ -341,39 +330,11 @@ struct ImageAdjustmentView: View {
     // MARK: - Quantization row
 
     private var quantizationRow: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "chart.bar.fill")
-                .foregroundColor(.blue)
-                .frame(width: 18)
-                .font(.caption)
-
-            Text("Quantize")
-                .font(.body)
-                .frame(width: 104, alignment: .leading)
-
-            Slider(value: $quantLevels, in: 2...256, step: 1) { editing in
-                if editing {
-                    captureUndoSnapshot()
-                } else {
-                    commitAdjustment()
-                }
-            }
-            .help("Adjust quantization levels")
-
-            Text(quantLevels >= 255 ? "∞" : "\(Int(quantLevels))")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .frame(width: 38, alignment: .trailing)
-                .monospacedDigit()
-
-            ResetButton(visible: quantLevels != 256) {
-                captureUndoSnapshot()
-                quantLevels = 256
-                commitAdjustment()
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 3)
+        SliderSettingRow(icon: "chart.bar.fill", label: "Quantize", value: $quantLevels,
+                         range: 2...256, defaultValue: 256,
+                         format: { $0 >= 255 ? "∞" : "\(Int($0))" },
+                         help: "Adjust quantization levels",
+                         onBegin: captureUndoSnapshot, onCommit: commitAdjustment)
     }
 
     // MARK: - Action button builder
@@ -445,6 +406,7 @@ struct ImageAdjustmentView: View {
     }
 }
 
+/// Percent slider for image adjustments (bipolar ranges show a "+" sign).
 private struct AdjustRow: View {
     let icon: String
     let label: String
@@ -457,60 +419,11 @@ private struct AdjustRow: View {
     /// Called with every value change during a drag (for controls that should follow live).
     var liveAction: ((Double) -> Void)? = nil
 
-    @State private var highlighted: Bool = false
-    @State private var isDragging: Bool = false
-
-    private func percentLabel(_ v: Double) -> String {
-        // Only show a "+" sign for bipolar ranges where 0 is the neutral midpoint.
-        let sign = (v > 0 && range.lowerBound < 0) ? "+" : ""
-        return "\(sign)\(Int(v))%"
-    }
-
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .foregroundColor(accent)
-                .frame(width: 18)
-                .font(.caption)
-
-            Text(label)
-                .font(.body)
-                .lineLimit(1)
-                .frame(width: 104, alignment: .leading)
-
-            Slider(value: $value, in: range, step: 1) { editing in
-                isDragging = editing
-                if editing {
-                    beginAction()
-                } else {
-                    commitAction()
-                    withAnimation(.easeOut(duration: 0.3)) { highlighted = true }
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 400_000_000)
-                        withAnimation(.easeOut(duration: 0.3)) { highlighted = false }
-                    }
-                }
-            }
-            .tint(accent)
-            .onChange(of: value) { _, newValue in
-                guard isDragging else { return }
-                liveAction?(newValue)
-            }
-
-            Text(percentLabel(value))
-                .font(.caption)
-                .foregroundColor(highlighted ? accent : .secondary)
-                .frame(width: 38, alignment: .trailing)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-
-            ResetButton(visible: value != defaultValue) {
-                beginAction()
-                value = defaultValue
-                commitAction()
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 3)
+        let bipolar = range.lowerBound < 0
+        SliderSettingRow(icon: icon, label: label, value: $value, accent: accent, range: range,
+                         defaultValue: defaultValue,
+                         format: { v in "\((v > 0 && bipolar) ? "+" : "")\(Int(v))%" },
+                         onBegin: beginAction, onCommit: commitAction, onLive: liveAction)
     }
 }

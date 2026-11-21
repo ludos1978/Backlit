@@ -48,6 +48,7 @@
 		B397A20FD3EF0532B5C3F0E0 /* VolumeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CA28381180634BC867EB4C /* VolumeService.swift */; };
 		C68CD3F13FB6F4F12B7860FB /* DisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0145C78886067F4B86E1C120 /* DisplayManager.swift */; };
 		C845D489330F0C4E1964E1BE /* DisplayInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720A7B037655FC845A492ABF /* DisplayInfo.swift */; };
+		CE1E736AE9958F43423CBCEB /* SettingRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD48B6B87F341FA81199BBBF /* SettingRows.swift */; };
 		CFFA63B54CE70382C590B8BF /* FreeDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5CA394AE7209A4B6A03C0C /* FreeDisplayApp.swift */; };
 		E548EE484030B7BCBAC22CB5 /* AdaptiveBrightnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E20854DA9CEB177B5BCDA04 /* AdaptiveBrightnessView.swift */; };
 		EAACDC70ADB5A4DBB8378320 /* DDCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434AE54196E2A9CE0807B90E /* DDCService.swift */; };
@@ -113,6 +114,7 @@
 		CFA093FE81C9AA28F0D11538 /* SystemColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemColorView.swift; sourceTree = "<group>"; };
 		D7C67F8B5FCC2EBDEDDE355E /* GammaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GammaService.swift; sourceTree = "<group>"; };
 		DC43BEDFE97334362F342E5B /* VirtualDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualDisplayView.swift; sourceTree = "<group>"; };
+		DD48B6B87F341FA81199BBBF /* SettingRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingRows.swift; sourceTree = "<group>"; };
 		DEBBB6E58E98622881E5E86F /* DisplayPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayPreset.swift; sourceTree = "<group>"; };
 		E39C6B398395E87CE499637B /* AdaptiveBrightnessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveBrightnessService.swift; sourceTree = "<group>"; };
 		E4B953CBEE2806D6EA565DCE /* BrightnessKeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessKeyService.swift; sourceTree = "<group>"; };
@@ -149,6 +151,7 @@
 				CA48159ABA36B094EAC2EAF3 /* OSControlledModifier.swift */,
 				398EFDE9AE0C244612CEB619 /* PresetListView.swift */,
 				AA5043ED1526A3B4738798EB /* SavePresetView.swift */,
+				DD48B6B87F341FA81199BBBF /* SettingRows.swift */,
 				CFA093FE81C9AA28F0D11538 /* SystemColorView.swift */,
 				DC43BEDFE97334362F342E5B /* VirtualDisplayView.swift */,
 				4B668CE98DDC3AD44A88F0CD /* VolumeRow.swift */,
@@ -360,6 +363,7 @@
 				EAE07BAC955F965779F6648A /* PresetService.swift in Sources */,
 				36DBE87DA84D8565ED230D26 /* ResolutionService.swift in Sources */,
 				ECE52E8F4DA8CD893356B842 /* SavePresetView.swift in Sources */,
+				CE1E736AE9958F43423CBCEB /* SettingRows.swift in Sources */,
 				5AFD0D52A8B138A41C7B6EC8 /* SettingsService.swift in Sources */,
 				10A4E4A67CCF2DE9A74C6AD3 /* SystemColorView.swift in Sources */,
 				9DB174CDFF8C3A5999C96BDC /* UndoService.swift in Sources */,

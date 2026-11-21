@@ -281,6 +281,12 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
         }
     }
 
+    /// Per-display on/off for adaptive brightness.
+    func setDisplay(_ display: DisplayInfo, enabled: Bool) {
+        if enabled { disabledDisplayUUIDs.remove(display.displayUUID) } else { disabledDisplayUUIDs.insert(display.displayUUID) }
+        rebuildSamplers()
+    }
+
     // MARK: Ignore list
 
     func ignoreFrontmostApp() {

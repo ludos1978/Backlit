@@ -47,7 +47,7 @@ Backlit/
 │   ├── Services/                   # Business logic layer, interacts directly with system frameworks
 │   │   ├── AdaptiveBrightnessService.swift # Adaptive brightness engine: per-display learned curve (content lightness × ambient light), modes content/ambient/both/follow-built-in, min/max/sensitivity/speed, learning from manual changes, ignore list with per-app brightness; drives BrightnessService
 │   │   ├── AmbientLightService.swift       # Ambient light sensor (lux) via IOHIDEventSystemClient SPI (Apple Silicon), BezelServices fallback; smoothed; wake-safe
-│   │   ├── ContentLightnessSampler.swift   # Per-display ScreenCaptureKit stream at 1/16 scale → CIE L* lightness (mean/RMS), stabilized; frames analysed in memory only
+│   │   ├── ContentLightnessSampler.swift   # Per-display ScreenCaptureKit stream, fixed 64-px-wide sample at nominal resolution (cost independent of panel size) → CIE L* lightness via Float LUTs (mean/RMS), stabilized (big jumps commit at once); frames analysed in memory only
 │   │   ├── BrightnessService.swift         # Unified brightness interface: built-in display uses IODisplayGetFloatParameter, external displays use DDC VCP 0x10; changes affect all brightness read/write paths
 │   │   ├── CGHelpers.swift                 # Shared blocking CG call utility: CGHelpers.runWithTimeout(seconds:fallback:operation:) runs WindowServer IPC blocking operations on a background thread with timeout protection; used by ResolutionService, VirtualDisplayService
 │   │   ├── ColorProfileService.swift       # ICC Profile enumeration (scans 3 system directories) and switching (ColorSync API); changes affect the color profile list and switching
@@ -73,12 +73,12 @@ Backlit/
 │   │   └── NSScreenExtension.swift         # NSScreen extension: finds the NSScreen by CGDirectDisplayID, gets displayID; depended on by NotchView, NotchOverlayManager
 │   ├── Backlit-Bridging-Header.h       # Private API declarations: CGVirtualDisplay (macOS 14+) and IOAVService (Apple Silicon DDC); property names verified against Chromium source (maxPixelsWide/maxPixelsHigh, not maxPixelSize)
 │   └── Views/                      # SwiftUI view layer
-│       ├── AdaptiveBrightnessView.swift    # Adaptive Brightness options (mode, live lux/lightness, sensitivity/min/max, response, sampling, learning, per-display, ignore list, reset)
+│       ├── AdaptiveBrightnessView.swift    # Adaptive Brightness panel built from SettingRows, split into sections: source + live readout + warnings, Brightness (sensitivity/min/max), Behaviour (response, sampling, measure, learn), Displays, Ignored Apps, reset
 │       ├── BrightnessSliderView.swift      # All-displays controls: CombinedBrightnessView, CombinedGammaView, ExtraDimmingRow (the per-display brightness/dim rows now live inside ImageAdjustmentView). Also CombinedGammaView (all-displays gamma) and ExtraDimmingRow ("Dim Below Minimum": software dimming below the hardware floor via BrightnessService.setExtraDimming; per-display + all-displays)
 │       ├── ColorProfileView.swift          # ICC Profile list (recommended/all grouping) and switching; depends on ColorProfileService
 │       ├── DisplayDetailView.swift         # ⚠️ Per-display expanded panel, container of collapsible Sections (three groups); adding/removing a Section requires changing this file and syncing MenuBarView
 │       ├── DisplayModeListView.swift       # Resolution mode list (HiDPI/native/other groups), favorites pinned with a star, click to switch; depends on ResolutionService
-│       ├── ImageAdjustmentView.swift       # Image adjustment fold: brightness + Dim Below Min rows (BrightnessService) followed by contrast/gamma/gain/temp/levels/per-channel/quantization/invert (GammaService), all in the same AdjustRow style
+│       ├── ImageAdjustmentView.swift       # Image adjustment fold: brightness + Dim Below Min rows (BrightnessService) followed by contrast/gamma/gain/temp/levels/per-channel/quantization/invert (GammaService), all SliderSettingRow (via AdjustRow)
 │       ├── MenuBarView.swift               # ⚠️ Main menu bar view: display list + expand/collapse + tools area + settings area + PresetListView; the entry container for all features, changes affect the global layout
 │       ├── NotchView.swift                 # Notch info display + mask toggle (shown only for built-in displays with a notch); depends on NotchOverlayManager
 │       ├── SystemColorView.swift           # System color picker (NSColorSampler) + HEX/RGB/HSB display + history; depends on SettingsService for persisting color history
