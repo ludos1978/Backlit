@@ -7,6 +7,18 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Added
+
+- **Keep Awake** (Options): *System* (default — macOS sleeps with its own settings), *Screens*
+  (screens and Mac stay awake while Backlit runs) and *Lid Closed* (the Mac stays awake even
+  with the lid closed and no external display; uses `pmset disablesleep` and asks for an
+  administrator password). The mode always starts as *System*; Backlit undoes its
+  `disablesleep` on quit and after a crash, and never touches one that was already on.
+
+---
+
 ## v0.7.1 (2026-11-17)
 
 ### Fixed

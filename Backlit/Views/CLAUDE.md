@@ -21,6 +21,7 @@
 | ImageAdjustmentView.swift | Image adjustment (gamma/contrast) |
 | VirtualDisplayView.swift | HiDPI virtual display |
 | NotchView.swift | Notch mask |
+| KeepAwakeView.swift | Keep Awake mode picker (Options) |
 | AutoBrightnessView.swift | Ambient light auto-brightness |
 
 ## Key patterns

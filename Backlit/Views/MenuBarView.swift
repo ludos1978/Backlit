@@ -223,6 +223,9 @@ struct MenuBarView: View {
                 FoldableSectionHeader(title: "Options", isExpanded: $showOptions)
 
                 if showOptions {
+                    // Keep awake: System (default) / Screens / Lid Closed
+                    KeepAwakeView()
+
                     // Virtual displays tool entry (Phase 10)
                     ExpandableRow(
                         icon: "display.2",

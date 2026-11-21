@@ -56,6 +56,7 @@ Backlit/
 │   │   ├── DisplayManager.swift            # ⚠️ Display enumeration (CGGetOnlineDisplayList) + CGDisplay hot-plug callback (auto-arrange feature removed 2026-09-07 — the app never moves displays on its own); @Published displays is injected globally, changes affect the whole display list data flow
 │   │   ├── GammaService.swift              # Software Gamma adjustment: CGSetDisplayTransferByFormula/Table, supports contrast/gain/color temperature/quantization/invert; the sole entry point for all gamma/software brightness writes; changes affect image adjustment effects
 │   │   ├── HiDPIService.swift              # Writes /Library/Displays/...plist to inject HiDPI scaled modes, requires administrator privileges; changes affect HiDPI override generation logic
+│   │   ├── KeepAwakeService.swift          # Keep Awake modes: system / screens (IOPM PreventUserIdleDisplaySleep assertion) / lid closed (pmset disablesleep via admin AppleScript, owned flag fd.keepAwake.sleepDisabledByBacklit, undone on quit + after crash); not persisted
 │   │   ├── LaunchService.swift             # SMAppService manages launch at login (macOS 13+); changes only affect the Launch at Login feature
 │   │   ├── NotchOverlayManager.swift       # Creates a black mask NSWindow (screenSaver level) over the built-in display's notch area; changes affect the visual effect and level of the notch mask
 │   │   ├── ResolutionService.swift         # Switches display modes via CGConfigureDisplayWithDisplayMode; applyModeSync is now async, the whole CG transaction runs inside CGHelpers.runWithTimeout; resolvedTargetDisplayID() falls back to VirtualDisplayService during mirror detection; changes affect the resolution switching success rate
@@ -86,6 +87,7 @@ Backlit/
 │       ├── HiDPIView.swift                 # HiDPI Override status row (plist approach) + write/restore buttons; depends on HiDPIService
 │       ├── AccessibilityContrastView.swift # System-wide accessibility contrast controls (Increase Contrast toggle + Display Contrast slider) in the top section; depends on AccessibilityService
 │       ├── XDRBrightnessView.swift         # XDR brightness section (tools panel: toggle + level slider) + XDRQuickSliderView (top-section quick slider, 0 = off); depends on XDRBrightnessService
+│       ├── KeepAwakeView.swift             # Keep Awake segmented picker (Options fold); depends on KeepAwakeService
 │       ├── VirtualDisplayView.swift        # Virtual display config list + creation form (preset resolutions) + one-click HiDPI preset; depends on VirtualDisplayService
 │       ├── VolumeRow.swift                 # Per-display volume slider + mute button (DisplayDetailView, external only; hidden when DDC volume is unsupported); depends on VolumeService
 │       └── SavePresetView.swift            # Saves the current display state as a preset; inline form (name + icon picker); calls PresetService.captureCurrentState + addPreset

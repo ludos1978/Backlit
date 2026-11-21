@@ -49,6 +49,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Displays Backlit disabled are re-enabled on quit; if the previous session
         // crashed while one was off, turn it back on now (only those, nothing else).
         DisplayDisableService.shared.restoreAfterUncleanExit()
+        // Same for a closed-lid keep-awake (pmset disablesleep) left on by a crash.
+        KeepAwakeService.shared.restoreAfterUncleanExit()
 
         // Observe System Settings contrast changes before the menu is first opened.
         _ = AccessibilityService.shared
@@ -99,6 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         BrightnessKeyService.shared.stop()
         DisplayDisableService.shared.enableAll()
+        KeepAwakeService.shared.restoreSystemDefault()
         // GammaService already handles CGDisplayRestoreColorSyncSettings via willTerminateNotification observer.
         VirtualDisplayService.shared.destroyAll()
     }

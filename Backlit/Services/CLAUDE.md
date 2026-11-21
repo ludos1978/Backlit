@@ -33,6 +33,7 @@ and provide high-level APIs for Views/ViewModels.
 | NotchOverlayManager.swift | Notch mask overlay |
 | SettingsService.swift | UserDefaults persistence |
 | UpdateService.swift | App update detection |
+| KeepAwakeService.swift | Keep Awake modes (IOPM assertion / pmset disablesleep) |
 | LaunchService.swift | Launch at login |
 | CGHelpers.swift | Timeout wrapper for blocking CG calls |
 
