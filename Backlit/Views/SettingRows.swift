@@ -17,6 +17,9 @@ struct SettingRowLabel: View {
     let icon: String
     let label: String
     var accent: Color = .blue
+    /// Fixed label width (keeps sliders/pickers aligned); nil lets the label grow
+    /// (toggle rows, whose switch sits at the trailing edge).
+    var labelWidth: CGFloat? = SettingRowMetrics.labelWidth
 
     var body: some View {
         Image(systemName: icon)
@@ -27,7 +30,8 @@ struct SettingRowLabel: View {
         Text(label)
             .font(.body)
             .lineLimit(1)
-            .frame(width: SettingRowMetrics.labelWidth, alignment: .leading)
+            .truncationMode(.tail)
+            .frame(width: labelWidth, alignment: .leading)
     }
 }
 
@@ -153,8 +157,8 @@ struct ToggleSettingRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            SettingRowLabel(icon: icon, label: label, accent: accent)
-            Spacer()
+            SettingRowLabel(icon: icon, label: label, accent: accent, labelWidth: nil)
+            Spacer(minLength: 4)
             Toggle(label, isOn: $isOn)
                 .toggleStyle(.switch)
                 .labelsHidden()

@@ -47,6 +47,7 @@
 		B390052D6B5FF9AA9CDB241A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7E0FB09B47CDD4877229CE1 /* Assets.xcassets */; };
 		B397A20FD3EF0532B5C3F0E0 /* VolumeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CA28381180634BC867EB4C /* VolumeService.swift */; };
 		C68CD3F13FB6F4F12B7860FB /* DisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0145C78886067F4B86E1C120 /* DisplayManager.swift */; };
+		C807BDD11E3AB24EABEF1593 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D71CA0D2070BF761536009 /* SettingsView.swift */; };
 		C845D489330F0C4E1964E1BE /* DisplayInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720A7B037655FC845A492ABF /* DisplayInfo.swift */; };
 		CE1E736AE9958F43423CBCEB /* SettingRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD48B6B87F341FA81199BBBF /* SettingRows.swift */; };
 		CFFA63B54CE70382C590B8BF /* FreeDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5CA394AE7209A4B6A03C0C /* FreeDisplayApp.swift */; };
@@ -93,6 +94,7 @@
 		6A5CA394AE7209A4B6A03C0C /* FreeDisplayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeDisplayApp.swift; sourceTree = "<group>"; };
 		6AF741F192F823CEC453541B /* KeepAwakeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAwakeService.swift; sourceTree = "<group>"; };
 		6C46133FCF826BB973542E38 /* XDRBrightnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XDRBrightnessView.swift; sourceTree = "<group>"; };
+		70D71CA0D2070BF761536009 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		720A7B037655FC845A492ABF /* DisplayInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayInfo.swift; sourceTree = "<group>"; };
 		79E1B823FF0C9230184D2375 /* DisplayModeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModeListView.swift; sourceTree = "<group>"; };
 		9C58D6A2D91396254D4BE62D /* AmbientLightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientLightService.swift; sourceTree = "<group>"; };
@@ -152,6 +154,7 @@
 				398EFDE9AE0C244612CEB619 /* PresetListView.swift */,
 				AA5043ED1526A3B4738798EB /* SavePresetView.swift */,
 				DD48B6B87F341FA81199BBBF /* SettingRows.swift */,
+				70D71CA0D2070BF761536009 /* SettingsView.swift */,
 				CFA093FE81C9AA28F0D11538 /* SystemColorView.swift */,
 				DC43BEDFE97334362F342E5B /* VirtualDisplayView.swift */,
 				4B668CE98DDC3AD44A88F0CD /* VolumeRow.swift */,
@@ -365,6 +368,7 @@
 				ECE52E8F4DA8CD893356B842 /* SavePresetView.swift in Sources */,
 				CE1E736AE9958F43423CBCEB /* SettingRows.swift in Sources */,
 				5AFD0D52A8B138A41C7B6EC8 /* SettingsService.swift in Sources */,
+				C807BDD11E3AB24EABEF1593 /* SettingsView.swift in Sources */,
 				10A4E4A67CCF2DE9A74C6AD3 /* SystemColorView.swift in Sources */,
 				9DB174CDFF8C3A5999C96BDC /* UndoService.swift in Sources */,
 				2C9CA50541CC0D3C7CF2C498 /* UpdateService.swift in Sources */,

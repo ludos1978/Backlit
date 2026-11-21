@@ -79,7 +79,8 @@ Backlit/
 │       ├── DisplayDetailView.swift         # ⚠️ Per-display expanded panel, container of collapsible Sections (three groups); adding/removing a Section requires changing this file and syncing MenuBarView
 │       ├── DisplayModeListView.swift       # Resolution mode list (HiDPI/native/other groups), favorites pinned with a star, click to switch; depends on ResolutionService
 │       ├── ImageAdjustmentView.swift       # Image adjustment fold: brightness + Dim Below Min rows (BrightnessService) followed by contrast/gamma/gain/temp/levels/per-channel/quantization/invert (GammaService), all SliderSettingRow (via AdjustRow)
-│       ├── MenuBarView.swift               # ⚠️ Main menu bar view: display list + expand/collapse + tools area + settings area + PresetListView; the entry container for all features, changes affect the global layout
+│       ├── MenuBarView.swift               # ⚠️ Main menu bar view: display list + expand/collapse + tools area + Settings entry + PresetListView; the entry container for all features, changes affect the global layout
+│       ├── SettingsView.swift              # App settings (launch at login, key interception, who controls what) built from SettingRows
 │       ├── NotchView.swift                 # Notch info display + mask toggle (shown only for built-in displays with a notch); depends on NotchOverlayManager
 │       ├── SettingRows.swift               # Shared option rows on one grid (18 pt icon · 104 pt label · control): SettingRowLabel, SliderSettingRow, PickerSettingRow, ToggleSettingRow, HintRow, SettingGroupHeader
 │       ├── SystemColorView.swift           # System color picker (NSColorSampler) + HEX/RGB/HSB display + history; depends on SettingsService for persisting color history
