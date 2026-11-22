@@ -13,6 +13,7 @@ release is 0.3.0.
 - Settings panel uses the same rows as the other option panels (grouped: general, Keys, Who controls each setting); toggle labels are no longer cut off.
 
 ### Fixed
+- Keep Awake "Lid Closed": the menu no longer freezes while the administrator password prompt is open (the prompt runs in its own process; the picker shows "Waiting for the administrator password…").
 - Adaptive brightness could leave a screen capture running in the background when its samplers were rebuilt while one was still starting (wake, display change, quick setting changes).
 
 ## v0.8.1 (2026-11-21)
