@@ -143,8 +143,19 @@ struct MenuBarView: View {
     /// must be given an explicit height derived from its content.
     @State private var contentHeight: CGFloat = 0
 
-    /// Cap for the scrollable area; beyond this the menu scrolls.
-    private let maxContentHeight: CGFloat = 640
+    /// Cap for the scrollable area: the menu grows with its content up to the
+    /// usable height of the screen it opens on (below the menu bar, above the
+    /// Dock); only beyond that does it scroll. The screen is the one under the
+    /// mouse — the menu bar icon that was just clicked.
+    @State private var maxContentHeight: CGFloat = MenuBarView.screenContentCap()
+
+    private static func screenContentCap() -> CGFloat {
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
+        let usable = screen?.visibleFrame.height ?? 800
+        // Footer (~36) + outer padding (16) + gap to the menu bar / Dock (~24).
+        return max(200, usable - 76)
+    }
 
     private var visibleDisplays: [DisplayInfo] {
         displayManager.displays.filter {
@@ -370,6 +381,7 @@ struct MenuBarView: View {
                 .opacity(0)
                 .accessibilityHidden(true)
         )
+        .onAppear { maxContentHeight = Self.screenContentCap() }
         .onReceive(displayManager.$displays) { newDisplays in
             let validIDs = Set(newDisplays.map { $0.displayID })
             expandedDisplayIDs = expandedDisplayIDs.intersection(validIDs)
