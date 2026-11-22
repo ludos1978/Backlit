@@ -7,6 +7,14 @@ release is 0.3.0.
 
 ---
 
+## Unreleased
+
+### Changed
+- Settings panel uses the same rows as the other option panels (grouped: general, Keys, Who controls each setting); toggle labels are no longer cut off.
+
+### Fixed
+- Adaptive brightness could leave a screen capture running in the background when its samplers were rebuilt while one was still starting (wake, display change, quick setting changes).
+
 ## v0.8.1 (2026-11-21)
 
 ### Changed
