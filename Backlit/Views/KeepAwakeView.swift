@@ -12,10 +12,7 @@ struct KeepAwakeView: View {
                              options: KeepAwakeService.Mode.allCases, title: \.title,
                              accent: service.mode == .system ? .secondary : .brown,
                              help: service.mode.help)
-                .disabled(service.isBusy)
-            if service.isBusy {
-                HintRow(text: "Waiting for the administrator password…", systemImage: "lock")
-            } else if let error = service.lastError {
+            if let error = service.lastError {
                 HintRow(text: error, systemImage: "exclamationmark.triangle.fill", color: .red)
             } else if service.mode != .system {
                 HintRow(text: service.mode.help)

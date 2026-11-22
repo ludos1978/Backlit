@@ -23,7 +23,7 @@ BetterDisplay is a great app, but its best features are locked behind a paid Pro
 | Display Presets | ✅ | Save & restore brightness, dimming, gamma/image adjustment, XDR and contrast with one click (never resolution) |
 | Virtual Display (Dummy) | ✅ | Create headless virtual displays |
 | Turn Displays Off | ✅ | Per-display switch that disconnects a screen in software (like BlackOut); the last one always stays on, all come back on quit |
-| Keep Awake | ✅ | System default / keep screens awake / keep the Mac awake with the lid closed (no external display needed) |
+| Keep Awake | ✅ | System default / keep screens awake / keep the Mac awake with the lid closed (no external display needed, on the power adapter) — power assertions like `caffeinate`, no admin rights |
 | Notch Management | ✅ | Hide the MacBook notch with a black overlay |
 | Launch at Login | ✅ | Via SMAppService |
 
@@ -156,8 +156,6 @@ Audited 2026-09-08 (full source review). What the app does and does not do:
   The command contains only numeric display IDs; the app never sees your password. It only
   overwrites or deletes override files it created itself (marked `FreeDisplayManaged`).
   This file affects every user of the Mac for that display model.
-  *Keep Awake → Lid Closed* runs `pmset -a disablesleep 1` (and `0` to undo) the same way;
-  it is undone on quit and after a crash, and a `disablesleep` set by someone else is left alone.
 - **Input monitoring (opt-in):** *Intercept Brightness Keys* installs an event tap whose
   mask covers only system media/function-key events (`NX_SYSDEFINED`) — it cannot see
   typed text — and acts solely on the two brightness keys.
