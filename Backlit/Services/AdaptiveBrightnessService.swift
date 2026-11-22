@@ -222,6 +222,7 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
         AmbientLightService.shared.stop()
         lightness.removeAll(); target.removeAll()
         lastApplied.removeAll(); holdUntil.removeAll()
+        lastWriteAt.removeAll()   // lastLearnedManualAt survives, so an old manual change isn't learned twice
     }
 
     /// (Re)creates content samplers for the enabled displays when content is an input.
@@ -251,7 +252,9 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
             samplers[display.displayID] = sampler
             Task { @MainActor in
                 do { try await sampler.start(fps: self.captureFPS) }
-                catch { self.contentError = "Could not sample \(display.name): \(error.localizedDescription)" }
+                catch where self.samplers[id] === sampler {
+                    self.contentError = "Could not sample \(display.name): \(error.localizedDescription)"
+                } catch {}   // superseded by a newer rebuild
             }
         }
     }
@@ -275,7 +278,8 @@ final class AdaptiveBrightnessService: ObservableObject, @unchecked Sendable {
         // Remembered per-app brightness: apply once when an ignored app comes to the front.
         if let id = frontmostBundleID, ignoredApps.contains(id), let remembered = appBrightness[id] {
             for display in enabledDisplays() {
-                BrightnessService.shared.setBrightnessSmooth(remembered, for: display, isAutoAdjust: true)
+                BrightnessService.shared.setBrightnessSmooth(remembered, for: display, isAutoAdjust: true,
+                                                            duration: speed.transition)
                 lastApplied[display.displayID] = remembered
             }
         }

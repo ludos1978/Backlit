@@ -440,6 +440,7 @@ struct DisplayRowView: View {
             .help("Expand the display control panel")
 
             if disableService.isAvailable {
+                let canDisable = disableService.canDisable(display)
                 Toggle("", isOn: Binding(
                     get: { true },
                     set: { on in if !on { disableService.disable(display) } }
@@ -447,8 +448,8 @@ struct DisplayRowView: View {
                 .toggleStyle(.switch)
                 .labelsHidden()
                 .controlSize(.mini)
-                .disabled(!disableService.canDisable(display))
-                .help(disableService.canDisable(display)
+                .disabled(!canDisable)
+                .help(canDisable
                       ? "Turn this display off (macOS moves its windows to the other screens)"
                       : "The last enabled display can't be turned off")
                 .accessibilityLabel("Display enabled")
@@ -525,6 +526,7 @@ struct DisabledDisplayRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(Color.primary.opacity(isHovered ? 0.06 : 0))
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
         .onHover { isHovered = $0 }
     }
 }

@@ -33,6 +33,9 @@ final class ContentLightnessSampler: @unchecked Sendable {
     private let sampleQueue = DispatchQueue(label: "io.github.ludos1978.backlit.lightness", qos: .utility)
     private var raw: Double = 0.5
     private var pendingFrames = 0
+    /// Bumped by every start/stop; a start that was overtaken while awaiting
+    /// discards its stream instead of leaving an orphaned capture running.
+    private var generation = 0
 
     private static let sampleWidth = 64
 
@@ -43,7 +46,9 @@ final class ContentLightnessSampler: @unchecked Sendable {
 
     func start(fps: Int) async throws {
         stop()
+        let gen = generation
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+        guard gen == generation else { return }   // stopped meanwhile
         guard let scDisplay = content.displays.first(where: { $0.displayID == displayID }) else {
             throw NSError(domain: "Backlit.Lightness", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "display not available for capture"])
@@ -71,9 +76,13 @@ final class ContentLightnessSampler: @unchecked Sendable {
         self.output = output
         self.stream = stream
         try await stream.startCapture()
+        if gen != generation {                    // stopped while starting
+            try? await stream.stopCapture()
+        }
     }
 
     func stop() {
+        generation &+= 1
         guard let stream else { return }
         self.stream = nil
         self.output = nil
@@ -167,5 +176,7 @@ private final class Output: NSObject, SCStreamOutput, SCStreamDelegate, @uncheck
         onSample(value)
     }
 
-    func stream(_ stream: SCStream, didStopWithError error: Error) {}
+    func stream(_ stream: SCStream, didStopWithError error: Error) {
+        debugLog("[Lightness] stream stopped: \(error.localizedDescription)")
+    }
 }
