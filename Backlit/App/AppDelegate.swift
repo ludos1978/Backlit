@@ -49,8 +49,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Displays Backlit disabled are re-enabled on quit; if the previous session
         // crashed while one was off, turn it back on now (only those, nothing else).
         DisplayDisableService.shared.restoreAfterUncleanExit()
-        // Same for a closed-lid keep-awake (pmset disablesleep) left on by a crash.
-        KeepAwakeService.shared.restoreAfterUncleanExit()
+        // Keep Awake: restore the remembered mode (and clean up after a crash).
+        KeepAwakeService.shared.restoreAtLaunch()
 
         // Observe System Settings contrast changes before the menu is first opened.
         _ = AccessibilityService.shared

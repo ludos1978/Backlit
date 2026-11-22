@@ -8,11 +8,12 @@ import IOKit.pwr_mgt
 /// - `.closedLid`: additionally keeps the Mac awake with the lid closed and no
 ///   external display (`pmset -a disablesleep 1`, needs an administrator password).
 ///
-/// The mode is not persisted: every launch starts in `.system` (launch is passive).
+/// The chosen mode is remembered (`fd.keepAwake.mode`) and restored at launch.
 /// `disablesleep` is a system-wide setting that survives Backlit, so it is undone on
-/// quit, and at the next launch if Backlit crashed while it was on
-/// (`fd.keepAwake.sleepDisabledByBacklit`). A `disablesleep` that was already on
-/// before (set by another tool or by hand) is never touched.
+/// quit (and re-applied at the next launch, which asks for the password again);
+/// after a crash with it on (`fd.keepAwake.sleepDisabledByBacklit`) it is undone at
+/// launch unless the remembered mode is still Lid Closed. A `disablesleep` that was
+/// already on before (set by another tool or by hand) is never touched.
 @MainActor
 final class KeepAwakeService: ObservableObject, @unchecked Sendable {
     static let shared = KeepAwakeService()
@@ -46,6 +47,7 @@ final class KeepAwakeService: ObservableObject, @unchecked Sendable {
 
     private var displayAssertion: IOPMAssertionID = 0
     private static let ownsDisableSleepKey = "fd.keepAwake.sleepDisabledByBacklit"
+    private static let modeKey = "fd.keepAwake.mode"
 
     private init() {}
 
@@ -83,6 +85,7 @@ final class KeepAwakeService: ObservableObject, @unchecked Sendable {
     private func finish(_ newMode: Mode) {
         if newMode == .system { releaseDisplayAssertion() } else { takeDisplayAssertion() }
         mode = newMode
+        UserDefaults.standard.set(newMode.rawValue, forKey: Self.modeKey)
     }
 
     private var ownsDisableSleep: Bool {
@@ -93,17 +96,31 @@ final class KeepAwakeService: ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// Quit: back to the system's own sleep behaviour.
+    /// Quit: back to the system's own sleep behaviour. The remembered mode is kept
+    /// for the next launch.
     func restoreSystemDefault() {
         releaseDisplayAssertion()
         _ = releaseDisableSleep()
         mode = .system
     }
 
-    /// Launch: a previous session crashed with `disablesleep` on — turn it off again.
-    func restoreAfterUncleanExit() {
-        guard UserDefaults.standard.bool(forKey: Self.ownsDisableSleepKey) else { return }
-        _ = releaseDisableSleep()
+    /// Launch: restores the remembered mode. Cleans up a `disablesleep` left on by
+    /// a crashed session unless Lid Closed is still wanted (then it is simply kept).
+    func restoreAtLaunch() {
+        let saved = Mode(rawValue: UserDefaults.standard.string(forKey: Self.modeKey) ?? "") ?? .system
+        switch saved {
+        case .system:
+            _ = releaseDisableSleep()
+        case .displays:
+            _ = releaseDisableSleep()
+            finish(.displays)
+        case .closedLid:
+            if Self.isSleepDisabled() {
+                finish(.closedLid)           // still on (crash, or set by another tool)
+            } else {
+                setMode(.closedLid)          // asks for the password, without blocking
+            }
+        }
     }
 
     // MARK: - Private
