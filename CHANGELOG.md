@@ -10,6 +10,7 @@ release is 0.3.0.
 ## Unreleased
 
 ### Changed
+- The menu grows to fit its content and only scrolls once it reaches the height of the screen (it used to scroll beyond a fixed 640 pt).
 - Settings panel uses the same rows as the other option panels (grouped: general, Keys, Who controls each setting); toggle labels are no longer cut off.
 
 ### Fixed
